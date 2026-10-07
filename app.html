@@ -1,652 +1,535 @@
 <!DOCTYPE html>
 <html lang="sl">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DigitNotes - Aplikacija</title>
-    
-    <link rel="icon" type="image/png" href="logo_zvezki.png">
-    
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    
-    <!-- Vektorske ikone (FontAwesome) - Brez emojijev za UI! -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
-    <!-- Firebase SDK (Compat različica za enostavnejšo uporabo v enem fajlu) -->
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-
-    <!-- jsPDF za generiranje PDF zvezkov -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-
-    <style>
-        /* Skrivanje pogledov, ki niso aktivni */
-        .view-hidden { display: none !important; }
-        
-        /* Prilagoditev za stranski meni na računalniku in spodnji meni na telefonu */
-        @media (min-width: 768px) {
-            .app-container { flex-direction: row; }
-            .content-area { padding-right: 80px; /* prostor za desni meni */ }
-            .side-menu { 
-                top: 0; right: 0; bottom: 0; width: 80px; 
-                flex-direction: column; border-left: 1px solid #e2e8f0; border-top: none;
-            }
-        }
-        @media (max-width: 767px) {
-            .app-container { flex-direction: column; }
-            .content-area { padding-bottom: 70px; /* prostor za spodnji meni */ }
-            .side-menu { 
-                bottom: 0; left: 0; right: 0; height: 70px; 
-                flex-direction: row; border-top: 1px solid #e2e8f0; border-left: none;
-            }
-        }
-
-        /* Animacija obarvanja ure v urniku */
-        .status-red { border-left: 4px solid #ef4444; background-color: #fef2f2; }
-        .status-orange { border-left: 4px solid #f97316; background-color: #fff7ed; }
-        .status-green { border-left: 4px solid #10b981; background-color: #f0fdf4; }
-
-        /* Slika zvezka hover efekti */
-        .notebook-img-container:hover .img-overlay { opacity: 1; }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DigitNotes</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+  body{-webkit-tap-highlight-color:transparent}
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:.5rem;font-weight:700;border-radius:.75rem;padding:.65rem 1rem;transition:.2s}
+  .btn-p{background:#059669;color:#fff;box-shadow:0 4px 10px rgba(5,150,105,.25)}.btn-p:hover{background:#047857}
+  .btn-s{background:#f1f5f9;color:#334155}.btn-s:hover{background:#e2e8f0}
+  .btn-d{background:#fee2e2;color:#b91c1c}.btn-d:hover{background:#fecaca}
+  .inp{width:100%;padding:.7rem 1rem;border-radius:.75rem;border:1px solid #e2e8f0;background:#f8fafc;outline:none}
+  .inp:focus{border-color:#10b981;box-shadow:0 0 0 3px #d1fae5;background:#fff}
+  .card{background:#fff;border:1px solid #f1f5f9;border-radius:1rem;box-shadow:0 1px 3px rgba(0,0,0,.06)}
+  .lbl{display:block;font-size:.875rem;font-weight:600;color:#334155;margin-bottom:.25rem}
+</style>
 </head>
-<body class="bg-slate-50 text-slate-800 font-sans antialiased h-screen w-screen overflow-hidden flex">
+<body class="bg-slate-50 text-slate-800 font-sans antialiased min-h-screen selection:bg-emerald-200">
+<div id="app"></div>
+<div id="modal" class="hidden fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm items-center justify-center p-3"></div>
+<div id="viewer" class="hidden fixed inset-0 z-[60] bg-black/95 items-center justify-center"></div>
+<div id="ctx" class="hidden fixed z-[70] bg-white rounded-xl shadow-2xl border border-slate-200 p-1 min-w-[190px]"></div>
+<div id="toast" class="fixed top-4 left-1/2 -translate-x-1/2 z-[80] pointer-events-none"></div>
 
-    <!-- ========================================== -->
-    <!-- 1. PRIJAVA (LOGIN VIEW)                    -->
-    <!-- ========================================== -->
-    <div id="view-login" class="w-full h-full flex flex-col items-center justify-center bg-emerald-50 relative">
-        <div class="absolute top-0 right-0 -mr-20 -mt-20 w-64 h-64 rounded-full bg-emerald-200 opacity-50 blur-3xl"></div>
-        <div class="bg-white p-8 rounded-2xl shadow-xl w-11/12 max-w-md z-10 border border-slate-100">
-            <div class="text-center mb-8">
-                <img src="logo_zvezki.png" alt="Logo" class="h-16 mx-auto mb-4" onerror="this.style.display='none'">
-                <h1 class="text-3xl font-bold text-emerald-700">Prijava</h1>
-                <p class="text-sm text-slate-500 mt-2">Dobrodošli v DigitNotes aplikaciji</p>
-            </div>
-            
-            <form id="login-form" class="space-y-5">
-                <div>
-                    <label class="block text-sm font-medium text-slate-700 mb-1"><i class="fa-solid fa-user mr-2 text-emerald-500"></i>Uporabniško ime</label>
-                    <input type="text" id="login-username" required class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-emerald-500 outline-none transition-all">
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-slate-700 mb-1"><i class="fa-solid fa-lock mr-2 text-emerald-500"></i>Geslo</label>
-                    <input type="password" id="login-password" required class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-emerald-500 outline-none transition-all">
-                </div>
-                <div class="flex items-center">
-                    <input type="checkbox" id="login-remember" class="w-4 h-4 text-emerald-600 border-slate-300 rounded focus:ring-emerald-500">
-                    <label for="login-remember" class="ml-2 block text-sm text-slate-700">Ohrani me prijavljenega</label>
-                </div>
-                
-                <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 px-4 rounded-xl shadow-md transition-colors">
-                    Vstopi
-                </button>
-            </form>
-            <div class="mt-6 text-center text-xs text-slate-500">
-                <p>Možnosti registracije ni. V primeru pozabljenega gesla se obrnite na <a href="#" class="text-emerald-600 font-bold hover:underline">informacije</a>.</p>
-            </div>
-        </div>
-    </div>
+<script>
+// ================= FIREBASE =================
+firebase.initializeApp({databaseURL:"https://digitnotes-bdeb7-default-rtdb.europe-west1.firebasedatabase.app"});
+const db=firebase.database();
 
-    <!-- ========================================== -->
-    <!-- GLAVNA APLIKACIJA (APP VIEW)               -->
-    <!-- ========================================== -->
-    <div id="view-app" class="view-hidden w-full h-full app-container relative bg-slate-50">
-        
-        <!-- OSREDNJA VSEBINA (Preklapljanje med stranmi) -->
-        <main class="content-area w-full h-full overflow-y-auto overflow-x-hidden p-4 md:p-8">
-            
-            <!-- 2. DOMAČA STRAN -->
-            <section id="page-home" class="max-w-4xl mx-auto view-hidden">
-                <div class="flex justify-between items-end border-b border-slate-200 pb-4 mb-6">
-                    <div>
-                        <h2 class="text-3xl font-extrabold text-slate-800">Pozdravljen, <span id="user-greeting-name" class="text-emerald-600">Uporabnik</span>!</h2>
-                        <p class="text-slate-500 mt-1">Tukaj je tvoj pregled za današnji dan.</p>
-                    </div>
-                    <div class="text-right">
-                        <div id="current-time" class="text-2xl font-bold text-slate-700">00:00</div>
-                        <div id="current-date" class="text-sm text-slate-500">Ponedeljek, 1. januar</div>
-                    </div>
-                </div>
+// ================= IKONE (vektorske SVG) =================
+const P={
+ cal:'<rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/>',
+ book:'<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V3H6.5A2.5 2.5 0 0 0 4 5.5z"/><path d="M20 17v4H6.5A2.5 2.5 0 0 1 4 18.5"/>',
+ gear:'<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/>',
+ out:'<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/>',
+ notes:'<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/>',
+ hw:'<rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2M9 14l2 2 4-4"/>',
+ grade:'<circle cx="12" cy="8" r="6"/><path d="M15.5 13.9 17 22l-5-3-5 3 1.5-8.1"/>',
+ l:'<path d="m15 18-6-6 6-6"/>', r:'<path d="m9 18 6-6-6-6"/>',
+ plus:'<path d="M12 5v14M5 12h14"/>', x:'<path d="M18 6 6 18M6 6l12 12"/>',
+ trash:'<path d="M3 6h18M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6M10 11v6M14 11v6M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>',
+ dl:'<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/>',
+ up:'<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/>',
+ share:'<circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.6 13.5 6.8 4M15.4 6.5l-6.8 4"/>',
+ pdf:'<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M9 15h6M9 18h4"/>',
+ img:'<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/>',
+ user:'<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>',
+ users:'<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8"/>',
+ lock:'<rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>',
+ check:'<path d="M20 6 9 17l-5-5"/>', edit:'<path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/>',
+ swap:'<path d="M17 1l4 4-4 4M3 11V9a4 4 0 0 1 4-4h14M7 23l-4-4 4-4M21 13v2a4 4 0 0 1-4 4H3"/>',
+ clock:'<circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>',
+ alert:'<path d="m10.3 3.9-8.5 14.7A2 2 0 0 0 3.5 21h17a2 2 0 0 0 1.7-2.4L13.7 3.9a2 2 0 0 0-3.4 0zM12 9v4M12 17h.01"/>',
+ coffee:'<path d="M18 8h1a4 4 0 0 1 0 8h-1M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4zM6 1v3M10 1v3M14 1v3"/>',
+ shield:'<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>',
+ home:'<path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/>'
+};
+const ic=(n,c='w-5 h-5')=>`<svg class="${c} shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${P[n]}</svg>`;
+const logo=`<div class="h-10 w-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center shadow">${ic('book','w-6 h-6')}</div>`;
 
-                <h3 class="text-xl font-bold mb-4 text-slate-700"><i class="fa-regular fa-calendar-check mr-2"></i>Tvoj današnji urnik</h3>
-                <div id="home-schedule-list" class="space-y-3 bg-white p-4 rounded-xl shadow-sm border border-slate-100">
-                    <!-- Dinamično generirano -->
-                    <div class="text-center p-4 text-slate-400 italic">Nalagam urnik...</div>
-                </div>
-            </section>
+// ================= POMOČNIKI =================
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const iso=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+const pd=iso=>new Date(iso+'T00:00:00');
+const fmt=iso=>pd(iso).toLocaleDateString('sl-SI',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+const DAYS=['Ponedeljek','Torek','Sreda','Četrtek','Petek'];
+const nodia=s=>String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[đĐ]/g,'d');
+const abbr=n=>nodia(n).replace(/[^a-zA-Z]/g,'').slice(0,3).toUpperCase()||'ZVE';
+const uid8=()=>Math.random().toString(36).slice(2,10)+Date.now().toString(36).slice(-4);
+function toast(m,err){const t=document.createElement('div');t.className=`mb-2 px-4 py-3 rounded-xl shadow-xl text-sm font-semibold text-white ${err?'bg-red-600':'bg-slate-800'}`;t.textContent=m;$('toast').appendChild(t);setTimeout(()=>t.remove(),3500)}
+function modal(html,wide){const m=$('modal');m.innerHTML=`<div class="bg-white rounded-2xl shadow-2xl w-full ${wide?'max-w-2xl':'max-w-md'} max-h-[92vh] overflow-y-auto p-6">${html}</div>`;m.classList.remove('hidden');m.classList.add('flex')}
+function closeModal(){$('modal').classList.add('hidden');$('modal').classList.remove('flex')}
+let _cf=null;
+function conf(msg,fn,label='Potrdi'){_cf=fn;modal(`<div class="flex items-start gap-3 mb-5"><div class="text-amber-500">${ic('alert','w-7 h-7')}</div><p class="text-slate-700">${msg}</p></div><div class="flex gap-2 justify-end"><button class="btn btn-s" onclick="closeModal()">Prekliči</button><button class="btn btn-d" onclick="closeModal();_cf()">${label}</button></div>`)}
+function resize(file,max=1400){return new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>{const i=new Image();i.onload=()=>{const k=Math.min(1,max/Math.max(i.width,i.height));const c=document.createElement('canvas');c.width=i.width*k;c.height=i.height*k;c.getContext('2d').drawImage(i,0,0,c.width,c.height);res(c.toDataURL('image/jpeg',.72))};i.onerror=rej;i.src=r.result};r.onerror=rej;r.readAsDataURL(file)})}
+const PC={};
+function getPhoto(uid,pid){return PC[pid]?Promise.resolve(PC[pid]):db.ref(`pd/${uid}/${pid}`).once('value').then(s=>PC[pid]=s.val())}
+function hydrate(){document.querySelectorAll('img[data-pid]:not([src])').forEach(im=>getPhoto(im.dataset.uid,im.dataset.pid).then(d=>{if(d)im.src=d}))}
 
-            <!-- 3. URNIK -->
-            <section id="page-schedule" class="max-w-5xl mx-auto view-hidden">
-                <div class="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
-                    <h2 class="text-3xl font-extrabold text-slate-800"><i class="fa-solid fa-calendar-days mr-3 text-emerald-600"></i>Urnik</h2>
-                    <div class="flex bg-white rounded-lg p-1 shadow-sm border border-slate-200">
-                        <input type="date" id="schedule-date-picker" class="px-3 py-2 outline-none text-slate-700 font-medium">
-                        <button class="px-4 py-2 bg-slate-100 hover:bg-slate-200 rounded-md text-sm font-bold ml-1 transition-colors"><i class="fa-solid fa-list mr-1"></i> Tedenski pogled</button>
-                    </div>
-                </div>
+// ================= STANJE =================
+let U=null,D={},A={},SH=null,ref=null;
+let S={view:'home',date:iso(new Date()),week:false,tab:'nb',nb:null,au:null};
+const params=new URLSearchParams(location.search);const SHARE=params.get('share');
 
-                <div id="full-schedule-list" class="space-y-4">
-                    <!-- Zgled ene ure -->
-                    <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex justify-between items-center cursor-pointer hover:shadow-md transition-shadow status-red" onclick="openClassModal('1', 'Matematika')">
-                        <div class="flex items-center gap-4">
-                            <div class="bg-slate-100 w-10 h-10 rounded-full flex items-center justify-center font-bold text-slate-600">1.</div>
-                            <div>
-                                <h4 class="font-bold text-lg">Matematika</h4>
-                                <p class="text-xs text-slate-500">Prof. Novak | Opomba: Manjkajo zapiski!</p>
-                            </div>
-                        </div>
-                        <div class="flex gap-2 text-slate-400">
-                            <i class="fa-solid fa-triangle-exclamation text-red-500"></i>
-                        </div>
-                    </div>
-                </div>
-            </section>
+function store(){return localStorage.getItem('dn_s')?localStorage:sessionStorage}
+function boot(){
+  const s=localStorage.getItem('dn_s')||sessionStorage.getItem('dn_s');
+  if(s){try{start(JSON.parse(s));return}catch(e){}}
+  renderLogin();
+}
+function start(sess){
+  U=sess;if(ref)ref.off();
+  if(U.role==='admin'){ref=db.ref('u');ref.on('value',s=>{A=s.val()||{};render()});S.view='admin'}
+  else{ref=db.ref('u/'+U.id);ref.on('value',s=>{D=s.val()||{};if(!D.profile){logout();return}render()});S.view='home'}
+  if(SHARE){openShared()}
+}
+function logout(){localStorage.removeItem('dn_s');sessionStorage.removeItem('dn_s');if(ref)ref.off();U=null;D={};A={};SH=null;renderLogin()}
 
-            <!-- 5. ZVEZKI -->
-            <section id="page-notebooks" class="max-w-6xl mx-auto view-hidden">
-                <h2 class="text-3xl font-extrabold text-slate-800 mb-6"><i class="fa-solid fa-book-open mr-3 text-emerald-600"></i>Zvezki</h2>
-                
-                <div id="notebooks-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    <!-- Dinamično zgenerirano -->
-                </div>
+// ================= PRIJAVA =================
+function renderLogin(){
+  $('app').innerHTML=`
+  <nav class="w-full bg-white/80 backdrop-blur-md shadow-sm py-4 px-6 flex items-center space-x-3 sticky top-0 z-20">${logo}<span class="text-xl font-bold text-emerald-700 tracking-tight">DigitNotes</span></nav>
+  <main class="relative overflow-hidden min-h-[85vh] flex items-center justify-center px-4 py-10">
+    <div class="absolute top-0 right-0 -mr-20 -mt-20 w-64 h-64 rounded-full bg-emerald-100 opacity-60 blur-3xl -z-10"></div>
+    <div class="absolute bottom-0 left-0 -ml-20 -mb-20 w-80 h-80 rounded-full bg-teal-100 opacity-60 blur-3xl -z-10"></div>
+    <div class="bg-white p-8 rounded-2xl shadow-xl border border-slate-100 w-full max-w-md relative overflow-hidden">
+      <div class="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-emerald-400 to-teal-500"></div>
+      <h1 class="text-2xl font-bold mb-1">Prijava</h1>
+      <p class="text-sm text-slate-500 mb-6 pb-4 border-b border-slate-100">${SHARE?'Za ogled deljenega zvezka se najprej prijavi.':'Vsi šolski zapiski na enem mestu.'}</p>
+      <div class="space-y-4">
+        <div><label class="lbl">Uporabniško ime</label><div class="relative"><span class="absolute left-3 top-3.5 text-slate-400">${ic('user','w-5 h-5')}</span><input id="lu" class="inp pl-11" autocomplete="username"></div></div>
+        <div><label class="lbl">Geslo</label><div class="relative"><span class="absolute left-3 top-3.5 text-slate-400">${ic('lock','w-5 h-5')}</span><input id="lp" type="password" class="inp pl-11" autocomplete="current-password" onkeydown="if(event.key==='Enter')login()"></div></div>
+        <label class="flex items-center gap-2 text-sm text-slate-600 cursor-pointer"><input id="lr" type="checkbox" class="w-4 h-4 accent-emerald-600"> Ostani prijavljen v tem računalniku</label>
+        <div id="le" class="hidden text-sm text-red-600 bg-red-50 rounded-xl px-3 py-2"></div>
+        <button class="btn btn-p w-full" onclick="login()">Prijavi se</button>
+        <p class="text-xs text-slate-500 text-center">Pozabljeno geslo? Obrni se na <a class="text-emerald-700 font-semibold underline" href="mailto:informacije@digitnotes.si">informacije</a>.</p>
+      </div>
+    </div></main>`;
+}
+async function login(){
+  const u=$('lu').value.trim(),p=$('lp').value,err=$('le');
+  const fail=m=>{err.textContent=m;err.classList.remove('hidden')};
+  if(!u||!p)return fail('Vnesi uporabniško ime in geslo.');
+  let sess=null;
+  if(u==='ADMIN'&&p==='Admin')sess={role:'admin'};
+  else{
+    try{
+      const id=(await db.ref('idx/'+u.toLowerCase()).once('value')).val();
+      if(id){const pr=(await db.ref(`u/${id}/profile`).once('value')).val();if(pr&&pr.password===p)sess={role:'user',id}}
+    }catch(e){return fail('Napaka povezave s strežnikom.')}
+  }
+  if(!sess)return fail('Napačno uporabniško ime ali geslo.');
+  ($('lr').checked?localStorage:sessionStorage).setItem('dn_s',JSON.stringify(sess));
+  start(sess);
+}
 
-                <!-- Detajl zvezka (skrito po privzetem) -->
-                <div id="notebook-detail" class="view-hidden">
-                    <button onclick="closeNotebookDetail()" class="mb-4 text-slate-500 hover:text-slate-800 font-bold"><i class="fa-solid fa-arrow-left mr-2"></i>Nazaj na seznam</button>
-                    <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-100 mb-6 flex justify-between items-center">
-                        <div>
-                            <h3 id="detail-notebook-title" class="text-2xl font-bold">Matematika <span class="text-2xl">📐</span></h3>
-                            <p class="text-slate-500 mt-1">Ocene: 4, 5, 3</p>
-                        </div>
-                        <div class="flex gap-3">
-                            <button class="bg-blue-50 text-blue-600 px-4 py-2 rounded-lg font-bold hover:bg-blue-100 transition"><i class="fa-solid fa-share-nodes mr-2"></i>Deli</button>
-                            <button onclick="generatePDF()" class="bg-emerald-50 text-emerald-600 px-4 py-2 rounded-lg font-bold hover:bg-emerald-100 transition"><i class="fa-solid fa-file-pdf mr-2"></i>Prenesi PDF</button>
-                        </div>
-                    </div>
-                    
-                    <h4 class="font-bold text-lg mb-4 text-slate-700">Fotografije zvezka</h4>
-                    <div id="notebook-photos" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
-                        <!-- Slike -->
-                    </div>
-                </div>
-            </section>
+// ================= OKVIR =================
+const NAV=[['home','Domov','home'],['sched','Urnik','cal'],['nbs','Zvezki','book'],['set','Nastavitve','gear']];
+function shell(inner){
+  const items=U.role==='admin'?[['admin','Uporabniki','users']]:NAV;
+  const btn=(v,l,i)=>`<button onclick="go('${v}')" class="flex md:flex-row flex-col items-center md:gap-3 gap-0.5 md:px-4 px-2 py-2 md:py-3 rounded-xl md:w-full text-xs md:text-sm font-semibold transition ${S.view===v||(v==='nbs'&&S.view==='nb')?'text-emerald-700 bg-emerald-50':'text-slate-500 hover:bg-slate-100'}">${ic(i,'w-6 h-6 md:w-5 md:h-5')}<span>${l}</span></button>`;
+  return `<div class="min-h-screen md:pr-60 pb-24 md:pb-0">
+  <header class="bg-white/80 backdrop-blur-md shadow-sm py-3 px-5 flex items-center gap-3 sticky top-0 z-20">${logo}<span class="text-xl font-bold text-emerald-700">DigitNotes</span></header>
+  <main class="max-w-4xl mx-auto p-4 md:p-8">${inner}</main>
+  <nav class="fixed z-30 bg-white border-slate-200 bottom-0 left-0 right-0 border-t flex justify-around px-1 md:top-0 md:left-auto md:right-0 md:bottom-0 md:w-60 md:border-t-0 md:border-l md:flex-col md:justify-start md:gap-1 md:p-4 md:pt-24">
+   ${items.map(i=>btn(...i)).join('')}
+   <button onclick="logout()" class="flex md:flex-row flex-col items-center md:gap-3 gap-0.5 md:px-4 px-2 py-2 md:py-3 rounded-xl md:w-full text-xs md:text-sm font-semibold text-slate-500 hover:bg-red-50 hover:text-red-600 md:mt-auto">${ic('out','w-6 h-6 md:w-5 md:h-5')}<span>Odjava</span></button>
+  </nav></div>`;
+}
+function go(v){S.view=v;render();scrollTo(0,0)}
+function render(){
+  if(!U)return;
+  let h='';
+  if(U.role==='admin')h=S.view==='adminu'?vAdminUser():vAdmin();
+  else h={home:vHome,sched:vSched,nbs:vNbs,nb:vNb,set:vSet,shared:vShared}[S.view]();
+  $('app').innerHTML=shell(h);hydrate();tick();
+}
+function tick(){const c=$('clock');if(c)c.textContent=new Date().toLocaleTimeString('sl-SI',{hour:'2-digit',minute:'2-digit',second:'2-digit'})}
+setInterval(tick,1000);
 
-            <!-- 4. NASTAVITVE -->
-            <section id="page-settings" class="max-w-4xl mx-auto view-hidden">
-                <h2 class="text-3xl font-extrabold text-slate-800 mb-6"><i class="fa-solid fa-gear mr-3 text-emerald-600"></i>Nastavitve</h2>
-                
-                <div class="flex gap-4 border-b border-slate-200 mb-6 overflow-x-auto pb-2">
-                    <button class="settings-tab-btn active text-emerald-600 font-bold border-b-2 border-emerald-600 pb-2 px-2" data-target="set-notebooks">Zvezki</button>
-                    <button class="settings-tab-btn text-slate-500 font-bold hover:text-slate-700 pb-2 px-2" data-target="set-schedule">Urnik</button>
-                    <button class="settings-tab-btn text-slate-500 font-bold hover:text-slate-700 pb-2 px-2" data-target="set-account">Račun</button>
-                </div>
+// ================= URNIK LOGIKA =================
+const startMin=h=>7*60+30+(h-1)*55;
+function slot(date,h){const wd=(pd(date).getDay()+6)%7;return wd>4?null:D.tt?.[wd+'_'+h]||null}
+function nbOf(id){return D.nb?.[id]}
+function status(date,h){
+  const s=slot(date,h);if(!s)return'empty';if(s.malica)return'malica';
+  const l=D.ls?.[date+'_'+h];
+  if(l?.saved)return'ok';
+  if(l?.assess)return'orange';
+  const now=new Date(),dd=pd(date),y=new Date();y.setDate(y.getDate()-1);y.setHours(0,0,0,0);
+  const past=dd<new Date(now.getFullYear(),now.getMonth(),now.getDate())||(iso(now)===date&&now.getHours()*60+now.getMinutes()>startMin(h)+45);
+  if(past&&dd>=y)return'red';
+  return'open';
+}
+const ST={ok:'bg-emerald-50 border-emerald-300',orange:'bg-orange-50 border-orange-300',red:'bg-red-50 border-red-300',open:'bg-white border-slate-200'};
+function dayList(date,compact){
+  const wd=(pd(date).getDay()+6)%7;
+  if(wd>4)return`<div class="card p-6 text-center text-slate-500">Vikend – ni pouka.</div>`;
+  if(D.off?.[date])return`<div class="card p-6 text-center text-slate-500">Urnik je za ta dan izklopljen – zapiskov ni treba vnašati.</div>`;
+  let out='';
+  for(let h=1;h<=9;h++){
+    const s=slot(date,h),st=status(date,h);
+    if(!s){if(!compact)out+=`<div class="flex items-center gap-3 px-4 py-2 text-slate-300 text-sm"><span class="w-8 text-center font-bold">${h}.</span>prosto</div>`;continue}
+    if(s.malica){out+=`<div class="flex items-center gap-3 px-4 py-3 rounded-xl bg-slate-100 text-slate-500"><span class="w-8 text-center font-bold">${h}.</span>${ic('coffee')}<span class="font-semibold">Malica</span></div>`;continue}
+    const n=nbOf(s.nid),l=D.ls?.[date+'_'+h]||{};
+    const pc=Object.values(D.pm?.[s.nid]||{}).filter(p=>p.l===date+'_'+h).length;
+    out+=`<button onclick="openLesson('${date}',${h})" class="w-full text-left flex items-center gap-3 px-4 py-3 rounded-xl border-2 transition hover:shadow-md ${ST[st]}">
+      <span class="w-8 text-center font-bold text-slate-500">${h}.</span>
+      <span class="text-2xl">${esc(n?.emoji||'')}</span>
+      <span class="flex-1 min-w-0"><span class="block font-bold truncate">${esc(n?.name||'(izbrisan zvezek)')}</span><span class="block text-xs text-slate-500 truncate">${esc(s.teacher||'')}</span></span>
+      <span class="flex gap-1.5 text-slate-500">${(l.notes||pc||l.noNotes)?ic('notes','w-4 h-4'):''}${l.hw?ic('hw','w-4 h-4'):''}${l.assess?ic('grade','w-4 h-4 text-orange-500'):''}${st==='red'?ic('alert','w-4 h-4 text-red-500'):''}${st==='ok'?ic('check','w-4 h-4 text-emerald-600'):''}</span></button>`;
+  }
+  return`<div class="space-y-2">${out}</div>`;
+}
 
-                <div id="set-notebooks" class="settings-pane space-y-4">
-                    <div class="bg-white p-5 rounded-xl border border-slate-100 shadow-sm flex flex-col md:flex-row gap-4 items-end">
-                        <div class="flex-grow w-full">
-                            <label class="block text-sm text-slate-600 font-bold mb-1">Ime predmeta</label>
-                            <input type="text" placeholder="Npr. Slovenščina" class="w-full border rounded-lg p-2">
-                        </div>
-                        <div class="flex-grow w-full">
-                            <label class="block text-sm text-slate-600 font-bold mb-1">Učitelj</label>
-                            <input type="text" placeholder="Npr. Prof. Horvat" class="w-full border rounded-lg p-2">
-                        </div>
-                        <div class="w-24 shrink-0">
-                            <label class="block text-sm text-slate-600 font-bold mb-1">Emoji</label>
-                            <input type="text" placeholder="📚" class="w-full border rounded-lg p-2 text-center text-xl">
-                        </div>
-                        <button class="bg-emerald-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-emerald-700 h-[42px]"><i class="fa-solid fa-plus"></i></button>
-                    </div>
-                    <!-- Seznam dodanih zvezkov -->
-                    <div id="settings-notebook-list" class="bg-white rounded-xl border border-slate-100 shadow-sm"></div>
-                </div>
+// ================= DOMOV =================
+function vHome(){
+  const now=new Date();
+  return`<div class="flex flex-wrap justify-between items-end gap-2 mb-6">
+   <div><p class="text-sm text-slate-500">Dobrodošel nazaj</p><h1 class="text-2xl md:text-3xl font-bold">Pozdravljen, <span class="text-emerald-700">${esc(D.profile?.name?.split(' ')[0]||'')}</span>!</h1></div>
+   <div class="text-right"><p class="text-sm text-slate-500 capitalize">${fmt(iso(now))}</p><p id="clock" class="text-2xl font-bold text-emerald-700 tabular-nums"></p></div></div>
+   <h2 class="font-bold text-lg mb-3 flex items-center gap-2">${ic('cal')} Današnji urnik</h2>${dayList(iso(now))}`;
+}
 
-                <div id="set-schedule" class="settings-pane view-hidden space-y-6">
-                    <div class="bg-white p-5 rounded-xl border border-slate-100 shadow-sm">
-                        <h3 class="font-bold text-lg mb-4">Nastavitev stalnega urnika</h3>
-                        <p class="text-sm text-slate-500 mb-4">Izberi predmet iz seznama ustvarjenih zvezkov. Pusti prazno za prosto uro ali izberi 'Malica'.</p>
-                        <!-- Matrika urnika bi se generirala tukaj (pon-pet, 1-9) -->
-                        <div class="overflow-x-auto">
-                            <table class="w-full text-left text-sm">
-                                <thead>
-                                    <tr>
-                                        <th class="p-2">Ura</th>
-                                        <th class="p-2">Ponedeljek</th>
-                                        <th class="p-2">Torek</th>
-                                        <!-- ... -->
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr>
-                                        <td class="p-2 font-bold">1.</td>
-                                        <td class="p-2"><select class="border p-1 rounded w-full"><option>Prazno</option><option>Malica</option><option>Matematika</option></select></td>
-                                        <td class="p-2"><select class="border p-1 rounded w-full"><option>Prazno</option></select></td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                    
-                    <div class="bg-orange-50 border border-orange-200 p-5 rounded-xl">
-                        <h3 class="font-bold text-lg mb-2 text-orange-800"><i class="fa-solid fa-power-off mr-2"></i>Dotični urnik (Izklop urnika)</h3>
-                        <p class="text-sm text-orange-700 mb-3">Izberi dan, ko aplikacija od tebe ne bo zahtevala zapiskov (npr. športni dan).</p>
-                        <div class="flex gap-2">
-                            <input type="date" class="border p-2 rounded-lg outline-none">
-                            <button class="bg-orange-600 text-white font-bold px-4 py-2 rounded-lg hover:bg-orange-700">Izklopi</button>
-                        </div>
-                    </div>
-                </div>
+// ================= URNIK =================
+function vSched(){
+  const d=S.date;
+  let body='';
+  if(S.week){
+    const base=pd(d);const mon=new Date(base);mon.setDate(base.getDate()-((base.getDay()+6)%7));
+    body=`<div class="grid md:grid-cols-5 gap-3">${[0,1,2,3,4].map(i=>{const x=new Date(mon);x.setDate(mon.getDate()+i);const k=iso(x);return`<div><h3 class="font-bold text-sm mb-2 text-emerald-700">${DAYS[i]} <span class="text-slate-400 font-normal">${x.getDate()}.${x.getMonth()+1}.</span></h3>${dayList(k,true)}</div>`}).join('')}</div>`;
+  }else body=`<h2 class="font-bold text-lg mb-3 capitalize">${fmt(d)}</h2>${dayList(d)}`;
+  return`<h1 class="text-2xl font-bold mb-4">Urnik</h1>
+  <div class="card p-3 mb-5 flex flex-wrap items-center gap-2">
+   <button class="btn btn-s !p-2.5" onclick="shiftDate(-1)">${ic('l')}</button>
+   <input type="date" class="inp !w-auto" value="${d}" onchange="S.date=this.value||S.date;render()">
+   <button class="btn btn-s !p-2.5" onclick="shiftDate(1)">${ic('r')}</button>
+   <button class="btn btn-s" onclick="S.date=iso(new Date());render()">Danes</button>
+   <div class="ml-auto flex rounded-xl bg-slate-100 p-1"><button class="px-3 py-1.5 rounded-lg text-sm font-bold ${!S.week?'bg-white shadow text-emerald-700':'text-slate-500'}" onclick="S.week=false;render()">Dan</button><button class="px-3 py-1.5 rounded-lg text-sm font-bold ${S.week?'bg-white shadow text-emerald-700':'text-slate-500'}" onclick="S.week=true;render()">Teden</button></div>
+  </div>${body}`;
+}
+function shiftDate(n){const d=pd(S.date);d.setDate(d.getDate()+n*(S.week?7:1));S.date=iso(d);render()}
 
-                <div id="set-account" class="settings-pane view-hidden space-y-4">
-                    <div class="bg-white p-5 rounded-xl border border-slate-100 shadow-sm space-y-4 max-w-md">
-                        <div>
-                            <label class="block text-sm text-slate-600 font-bold mb-1">Novo uporabniško ime</label>
-                            <input type="text" class="w-full border rounded-lg p-2">
-                        </div>
-                        <div>
-                            <label class="block text-sm text-slate-600 font-bold mb-1">Novo geslo</label>
-                            <input type="password" class="w-full border rounded-lg p-2">
-                        </div>
-                        <button class="bg-emerald-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-emerald-700 w-full">Shrani spremembe</button>
-                    </div>
-                </div>
-            </section>
+// ---- pogovorno okno ure ----
+let LM=null;
+function openLesson(date,h){
+  const s=slot(date,h),n=nbOf(s.nid);if(!n)return toast('Zvezek za to uro ne obstaja več.',true);
+  LM={date,h,key:date+'_'+h,nid:s.nid,teacher:s.teacher,l:{...(D.ls?.[date+'_'+h]||{})}};
+  const L=LM.l;
+  modal(`<div class="flex justify-between items-start mb-4"><div><div class="text-3xl mb-1">${esc(n.emoji||'')}</div><h3 class="text-xl font-bold">${esc(n.name)}</h3><p class="text-sm text-slate-500">${h}. ura · ${fmt(date)}${s.teacher?' · '+esc(s.teacher):''}</p></div><button class="btn btn-s !p-2" onclick="closeModal()">${ic('x')}</button></div>
+  <div class="space-y-5">
+   <section><h4 class="font-bold flex items-center gap-2 mb-2 text-emerald-700">${ic('notes')} Zapiski</h4>
+     <textarea id="lm_notes" rows="3" class="inp" placeholder="Povzetek snovi…">${esc(L.notes||'')}</textarea>
+     <div id="lm_ph" class="flex flex-wrap gap-2 mt-2"></div>
+     <div class="flex flex-wrap items-center gap-3 mt-2">
+      <label class="btn btn-s cursor-pointer">${ic('up')} Naloži fotografije<input type="file" accept="image/*" multiple class="hidden" onchange="lmUpload(this)"></label>
+      <label class="flex items-center gap-2 text-sm cursor-pointer"><input id="lm_no" type="checkbox" class="w-4 h-4 accent-emerald-600" ${L.noNotes?'checked':''}> Ura brez zapiskov</label></div></section>
+   <section><h4 class="font-bold flex items-center gap-2 mb-2 text-sky-700">${ic('hw')} Domača naloga</h4><textarea id="lm_hw" rows="2" class="inp" placeholder="Navodila za domačo nalogo…">${esc(L.hw||'')}</textarea></section>
+   <section><h4 class="font-bold flex items-center gap-2 mb-2 text-orange-600">${ic('grade')} Ocenjevanje</h4>
+     <label class="flex items-center gap-2 text-sm mb-2 cursor-pointer"><input id="lm_as" type="checkbox" class="w-4 h-4 accent-orange-500" ${L.assess?'checked':''} onchange="$('lm_asb').classList.toggle('hidden',!this.checked)"> Ta ura vsebuje ocenjevanje</label>
+     <div id="lm_asb" class="grid grid-cols-2 gap-2 ${L.assess?'':'hidden'}"><select id="lm_at" class="inp">${['Ustno','Pisno','Test','Kontrolna naloga','Drugo'].map(o=>`<option ${L.at===o?'selected':''}>${o}</option>`).join('')}</select><input id="lm_gr" class="inp" placeholder="Ocena (neobvezno)" value="${esc(L.grade||'')}"></div></section>
+   <section><label class="lbl">Opombe</label><textarea id="lm_op" rows="2" class="inp" placeholder="Opombe k uri…">${esc(L.op||'')}</textarea></section>
+   <div class="flex gap-2 justify-end"><button class="btn btn-s" onclick="closeModal()">Prekliči</button><button class="btn btn-p" onclick="lmSave()">${ic('check')} Shrani uro</button></div>
+  </div>`,true);
+  lmPhotos();
+}
+function lmPhotos(){
+  const ps=Object.entries(D.pm?.[LM.nid]||{}).filter(([,p])=>p.l===LM.key);
+  $('lm_ph').innerHTML=ps.map(([id])=>`<div class="relative w-20 h-20"><img data-pid="${id}" data-uid="${U.id}" class="w-20 h-20 object-cover rounded-lg border"><button class="absolute -top-1.5 -right-1.5 bg-red-600 text-white rounded-full p-1" onclick="delPhoto('${LM.nid}','${id}',true)">${ic('x','w-3 h-3')}</button></div>`).join('');
+  hydrate();
+}
+async function addPhotos(nid,files,lesson,date){
+  const mx=900;
+  for(const f of files){
+    try{const data=await resize(f);const id=db.ref().push().key;PC[id]=data;
+      await db.ref(`pd/${U.id}/${id}`).set(data);
+      await db.ref(`u/${U.id}/pm/${nid}/${id}`).set({t:Date.now(),l:lesson||null,dt:date||iso(new Date())});
+    }catch(e){toast('Napaka pri nalaganju slike.',true)}
+  }
+}
+async function lmUpload(inp){toast('Nalagam…');await addPhotos(LM.nid,[...inp.files],LM.key,LM.date);setTimeout(lmPhotos,400)}
+function lmSave(){
+  const v=id=>$(id).value.trim();
+  const ph=Object.values(D.pm?.[LM.nid]||{}).filter(p=>p.l===LM.key).length;
+  const notes=v('lm_notes'),no=$('lm_no').checked,hw=v('lm_hw'),as=$('lm_as').checked;
+  const hasNotes=!!(notes||ph||no);
+  if(!hasNotes&&!as){toast('Ure ni mogoče shraniti: dodaj zapiske ali označi „Ura brez zapiskov“.',true);return}
+  const rec={notes,noNotes:no,hw,assess:as,at:as?$('lm_at').value:'',grade:as?v('lm_gr'):'',op:v('lm_op'),nid:LM.nid,teacher:LM.teacher||'',saved:hasNotes&&!as?true:(hasNotes&&as?false:false)};
+  // ocenjevanje brez zaključka ostane oranžno, dokler ni zapiskov
+  rec.saved=hasNotes;
+  if(as&&!hasNotes)rec.saved=false;
+  db.ref(`u/${U.id}/ls/${LM.key}`).set(rec).then(()=>{
+    closeModal();toast('Ura shranjena.');
+    const open=[];for(let h=1;h<=9;h++)if(['red'].includes(status(LM.date,h))&&h<LM.h)open.push(h);
+    const y=new Date(pd(LM.date));y.setDate(y.getDate()-1);
+    for(let h=1;h<=9;h++)if(status(iso(y),h)==='red')open.push('prej.');
+    if(open.length)setTimeout(()=>toast('Imaš še neshranjene (rdeče) ure – prosimo, naloži jih.',true),600);
+  });
+}
 
-        </main>
+// ================= ZVEZKI =================
+function pcount(nid,pm=D.pm){return Object.keys(pm?.[nid]||{}).length}
+function vNbs(){
+  const ids=Object.keys(D.nb||{});
+  return`<h1 class="text-2xl font-bold mb-4">Zvezki</h1>`+(ids.length?`<div class="grid sm:grid-cols-2 gap-3">${ids.map(id=>{const n=D.nb[id];return`<button onclick="openNb('${id}')" class="card p-4 flex items-center gap-4 text-left hover:shadow-lg hover:-translate-y-0.5 transition"><span class="text-4xl w-14 h-14 rounded-2xl bg-emerald-50 flex items-center justify-center">${esc(n.emoji||'')}</span><span class="flex-1"><span class="block font-bold text-lg">${esc(n.name)}</span><span class="text-sm text-slate-500 flex items-center gap-1">${ic('img','w-4 h-4')} ${pcount(id)} fotografij</span></span>${ic('r','w-5 h-5 text-slate-400')}</button>`}).join('')}</div>`:`<div class="card p-8 text-center text-slate-500">Še nimaš zvezkov. Dodaš jih v Nastavitve → Zvezki.</div>`);
+}
+function openNb(id){S.nb=id;S.view='nb';render();scrollTo(0,0)}
+function nbCtx(){
+  if(S.view==='shared'&&SH)return{uid:SH.uid,id:SH.nid,nb:SH.nb,pm:{[SH.nid]:SH.pm},owner:false,author:SH.author,grades:[]};
+  const nb=D.nb?.[S.nb];
+  const grades=Object.entries(D.ls||{}).filter(([k,l])=>l.nid===S.nb&&l.grade).map(([k,l])=>({d:k.split('_')[0],t:l.at,g:l.grade}));
+  return{uid:U.id,id:S.nb,nb,pm:D.pm,owner:true,author:D.profile?.name,grades};
+}
+function sortedPhotos(c){
+  return Object.entries(c.pm?.[c.id]||{}).sort((a,b)=>a[1].t-b[1].t).map(([id,p],i)=>{
+    const d=(p.dt||'').split('-');
+    return{id,name:`${String(i+1).padStart(2,'0')}_${abbr(c.nb.name)}_${d[2]}${d[1]}${d[0]}.jpg`}});
+}
+function vNb(){const c=nbCtx();if(!c.nb){S.view='nbs';return vNbs()}return nbHtml(c)}
+function vShared(){return nbHtml(nbCtx())}
+function nbHtml(c){
+  const ph=sortedPhotos(c);
+  return`<button class="btn btn-s mb-4" onclick="go('${c.owner?'nbs':'home'}')">${ic('l')} Nazaj</button>
+  <div class="flex flex-wrap items-center gap-4 mb-5"><span class="text-5xl">${esc(c.nb.emoji||'')}</span><div class="flex-1"><h1 class="text-2xl font-bold">${esc(c.nb.name)}</h1><p class="text-sm text-slate-500">${ph.length} fotografij · avtor: ${esc(c.author||'')}</p></div>
+   <div class="flex flex-wrap gap-2"><button class="btn btn-p" onclick="makePdf()">${ic('pdf')} PDF</button>${c.owner?`<button class="btn btn-s" onclick="shareNb()">${ic('share')} Deli</button><label class="btn btn-s cursor-pointer">${ic('plus')} Fotografije<input type="file" accept="image/*" multiple class="hidden" onchange="nbUpload(this)"></label>`:''}</div></div>
+  ${c.grades.length?`<div class="card p-4 mb-5"><h3 class="font-bold flex items-center gap-2 mb-2 text-orange-600">${ic('grade')} Ocene</h3><div class="flex flex-wrap gap-2">${c.grades.map(g=>`<span class="px-3 py-1.5 rounded-xl bg-orange-50 border border-orange-200 text-sm"><b>${esc(g.g)}</b> <span class="text-slate-500">· ${esc(g.t||'')} · ${g.d.split('-').reverse().join('.')}</span></span>`).join('')}</div></div>`:''}
+  <h3 class="font-bold mb-2">Fotografije</h3>
+  ${ph.length?`<div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">${ph.map((p,i)=>`<div class="group" ${c.owner?`oncontextmenu="showCtx(event,'${p.id}');return false" ontouchstart="lp(event,'${p.id}')" ontouchend="lpx()" ontouchmove="lpx()"`:''} onclick="openViewer(${i})"><img data-pid="${p.id}" data-uid="${c.uid}" class="aspect-[3/4] w-full object-cover rounded-xl border bg-slate-100 cursor-pointer group-hover:shadow-lg transition"><p class="text-[11px] text-slate-500 mt-1 truncate">${p.name}</p></div>`).join('')}</div>`:`<div class="card p-8 text-center text-slate-500">Zvezek je prazen.</div>`}
+  ${c.owner?`<p class="text-xs text-slate-400 mt-4">Namig: z desnim klikom (na telefonu z dolgim pritiskom) na fotografijo jo zamenjaš ali izbrišeš.</p>`:''}`;
+}
+async function nbUpload(inp){toast('Nalagam…');await addPhotos(S.nb,[...inp.files]);}
+// kontekstni meni
+let lt=null;
+function lp(e,id){const t=e.touches[0];lt=setTimeout(()=>showCtx({clientX:t.clientX,clientY:t.clientY,preventDefault(){}},id),550)}
+function lpx(){clearTimeout(lt)}
+function showCtx(e,id){
+  e.preventDefault&&e.preventDefault();const m=$('ctx');
+  m.innerHTML=`<button class="w-full flex items-center gap-2 px-3 py-2.5 hover:bg-slate-100 rounded-lg text-sm font-semibold" onclick="replacePhoto('${id}')">${ic('swap','w-4 h-4')} Zamenjaj fotografijo</button>
+  <button class="w-full flex items-center gap-2 px-3 py-2.5 hover:bg-slate-100 rounded-lg text-sm font-semibold" onclick="dlPhoto('${id}')">${ic('dl','w-4 h-4')} Prenesi</button>
+  <button class="w-full flex items-center gap-2 px-3 py-2.5 hover:bg-red-50 text-red-600 rounded-lg text-sm font-semibold" onclick="delPhoto(S.nb,'${id}')">${ic('trash','w-4 h-4')} Izbriši fotografijo</button>`;
+  m.style.left=Math.min(e.clientX,innerWidth-210)+'px';m.style.top=Math.min(e.clientY,innerHeight-150)+'px';m.classList.remove('hidden');
+}
+document.addEventListener('click',()=>$('ctx').classList.add('hidden'));
+document.addEventListener('scroll',()=>$('ctx').classList.add('hidden'),true);
+function replacePhoto(id){
+  const i=document.createElement('input');i.type='file';i.accept='image/*';
+  i.onchange=async()=>{if(!i.files[0])return;const d=await resize(i.files[0]);PC[id]=d;await db.ref(`pd/${U.id}/${id}`).set(d);toast('Fotografija zamenjana.');render()};
+  i.click();
+}
+function delPhoto(nid,id,inLesson){
+  const p=D.pm?.[nid]?.[id];
+  conf(`Si prepričan, da želiš izbrisati fotografijo?${p?.l?' <b>Izbrisala se bo tudi iz ure v urniku</b>, kjer je bila naložena.':''} Ostale fotografije v zvezku se bodo samodejno prerazporedile.`,async()=>{
+    await db.ref(`pd/${U.id}/${id}`).remove();await db.ref(`u/${U.id}/pm/${nid}/${id}`).remove();delete PC[id];
+    toast('Fotografija izbrisana.');if(inLesson)setTimeout(()=>{LM&&openLesson(LM.date,LM.h)},300);
+  },'Izbriši');
+}
+async function dlPhoto(id,name){
+  const c=nbCtx();const n=name||sortedPhotos(c).find(p=>p.id===id).name;
+  const d=await getPhoto(c.uid,id);const a=document.createElement('a');a.href=d;a.download=n;a.click();
+}
+// pregledovalnik
+let VI=0,VP=[];
+function openViewer(i){VP=sortedPhotos(nbCtx());VI=i;drawViewer();}
+async function drawViewer(){
+  const v=$('viewer'),p=VP[VI],c=nbCtx();v.classList.remove('hidden');v.classList.add('flex');
+  v.innerHTML=`<button class="absolute top-4 right-4 text-white bg-white/10 rounded-full p-3 hover:bg-white/20" onclick="closeViewer()">${ic('x','w-6 h-6')}</button>
+  <button class="absolute top-4 left-4 text-white bg-white/10 rounded-full p-3 hover:bg-white/20" onclick="dlPhoto('${p.id}','${p.name}')">${ic('dl','w-6 h-6')}</button>
+  <button class="absolute left-3 top-1/2 text-white bg-white/10 rounded-full p-3 hover:bg-white/20" onclick="vStep(-1)">${ic('l','w-7 h-7')}</button>
+  <button class="absolute right-3 top-1/2 text-white bg-white/10 rounded-full p-3 hover:bg-white/20" onclick="vStep(1)">${ic('r','w-7 h-7')}</button>
+  <img id="vimg" class="max-w-[88vw] max-h-[88vh] object-contain"><p class="absolute bottom-4 text-white/70 text-sm">${p.name} · ${VI+1}/${VP.length}</p>`;
+  const d=await getPhoto(c.uid,p.id);if($('vimg'))$('vimg').src=d;
+}
+function vStep(n){VI=(VI+n+VP.length)%VP.length;drawViewer()}
+function closeViewer(){$('viewer').classList.add('hidden');$('viewer').classList.remove('flex')}
+document.addEventListener('keydown',e=>{if($('viewer').classList.contains('hidden'))return;if(e.key==='ArrowLeft')vStep(-1);if(e.key==='ArrowRight')vStep(1);if(e.key==='Escape')closeViewer()});
+let tx=0;$('viewer').addEventListener('touchstart',e=>tx=e.touches[0].clientX);
+$('viewer').addEventListener('touchend',e=>{const d=e.changedTouches[0].clientX-tx;if(Math.abs(d)>60)vStep(d<0?1:-1)});
 
-        <!-- STALNI MENI (Spodaj na tel, desno na PC) -->
-        <nav class="side-menu fixed bg-white shadow-[0_0_15px_rgba(0,0,0,0.05)] z-40 flex items-center justify-around md:justify-start md:pt-8 md:gap-8">
-            <button class="nav-btn group flex flex-col items-center p-2 text-slate-400 hover:text-emerald-600 transition-colors" data-page="page-home" title="Domov">
-                <i class="fa-solid fa-house text-xl md:text-2xl mb-1"></i>
-                <span class="text-[10px] font-bold">DOMOV</span>
-            </button>
-            <button class="nav-btn group flex flex-col items-center p-2 text-slate-400 hover:text-emerald-600 transition-colors" data-page="page-schedule" title="Urnik">
-                <i class="fa-solid fa-calendar-day text-xl md:text-2xl mb-1"></i>
-                <span class="text-[10px] font-bold">URNIK</span>
-            </button>
-            <button class="nav-btn group flex flex-col items-center p-2 text-slate-400 hover:text-emerald-600 transition-colors" data-page="page-notebooks" title="Zvezki">
-                <i class="fa-solid fa-book-open text-xl md:text-2xl mb-1"></i>
-                <span class="text-[10px] font-bold">ZVEZKI</span>
-            </button>
-            <button class="nav-btn group flex flex-col items-center p-2 text-slate-400 hover:text-emerald-600 transition-colors" data-page="page-settings" title="Nastavitve">
-                <i class="fa-solid fa-gear text-xl md:text-2xl mb-1"></i>
-                <span class="text-[10px] font-bold">NASTAVITVE</span>
-            </button>
-            <div class="md:mt-auto md:mb-8">
-                <button onclick="logout()" class="group flex flex-col items-center p-2 text-rose-400 hover:text-rose-600 transition-colors" title="Odjava">
-                    <i class="fa-solid fa-right-from-bracket text-xl md:text-2xl mb-1"></i>
-                    <span class="text-[10px] font-bold">ODJAVA</span>
-                </button>
-            </div>
-        </nav>
-    </div>
+// deljenje
+function shareNb(){
+  const link=location.href.split('?')[0].split('#')[0]+'?share='+U.id+'.'+S.nb;
+  modal(`<h3 class="text-lg font-bold mb-2 flex items-center gap-2">${ic('share')} Deli zvezek</h3><p class="text-sm text-slate-500 mb-3">Prijatelj mora ob odpiranju povezave najprej vpisati svoje podatke za prijavo v aplikacijo.</p><input id="shl" class="inp mb-3" readonly value="${link}" onclick="this.select()"><div class="flex gap-2 justify-end"><button class="btn btn-s" onclick="closeModal()">Zapri</button><button class="btn btn-p" onclick="navigator.clipboard.writeText($('shl').value).then(()=>toast('Povezava kopirana.'))">Kopiraj povezavo</button></div>`);
+}
+async function openShared(){
+  const [uid,nid]=SHARE.split('.');
+  try{
+    const [nb,pm,nm]=await Promise.all([`u/${uid}/nb/${nid}`,`u/${uid}/pm/${nid}`,`u/${uid}/profile/name`].map(p=>db.ref(p).once('value').then(s=>s.val())));
+    if(!nb)return toast('Zvezek ne obstaja več.',true);
+    if(U.role==='user'&&U.id===uid){S.nb=nid;S.view='nb';render();return}
+    SH={uid,nid,nb,pm:pm||{},author:nm};S.view='shared';render();
+  }catch(e){toast('Napaka pri odpiranju zvezka.',true)}
+}
 
-    <!-- ========================================== -->
-    <!-- ADMIN POGLED (ADMIN VIEW)                  -->
-    <!-- ========================================== -->
-    <div id="view-admin" class="view-hidden w-full h-full bg-slate-900 text-slate-100 overflow-y-auto p-8 relative">
-        <div class="max-w-6xl mx-auto">
-            <div class="flex justify-between items-center mb-8 border-b border-slate-700 pb-4">
-                <h1 class="text-3xl font-bold text-emerald-400"><i class="fa-solid fa-shield-halved mr-3"></i>Nadzorna plošča Admin</h1>
-                <button onclick="logout()" class="bg-rose-600 hover:bg-rose-700 text-white font-bold py-2 px-4 rounded-lg"><i class="fa-solid fa-power-off mr-2"></i>Odjava</button>
-            </div>
+// PDF
+function loadImg(src){return new Promise(r=>{const i=new Image();i.onload=()=>r(i);i.src=src})}
+async function makePdf(){
+  const c=nbCtx(),ph=sortedPhotos(c);toast('Generiram PDF…');
+  const {jsPDF}=window.jspdf,doc=new jsPDF({unit:'mm',format:'a4'});
+  const W=210,H=297,au=nodia(c.author||'');
+  doc.setFillColor(5,150,105);doc.rect(0,0,W,110,'F');
+  doc.setTextColor(255);doc.setFont('helvetica','bold');doc.setFontSize(34);doc.text(nodia(c.nb.name),W/2,60,{align:'center'});
+  doc.setFontSize(14);doc.setFont('helvetica','normal');doc.text('Zvezek',W/2,45,{align:'center'});
+  doc.setTextColor(51,65,85);doc.setFontSize(18);doc.text('Avtor: '+au,W/2,150,{align:'center'});
+  doc.setFontSize(11);doc.setTextColor(120);doc.text('DigitNotes · '+new Date().toLocaleDateString('sl-SI'),W/2,160,{align:'center'});
+  for(let i=0;i<ph.length;i++){
+    const d=await getPhoto(c.uid,ph[i].id);if(!d)continue;const im=await loadImg(d);
+    doc.addPage();const k=Math.min(190/im.width,255/im.height),w=im.width*k,h=im.height*k;
+    doc.addImage(d,'JPEG',(W-w)/2,10,w,h);
+    doc.setFontSize(9);doc.setTextColor(120);
+    doc.text(c.owner?String(i+1):`${au} - ${i+1}`,W/2,H-8,{align:'center'});
+  }
+  doc.save(nodia(c.nb.name).replace(/\W+/g,'_')+'.pdf');
+}
 
-            <!-- Dodaj uporabnika -->
-            <div class="bg-slate-800 p-6 rounded-xl border border-slate-700 mb-8">
-                <h2 class="text-xl font-bold mb-4">Dodaj uporabnika</h2>
-                <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-                    <input type="email" placeholder="E-pošta" class="bg-slate-700 border-none rounded p-2 text-white outline-none focus:ring-2 focus:ring-emerald-500">
-                    <input type="text" placeholder="Ime in priimek" class="bg-slate-700 border-none rounded p-2 text-white outline-none focus:ring-2 focus:ring-emerald-500">
-                    <input type="text" placeholder="Uporabniško ime" class="bg-slate-700 border-none rounded p-2 text-white outline-none focus:ring-2 focus:ring-emerald-500">
-                    <input type="text" placeholder="Geslo" class="bg-slate-700 border-none rounded p-2 text-white outline-none focus:ring-2 focus:ring-emerald-500">
-                </div>
-                <button class="mt-4 bg-emerald-600 hover:bg-emerald-700 font-bold py-2 px-4 rounded shadow"><i class="fa-solid fa-user-plus mr-2"></i>Ustvari uporabnika</button>
-            </div>
+// ================= NASTAVITVE =================
+function vSet(){
+  const tabs=[['nb','Zvezki','book'],['tt','Urnik','cal'],['ac','Račun','user']];
+  return`<h1 class="text-2xl font-bold mb-4">Nastavitve</h1><div class="flex gap-2 mb-5 overflow-x-auto">${tabs.map(([k,l,i])=>`<button onclick="S.tab='${k}';render()" class="btn ${S.tab===k?'btn-p':'btn-s'}">${ic(i,'w-4 h-4')} ${l}</button>`).join('')}</div>`+({nb:setNb,tt:setTt,ac:setAc}[S.tab])();
+}
+function setNb(){
+  const ids=Object.keys(D.nb||{});
+  return`<div class="flex justify-between items-center mb-3"><h2 class="font-bold text-lg">Nastavitve zvezkov</h2><button class="btn btn-p" onclick="nbForm()">${ic('plus')} Dodaj zvezek</button></div>
+  ${D.profile?.max!=null&&D.profile.max!==''?`<p class="text-sm text-slate-500 mb-3">Omejitev: ${ids.length} / ${D.profile.max} zvezkov</p>`:''}
+  <div class="space-y-2">${ids.map(id=>{const n=D.nb[id];return`<div class="card p-4 flex items-center gap-3"><span class="text-3xl">${esc(n.emoji||'')}</span><div class="flex-1 min-w-0"><b>${esc(n.name)}</b><p class="text-xs text-slate-500 truncate">Učitelji: ${esc((n.teachers||[]).join(', '))}</p></div><button class="btn btn-s !p-2" onclick="nbForm('${id}')">${ic('edit','w-4 h-4')}</button><button class="btn btn-d !p-2" onclick="delNb('${id}')">${ic('trash','w-4 h-4')}</button></div>`}).join('')||'<div class="card p-6 text-center text-slate-500">Ni zvezkov.</div>'}</div>`;
+}
+const EM=['📐','📖','🧪','🌍','🎨','🎵','⚽','💻','🇬🇧','🔬','📜','🧮','🌱','✏️'];
+function nbForm(id,uidTarget){
+  const n=(uidTarget?A[uidTarget]?.nb?.[id]:D.nb?.[id])||{};
+  window._nbT=uidTarget||null;
+  modal(`<h3 class="text-lg font-bold mb-4">${id?'Uredi zvezek':'Nov zvezek'}</h3><div class="space-y-3">
+   <div><label class="lbl">Predmet / ime zvezka</label><input id="nf_n" class="inp" value="${esc(n.name||'')}" placeholder="npr. Matematika"></div>
+   <div><label class="lbl">Emoji zvezka</label><input id="nf_e" class="inp text-center text-2xl" maxlength="4" value="${esc(n.emoji||'📖')}"><div class="flex flex-wrap gap-1 mt-2">${EM.map(e=>`<button type="button" class="text-2xl p-1.5 rounded-lg hover:bg-slate-100" onclick="$('nf_e').value='${e}'">${e}</button>`).join('')}</div></div>
+   <div><label class="lbl">Učitelji (vsaj eden, ločeni z vejico)</label><input id="nf_t" class="inp" value="${esc((n.teachers||[]).join(', '))}" placeholder="npr. Novak, Kovač"></div>
+   <div class="flex gap-2 justify-end pt-2"><button class="btn btn-s" onclick="closeModal()">Prekliči</button><button class="btn btn-p" onclick="nbSave('${id||''}')">Shrani</button></div></div>`);
+}
+function nbSave(id){
+  const name=$('nf_n').value.trim(),em=$('nf_e').value.trim(),t=$('nf_t').value.split(',').map(s=>s.trim()).filter(Boolean);
+  if(!name)return toast('Vnesi ime zvezka.',true);if(!t.length)return toast('Določi vsaj enega učitelja.',true);
+  const uid=window._nbT||U.id,prof=(window._nbT?A[uid]?.profile:D.profile)||{},nbs=(window._nbT?A[uid]?.nb:D.nb)||{};
+  if(!id&&prof.max!==undefined&&prof.max!==''&&prof.max!==null&&Object.keys(nbs).length>=+prof.max&&!window._nbT)return toast('Dosegel si omejitev števila zvezkov.',true);
+  const nid=id||uid8();
+  db.ref(`u/${uid}/nb/${nid}`).set({name,emoji:em||'📖',teachers:t}).then(()=>{closeModal();toast('Shranjeno.')});
+}
+function delNb(id,uidT){
+  const uid=uidT||U.id;
+  conf('Izbrisal se bo zvezek skupaj z vsemi fotografijami in zapisi v urniku. Nadaljujem?',async()=>{
+    const pm=(uidT?A[uid]?.pm?.[id]:D.pm?.[id])||{};
+    for(const p of Object.keys(pm))await db.ref(`pd/${uid}/${p}`).remove();
+    const root=(uidT?A[uid]:D)||{},up={};
+    up[`u/${uid}/nb/${id}`]=null;up[`u/${uid}/pm/${id}`]=null;
+    Object.entries(root.tt||{}).forEach(([k,s])=>{if(s.nid===id)up[`u/${uid}/tt/${k}`]=null});
+    Object.entries(root.ls||{}).forEach(([k,l])=>{if(l.nid===id)up[`u/${uid}/ls/${k}`]=null});
+    await db.ref().update(up);toast('Zvezek izbrisan.');
+  },'Izbriši');
+}
+function setTt(){
+  const opts=sel=>{let o=`<option value="">— prosto —</option><option value="M" ${sel==='M'?'selected':''}>Malica</option>`;
+    Object.entries(D.nb||{}).forEach(([id,n])=>(n.teachers||[]).forEach(t=>{const v=id+'|'+t;o+=`<option value="${esc(v)}" ${sel===v?'selected':''}>${esc(n.emoji||'')} ${esc(n.name)} – ${esc(t)}</option>`}));return o};
+  let rows='';
+  for(let h=1;h<=9;h++){rows+=`<tr><td class="font-bold text-slate-500 pr-2">${h}.</td>`;
+    for(let d=0;d<5;d++){const s=D.tt?.[d+'_'+h];const cur=!s?'':s.malica?'M':s.nid+'|'+s.teacher;rows+=`<td class="p-1"><select class="inp !py-2 !px-2 text-sm min-w-[150px]" onchange="ttSet(${d},${h},this.value)">${opts(cur)}</select></td>`}rows+='</tr>'}
+  const off=Object.keys(D.off||{}).sort();
+  return`<h2 class="font-bold text-lg mb-3">Nastavitve urnika</h2><p class="text-sm text-slate-500 mb-3">Izbereš lahko le predmete, za katere imaš vpisane zvezke. Pri predmetu z več učitelji izbereš, kdo te uči.</p>
+  <div class="card p-3 overflow-x-auto mb-8"><table class="w-full"><thead><tr><th></th>${DAYS.map(d=>`<th class="text-left text-sm p-1">${d}</th>`).join('')}</tr></thead><tbody>${rows}</tbody></table></div>
+  <h2 class="font-bold text-lg mb-1">Dotični urnik</h2><p class="text-sm text-slate-500 mb-3">Izklopi urnik za določen dan ali obdobje – aplikacija takrat ne bo zahtevala zapiskov.</p>
+  <div class="card p-4"><div class="flex flex-wrap gap-2 items-end"><div><label class="lbl">Od</label><input id="of1" type="date" class="inp"></div><div><label class="lbl">Do (neobvezno)</label><input id="of2" type="date" class="inp"></div><button class="btn btn-p" onclick="offAdd()">Izklopi urnik</button></div>
+  <div class="flex flex-wrap gap-2 mt-4">${off.map(d=>`<span class="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-amber-50 border border-amber-200 text-sm">${d.split('-').reverse().join('.')}<button onclick="db.ref('u/${U.id}/off/${d}').remove()">${ic('x','w-3.5 h-3.5')}</button></span>`).join('')||'<span class="text-sm text-slate-400">Noben dan ni izklopljen.</span>'}</div></div>`;
+}
+function ttSet(d,h,v){
+  const r=db.ref(`u/${U.id}/tt/${d}_${h}`);
+  if(!v)r.remove();else if(v==='M')r.set({malica:true});else{const i=v.indexOf('|');r.set({nid:v.slice(0,i),teacher:v.slice(i+1)})}
+}
+function offAdd(){
+  const a=$('of1').value,b=$('of2').value||a;if(!a)return toast('Izberi datum.',true);if(b<a)return toast('Konec je pred začetkom.',true);
+  const up={};for(let d=pd(a);iso(d)<=b;d.setDate(d.getDate()+1))up[`u/${U.id}/off/${iso(d)}`]=true;
+  db.ref().update(up).then(()=>toast('Urnik izklopljen.'));
+}
+function setAc(){
+  const p=D.profile||{};
+  return`<h2 class="font-bold text-lg mb-3">Nastavitve računa</h2><div class="card p-5 space-y-4 max-w-md">
+   <div><label class="lbl">Uporabniško ime</label><input id="ac_u" class="inp" value="${esc(p.username)}"></div>
+   <div><label class="lbl">Novo geslo</label><input id="ac_p" type="password" class="inp" placeholder="Pusti prazno, če ga ne spreminjaš"></div>
+   <button class="btn btn-p" onclick="acSave()">Shrani spremembe</button></div>`;
+}
+async function acSave(){
+  const u=$('ac_u').value.trim(),p=$('ac_p').value,old=D.profile.username;
+  if(u.length<3)return toast('Uporabniško ime je prekratko.',true);
+  if(u.toLowerCase()!==old.toLowerCase()){
+    const ex=(await db.ref('idx/'+u.toLowerCase()).once('value')).val();
+    if(ex||u.toLowerCase()==='admin')return toast('To uporabniško ime je zasedeno.',true);
+    await db.ref('idx/'+old.toLowerCase()).remove();await db.ref('idx/'+u.toLowerCase()).set(U.id);
+  }
+  const up={username:u};if(p){if(p.length<4)return toast('Geslo je prekratko.',true);up.password=p}
+  await db.ref(`u/${U.id}/profile`).update(up);$('ac_p').value='';toast('Račun posodobljen.');
+}
 
-            <!-- Tabela uporabnikov -->
-            <div class="bg-slate-800 rounded-xl border border-slate-700 overflow-hidden">
-                <table class="w-full text-left">
-                    <thead class="bg-slate-950">
-                        <tr>
-                            <th class="p-4">Uporabnik</th>
-                            <th class="p-4">E-pošta</th>
-                            <th class="p-4 text-center">Št. zvezkov (Limit)</th>
-                            <th class="p-4 text-center">Št. slik</th>
-                            <th class="p-4 text-right">Akcije</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-slate-700">
-                        <!-- Primer uporabnika -->
-                        <tr class="hover:bg-slate-700/50 transition">
-                            <td class="p-4 font-bold">Janez Novak<br><span class="text-xs text-slate-400 font-normal">@janez123</span></td>
-                            <td class="p-4">janez@sola.si</td>
-                            <td class="p-4 text-center">5 <button class="text-emerald-400 ml-2 text-xs" title="Spremeni limit"><i class="fa-solid fa-pen"></i></button></td>
-                            <td class="p-4 text-center">142</td>
-                            <td class="p-4 text-right space-x-2">
-                                <button class="bg-blue-600 p-2 rounded text-sm hover:bg-blue-500" title="Uredi zvezke"><i class="fa-solid fa-book"></i></button>
-                                <button class="bg-slate-600 p-2 rounded text-sm hover:bg-slate-500" title="Uredi profil"><i class="fa-solid fa-pen-to-square"></i></button>
-                                <button class="bg-rose-600 p-2 rounded text-sm hover:bg-rose-500" title="Izbriši"><i class="fa-solid fa-trash"></i></button>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
+// ================= ADMIN =================
+function vAdmin(){
+  const ids=Object.keys(A).filter(k=>A[k].profile);
+  return`<div class="flex justify-between items-center mb-4"><h1 class="text-2xl font-bold flex items-center gap-2">${ic('shield')} Uporabniki</h1><button class="btn btn-p" onclick="userForm()">${ic('plus')} Dodaj uporabnika</button></div>
+  <div class="space-y-2">${ids.map(id=>{const p=A[id].profile;const nn=Object.keys(A[id].nb||{}).length;return`<div class="card p-4 flex items-center gap-3 flex-wrap"><button class="flex-1 text-left min-w-[200px]" onclick="S.au='${id}';S.view='adminu';render()"><b>${esc(p.name)}</b> <span class="text-slate-400">@${esc(p.username)}</span><p class="text-xs text-slate-500">${esc(p.email)} · ${nn} zvezkov${p.max!==undefined&&p.max!==''?' (omejitev '+p.max+')':''}</p></button><button class="btn btn-s !p-2" onclick="userForm('${id}')">${ic('edit','w-4 h-4')}</button><button class="btn btn-d !p-2" onclick="delUser('${id}')">${ic('trash','w-4 h-4')}</button></div>`}).join('')||'<div class="card p-8 text-center text-slate-500">Še ni uporabnikov.</div>'}</div>`;
+}
+function userForm(id){
+  const p=(id&&A[id]?.profile)||{};
+  modal(`<h3 class="text-lg font-bold mb-4">${id?'Uredi uporabnika':'Nov uporabnik'}</h3><div class="space-y-3">
+   <div><label class="lbl">Ime in priimek</label><input id="uf_n" class="inp" value="${esc(p.name)}"></div>
+   <div><label class="lbl">E-poštni naslov</label><input id="uf_e" type="email" class="inp" value="${esc(p.email)}"></div>
+   <div><label class="lbl">Uporabniško ime</label><input id="uf_u" class="inp" value="${esc(p.username)}"></div>
+   <div><label class="lbl">Geslo</label><input id="uf_p" class="inp" value="${esc(p.password)}"></div>
+   <div class="flex gap-2 justify-end pt-2"><button class="btn btn-s" onclick="closeModal()">Prekliči</button><button class="btn btn-p" onclick="userSave('${id||''}')">Shrani</button></div></div>`);
+}
+async function userSave(id){
+  const v=k=>$(k).value.trim(),name=v('uf_n'),email=v('uf_e'),un=v('uf_u'),pw=$('uf_p').value;
+  if(!name||!email||!un||!pw)return toast('Izpolni vsa polja.',true);
+  if(!/^\S+@\S+\.\S+$/.test(email))return toast('Neveljaven e-poštni naslov.',true);
+  const k=un.toLowerCase();const ex=(await db.ref('idx/'+k).once('value')).val();
+  if((ex&&ex!==id)||k==='admin')return toast('Uporabniško ime je zasedeno.',true);
+  const nid=id||uid8();
+  if(id&&A[id].profile.username.toLowerCase()!==k)await db.ref('idx/'+A[id].profile.username.toLowerCase()).remove();
+  await db.ref('idx/'+k).set(nid);
+  await db.ref(`u/${nid}/profile`).update({name,email,username:un,password:pw});
+  closeModal();toast('Uporabnik shranjen.');
+}
+function delUser(id){
+  conf(`Izbrisal se bo uporabnik <b>${esc(A[id].profile.name)}</b> z vsemi zvezki in fotografijami.`,async()=>{
+    await db.ref('idx/'+A[id].profile.username.toLowerCase()).remove();
+    await db.ref('pd/'+id).remove();await db.ref('u/'+id).remove();toast('Uporabnik izbrisan.');
+  },'Izbriši');
+}
+function vAdminUser(){
+  const u=A[S.au];if(!u?.profile){S.view='admin';return vAdmin()}
+  const p=u.profile,ids=Object.keys(u.nb||{});
+  return`<button class="btn btn-s mb-4" onclick="go('admin')">${ic('l')} Nazaj</button>
+  <h1 class="text-2xl font-bold">${esc(p.name)}</h1><p class="text-sm text-slate-500 mb-4">@${esc(p.username)} · ${esc(p.email)}</p>
+  <div class="card p-4 mb-5 flex flex-wrap items-end gap-3"><div><label class="lbl">Največje število zvezkov</label><input id="mx" type="number" min="0" class="inp !w-40" placeholder="brez omejitve" value="${p.max??''}"></div><button class="btn btn-p" onclick="setMax()">Shrani omejitev</button></div>
+  <div class="flex justify-between items-center mb-3"><h2 class="font-bold text-lg">Zvezki (${ids.length})</h2><button class="btn btn-p" onclick="adminAddNb()">${ic('plus')} Dodaj zvezek</button></div>
+  <div class="space-y-2">${ids.map(id=>{const n=u.nb[id];return`<div class="card p-4 flex items-center gap-3"><span class="text-3xl">${esc(n.emoji||'')}</span><div class="flex-1"><b>${esc(n.name)}</b><p class="text-xs text-slate-500 flex items-center gap-1">${ic('img','w-3.5 h-3.5')} ${pcount(id,u.pm)} naloženih slik</p></div><button class="btn btn-s !p-2" onclick="nbForm('${id}','${S.au}')">${ic('edit','w-4 h-4')}</button><button class="btn btn-d !p-2" onclick="delNb('${id}','${S.au}')">${ic('trash','w-4 h-4')}</button></div>`}).join('')||'<div class="card p-6 text-center text-slate-500">Uporabnik nima zvezkov.</div>'}</div>`;
+}
+function adminAddNb(){nbForm(null,S.au);window._nbT=S.au}
+function setMax(){
+  const v=$('mx').value;const r=db.ref(`u/${S.au}/profile/max`);
+  (v===''?r.remove():r.set(+v)).then(()=>toast('Omejitev shranjena.'));
+}
+// admin ne sme preseči omejitve pri ročnem dodajanju – omejitev velja za uporabnika; admin jo lahko prosto spreminja.
 
-    <!-- ========================================== -->
-    <!-- MODALNA OKNA                               -->
-    <!-- ========================================== -->
-    
-    <!-- Modal za oddajo podatkov o uri (Urnik) -->
-    <div id="class-modal" class="view-hidden fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden transform scale-100 transition-transform">
-            <div class="bg-slate-50 px-6 py-4 border-b border-slate-100 flex justify-between items-center">
-                <div>
-                    <h3 id="modal-class-title" class="text-xl font-bold text-slate-800">Matematika</h3>
-                    <p class="text-xs text-slate-500">Dodajanje informacij za izbrano uro</p>
-                </div>
-                <button onclick="closeModal('class-modal')" class="text-slate-400 hover:text-slate-700"><i class="fa-solid fa-xmark text-2xl"></i></button>
-            </div>
-            
-            <div class="p-6 space-y-6">
-                <!-- Zapiski -->
-                <div class="flex flex-col gap-2">
-                    <label class="font-bold text-slate-700 flex items-center"><i class="fa-solid fa-camera mr-2 text-emerald-500"></i>Zapiski</label>
-                    <div class="flex gap-2">
-                        <button class="flex-1 bg-emerald-50 border border-emerald-200 text-emerald-700 py-2 rounded-lg font-bold hover:bg-emerald-100"><i class="fa-solid fa-upload mr-2"></i>Naloži</button>
-                        <button class="flex-1 bg-slate-50 border border-slate-200 text-slate-600 py-2 rounded-lg font-bold hover:bg-slate-100"><i class="fa-solid fa-ban mr-2"></i>Brez zapiskov</button>
-                    </div>
-                </div>
-
-                <!-- Domača naloga -->
-                <div class="flex flex-col gap-2">
-                    <label class="font-bold text-slate-700 flex items-center"><i class="fa-solid fa-house mr-2 text-blue-500"></i>Domača naloga</label>
-                    <textarea class="w-full border border-slate-200 rounded-lg p-3 outline-none focus:border-blue-500 resize-none h-20" placeholder="Vpiši navodila..."></textarea>
-                </div>
-
-                <!-- Ocenjevanje -->
-                <div class="flex flex-col gap-2">
-                    <label class="font-bold text-slate-700 flex items-center"><i class="fa-solid fa-star mr-2 text-orange-500"></i>Ocenjevanje</label>
-                    <div class="flex gap-2">
-                        <input type="text" placeholder="Opis preverjanja" class="flex-grow border border-slate-200 rounded-lg p-2 outline-none focus:border-orange-500">
-                        <input type="number" min="1" max="5" placeholder="Ocena" class="w-20 border border-slate-200 rounded-lg p-2 text-center outline-none focus:border-orange-500">
-                    </div>
-                </div>
-                
-                <!-- Opombe -->
-                <div class="flex flex-col gap-2">
-                    <label class="font-bold text-slate-700 flex items-center"><i class="fa-solid fa-comment mr-2 text-slate-500"></i>Opombe</label>
-                    <input type="text" class="w-full border border-slate-200 rounded-lg p-2 outline-none">
-                </div>
-            </div>
-            
-            <div class="bg-slate-50 px-6 py-4 border-t border-slate-100 text-right">
-                <button class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 px-6 rounded-lg shadow-md transition-colors" onclick="saveClassData()">Shrani</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Prikaz slike v zvezku na celem zaslonu -->
-    <div id="photo-modal" class="view-hidden fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4">
-        <button onclick="closeModal('photo-modal')" class="absolute top-4 right-4 text-white hover:text-rose-400 z-50 text-3xl"><i class="fa-solid fa-xmark"></i></button>
-        
-        <button class="absolute left-4 top-1/2 -translate-y-1/2 text-white/50 hover:text-white text-5xl z-50"><i class="fa-solid fa-chevron-left"></i></button>
-        <button class="absolute right-4 top-1/2 -translate-y-1/2 text-white/50 hover:text-white text-5xl z-50"><i class="fa-solid fa-chevron-right"></i></button>
-        
-        <img src="" id="fs-photo-img" class="max-h-full max-w-full object-contain pointer-events-auto" oncontextmenu="showPhotoContext(event)">
-        
-        <!-- Meni ob desnem kliku / dolgem pritisku na sliko -->
-        <div id="photo-context-menu" class="view-hidden absolute bg-white rounded-lg shadow-2xl p-2 w-48 z-50 transform scale-95">
-            <div class="text-xs text-slate-400 px-2 py-1 mb-1 border-b" id="photo-context-name">01_MAT_01012000</div>
-            <button class="w-full text-left px-3 py-2 hover:bg-slate-100 rounded text-sm font-bold text-slate-700"><i class="fa-solid fa-rotate mr-2"></i>Zamenjaj sliko</button>
-            <button class="w-full text-left px-3 py-2 hover:bg-slate-100 rounded text-sm font-bold text-slate-700"><i class="fa-solid fa-download mr-2"></i>Prenesi</button>
-            <button class="w-full text-left px-3 py-2 hover:bg-rose-50 rounded text-sm font-bold text-rose-600" onclick="deletePhoto()"><i class="fa-solid fa-trash mr-2"></i>Izbriši</button>
-        </div>
-    </div>
-
-
-    <script>
-        // ==========================================
-        // FIREBASE INICIALIZACIJA
-        // ==========================================
-        const firebaseConfig = {
-            databaseURL: "https://digitnotes-bdeb7-default-rtdb.europe-west1.firebasedatabase.app/"
-        };
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.database();
-
-        // ==========================================
-        // OSNOVNA LOGIKA UPORABNIŠKEGA VMESNIKA
-        // ==========================================
-        
-        const views = {
-            login: document.getElementById('view-login'),
-            app: document.getElementById('view-app'),
-            admin: document.getElementById('view-admin')
-        };
-        
-        const pages = {
-            home: document.getElementById('page-home'),
-            schedule: document.getElementById('page-schedule'),
-            notebooks: document.getElementById('page-notebooks'),
-            settings: document.getElementById('page-settings')
-        };
-
-        // Skrij vse, pokaži določeno
-        function showView(viewName) {
-            Object.values(views).forEach(v => v.classList.add('view-hidden'));
-            views[viewName].classList.remove('view-hidden');
-        }
-
-        function showPage(pageId) {
-            Object.values(pages).forEach(p => p.classList.add('view-hidden'));
-            pages[pageId.replace('page-', '')].classList.remove('view-hidden');
-            
-            // Obarvaj aktivni gumb
-            document.querySelectorAll('.nav-btn').forEach(btn => {
-                if(btn.dataset.page === pageId) {
-                    btn.classList.add('text-emerald-600');
-                    btn.classList.remove('text-slate-400');
-                } else {
-                    btn.classList.remove('text-emerald-600');
-                    btn.classList.add('text-slate-400');
-                }
-            });
-        }
-
-        // Event listenerji za navigacijo
-        document.querySelectorAll('.nav-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                showPage(btn.dataset.page);
-            });
-        });
-
-        // ==========================================
-        // PRIJAVA IN AVTENTIKACIJA
-        // ==========================================
-        
-        document.getElementById('login-form').addEventListener('submit', function(e) {
-            e.preventDefault();
-            const user = document.getElementById('login-username').value;
-            const pass = document.getElementById('login-password').value;
-
-            if (user === 'ADMIN' && pass === 'Admin') {
-                showView('admin');
-            } else {
-                // Navaden uporabnik - tukaj bi šla prava avtentikacija
-                document.getElementById('user-greeting-name').innerText = user;
-                showView('app');
-                showPage('page-home');
-                startClock();
-                mockDataLoad(); // Za prikaz UI
-            }
-        });
-
-        function logout() {
-            // Počisti podatke in vrni na prijavo
-            showView('login');
-            document.getElementById('login-password').value = '';
-        }
-
-        // Ura in datum
-        function startClock() {
-            const timeEl = document.getElementById('current-time');
-            const dateEl = document.getElementById('current-date');
-            const dnevi = ['Nedelja', 'Ponedeljek', 'Torek', 'Sreda', 'Četrtek', 'Petek', 'Sobota'];
-            
-            setInterval(() => {
-                const zdaj = new Date();
-                timeEl.innerText = zdaj.toLocaleTimeString('sl-SI', {hour: '2-digit', minute:'2-digit'});
-                dateEl.innerText = `${dnevi[zdaj.getDay()]}, ${zdaj.toLocaleDateString('sl-SI')}`;
-            }, 1000);
-        }
-
-        // ==========================================
-        // NASTAVITVE (TABI)
-        // ==========================================
-        document.querySelectorAll('.settings-tab-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
-                // Odstrani active classe
-                document.querySelectorAll('.settings-tab-btn').forEach(b => {
-                    b.classList.remove('text-emerald-600', 'border-b-2', 'border-emerald-600');
-                    b.classList.add('text-slate-500');
-                });
-                // Skrij panele
-                document.querySelectorAll('.settings-pane').forEach(p => p.classList.add('view-hidden'));
-                
-                // Aktiviraj
-                btn.classList.add('text-emerald-600', 'border-b-2', 'border-emerald-600');
-                btn.classList.remove('text-slate-500');
-                document.getElementById(btn.dataset.target).classList.remove('view-hidden');
-            });
-        });
-
-        // ==========================================
-        // MODALNA OKNA & INTERAKCIJE
-        // ==========================================
-        function openClassModal(hour, name) {
-            document.getElementById('modal-class-title').innerText = `${hour}. ura - ${name}`;
-            document.getElementById('class-modal').classList.remove('view-hidden');
-        }
-
-        function closeModal(id) {
-            document.getElementById(id).classList.add('view-hidden');
-            if(id === 'photo-modal') hidePhotoContext();
-        }
-
-        function saveClassData() {
-            // Tukaj bi se podatki shranili v Firebase Realtime DB
-            // Obarvanje glede na logiko (rdeča, oranžna, zelena)
-            alert('Shranjeno v Firebase!');
-            closeModal('class-modal');
-        }
-
-        // ==========================================
-        // ZVEZKI, SLIKE IN GENERIRANJE PDF
-        // ==========================================
-        
-        function closeNotebookDetail() {
-            document.getElementById('notebook-detail').classList.add('view-hidden');
-            document.getElementById('notebooks-grid').classList.remove('view-hidden');
-        }
-
-        // Kontekstni meni za slike (Zamenjaj, Izbriši, Prenesi)
-        const contextMenu = document.getElementById('photo-context-menu');
-        
-        function showPhotoContext(e) {
-            e.preventDefault();
-            contextMenu.style.left = e.clientX + 'px';
-            contextMenu.style.top = e.clientY + 'px';
-            contextMenu.classList.remove('view-hidden');
-        }
-        
-        function hidePhotoContext() {
-            contextMenu.classList.add('view-hidden');
-        }
-        
-        document.addEventListener('click', hidePhotoContext);
-        
-        function deletePhoto() {
-            if(confirm('POZOR: Brisanje slike bo vplivalo na urnik in vse slike za njo se bodo preštevilčile. Nadaljujem?')) {
-                // Firebase logika brisanja in preštevilčevanja bi prišla sem
-                alert('Slika izbrisana in zaporedja posodobljena.');
-                hidePhotoContext();
-                closeModal('photo-modal');
-            }
-        }
-
-        // jsPDF Generiranje
-        function generatePDF() {
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF();
-            
-            // Naslovnica
-            doc.setFontSize(30);
-            
-            // Konverzija šumnikov - zahteva
-            const title = "Matematika".replace(/[čšžČŠŽ]/g, match => {
-                const map = {'č':'c','š':'s','ž':'z','Č':'C','Š':'S','Ž':'Z'};
-                return map[match];
-            });
-            
-            doc.text(title, 105, 100, null, null, "center");
-            doc.setFontSize(14);
-            doc.text("Avtor: " + document.getElementById('user-greeting-name').innerText, 105, 120, null, null, "center");
-            
-            // Stran 2 (Vsebina)
-            doc.addPage();
-            doc.text("Tukaj bi bile vstavljene slike...", 20, 20);
-            
-            // Noga
-            const pageCount = doc.internal.getNumberOfPages();
-            for(let i = 1; i <= pageCount; i++) {
-                doc.setPage(i);
-                doc.setFontSize(10);
-                doc.text('Stran ' + i, 105, 290, null, null, "center");
-            }
-            
-            doc.save(`Zvezek_${title}.pdf`);
-        }
-
-
-        // ==========================================
-        // MOCK PODATKI ZA VIZUALIZACIJO
-        // ==========================================
-        function mockDataLoad() {
-            // Generiranje grid-a zvezkov (Vključuje EMOJI kot zahtevano v navodilih izključno za zvezke)
-            const grid = document.getElementById('notebooks-grid');
-            grid.innerHTML = `
-                <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-100 cursor-pointer hover:-translate-y-1 hover:shadow-md transition-all group" onclick="document.getElementById('notebooks-grid').classList.add('view-hidden'); document.getElementById('notebook-detail').classList.remove('view-hidden');">
-                    <div class="flex justify-between items-start mb-4">
-                        <span class="text-4xl">📐</span>
-                        <span class="bg-slate-100 text-slate-500 text-xs font-bold px-2 py-1 rounded-full"><i class="fa-solid fa-image mr-1"></i> 42</span>
-                    </div>
-                    <h3 class="font-bold text-xl group-hover:text-emerald-600 transition-colors">Matematika</h3>
-                    <p class="text-sm text-slate-500 mt-1">Prof. Novak</p>
-                </div>
-                <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-100 cursor-pointer hover:-translate-y-1 hover:shadow-md transition-all group">
-                    <div class="flex justify-between items-start mb-4">
-                        <span class="text-4xl">🧪</span>
-                        <span class="bg-slate-100 text-slate-500 text-xs font-bold px-2 py-1 rounded-full"><i class="fa-solid fa-image mr-1"></i> 15</span>
-                    </div>
-                    <h3 class="font-bold text-xl group-hover:text-emerald-600 transition-colors">Kemija</h3>
-                    <p class="text-sm text-slate-500 mt-1">Prof. Kovač</p>
-                </div>
-            `;
-
-            // Nastavitve urnika - seznam zvezkov
-            document.getElementById('settings-notebook-list').innerHTML = `
-                <div class="flex justify-between items-center p-3 border-b border-slate-100 last:border-0">
-                    <div><span class="mr-2">📐</span> <strong>Matematika</strong> (Prof. Novak)</div>
-                    <button class="text-rose-500 hover:text-rose-700 p-2"><i class="fa-solid fa-trash"></i></button>
-                </div>
-            `;
-        }
-
-    </script>
+boot();
+</script>
 </body>
 </html>
