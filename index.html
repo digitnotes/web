@@ -34,6 +34,12 @@
       <img src="logo_zvezki.png" alt="DigitNotes Logo" class="h-10 w-auto object-contain transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3">
       <span class="text-xl font-bold text-emerald-700 tracking-tight transition-colors duration-300 group-hover:text-emerald-600">DigitNotes</span>
     </div>
+    <!-- Dodana ikona za prijavo -->
+    <a href="https://digitnotes.github.io/web/app" class="flex items-center justify-center w-10 h-10 rounded-full bg-emerald-100 text-emerald-600 hover:bg-emerald-200 hover:text-emerald-700 transition-colors duration-300" title="Prijava">
+      <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"></path>
+      </svg>
+    </a>
   </nav>
 
   <!-- Glavna vsebina -->
@@ -76,9 +82,35 @@
             </div>
 
             <!-- Črta 2 -->
+            <div class="flex-auto h-1.5 bg-gradient-to-r from-emerald-400 to-emerald-400 -mx-4 z-0 rounded-full shadow-sm"></div>
+
+            <!-- Korak 3 -->
+            <div class="flex flex-col items-center relative z-10 group">
+                <div class="w-14 h-14 rounded-full bg-emerald-500 text-white flex items-center justify-center font-bold shadow-lg ring-4 ring-emerald-50 transition-transform duration-300 group-hover:scale-110">
+                    <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
+                </div>
+                <div class="absolute top-16 text-center w-40 -ml-12 transition-all duration-300 group-hover:-translate-y-1 mt-1">
+                    <span class="text-sm font-bold text-emerald-700 leading-tight block">Vzpostavitev strežnika in baze podatkov</span>
+                </div>
+            </div>
+
+            <!-- Črta 3 -->
             <div class="flex-auto h-1.5 bg-gradient-to-r from-emerald-400 to-orange-400 -mx-4 z-0 rounded-full shadow-sm"></div>
 
-            <!-- Korak 3 (Oranžna - v delu) -->
+            <!-- Korak 4 (Nova točka - Javna objava za predprijavljene) -->
+            <div class="flex flex-col items-center relative z-10 group">
+                <div class="w-14 h-14 rounded-full bg-emerald-500 text-white flex items-center justify-center font-bold shadow-lg ring-4 ring-emerald-50 transition-transform duration-300 group-hover:scale-110">
+                    <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
+                </div>
+                <div class="absolute top-16 text-center w-40 -ml-12 transition-all duration-300 group-hover:-translate-y-1">
+                    <span class="text-sm font-bold text-emerald-700 leading-tight block">Javna objava za predprijavljene uporabnike</span>
+                </div>
+            </div>
+
+            <!-- Črta 4 -->
+            <div class="flex-auto h-1.5 bg-gradient-to-r from-orange-400 to-slate-200 -mx-4 z-0 rounded-full"></div>
+
+            <!-- Korak 5 (Prej 4. točka - Oranžno kladivo) -->
             <div class="flex flex-col items-center relative z-10 group cursor-help" title="Trenutno delamo na tem!">
                 <div class="w-16 h-16 -mt-1 rounded-full bg-orange-500 text-white flex items-center justify-center font-bold shadow-xl ring-4 ring-orange-100 transition-transform duration-300 group-hover:scale-110 animate-bounce" style="animation-duration: 2s;">
                     <!-- Ikona kladiva -->
@@ -86,21 +118,8 @@
                         <path fill-rule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clip-rule="evenodd"></path>
                     </svg>
                 </div>
-                <div class="absolute top-16 text-center w-40 -ml-12 transition-all duration-300 group-hover:-translate-y-1 mt-1">
-                    <span class="text-sm font-bold text-orange-600 leading-tight block">Vzpostavitev strežnika in baze podatkov</span>
-                </div>
-            </div>
-
-            <!-- Črta 3 (neaktivna) -->
-            <div class="flex-auto h-1.5 bg-slate-200 -mx-4 z-0 rounded-full"></div>
-
-            <!-- Korak 4 -->
-            <div class="flex flex-col items-center relative z-10 group">
-                <div class="w-14 h-14 rounded-full bg-white border-2 border-slate-300 text-slate-400 flex items-center justify-center font-bold ring-4 ring-slate-50 transition-colors duration-300 group-hover:border-slate-400 group-hover:text-slate-500">
-                    4
-                </div>
-                <div class="absolute top-16 text-center w-36 -ml-11 transition-all duration-300 group-hover:-translate-y-1">
-                    <span class="text-sm font-medium text-slate-500 leading-tight block">Javna objava</span>
+                <div class="absolute top-16 text-center w-36 -ml-11 transition-all duration-300 group-hover:-translate-y-1 mt-1">
+                    <span class="text-sm font-bold text-orange-600 leading-tight block">Javna objava</span>
                 </div>
             </div>
         </div>
@@ -108,7 +127,7 @@
         <!-- Vrstica napredka za mobilne naprave -->
         <div class="flex flex-col md:hidden space-y-6 relative">
              <div class="absolute left-6 top-6 bottom-6 w-1 bg-emerald-100 rounded-full z-0"></div>
-             <div class="absolute left-6 top-6 h-1/2 w-1 bg-emerald-500 rounded-full z-0"></div>
+             <div class="absolute left-6 top-6 h-3/4 w-1 bg-emerald-500 rounded-full z-0"></div>
 
             <div class="flex items-center space-x-6 relative z-10 group">
                 <div class="w-12 h-12 rounded-full bg-emerald-500 text-white flex items-center justify-center font-bold shadow-md shrink-0 ring-4 ring-slate-50 transition-transform duration-300 group-hover:scale-110">
@@ -124,19 +143,27 @@
                 <span class="text-base font-bold text-emerald-700 transition-colors duration-300 group-hover:text-emerald-800">Zaprta demo različica</span>
             </div>
             
+            <div class="flex items-center space-x-6 relative z-10 group">
+                <div class="w-12 h-12 rounded-full bg-emerald-500 text-white flex items-center justify-center font-bold shadow-md shrink-0 ring-4 ring-slate-50 transition-transform duration-300 group-hover:scale-110">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
+                </div>
+                <span class="text-base font-bold text-emerald-700 transition-colors duration-300 group-hover:text-emerald-800">Vzpostavitev strežnika<br>in baze podatkov</span>
+            </div>
+
+            <!-- Nova točka (Mobilna verzija) -->
+            <div class="flex items-center space-x-6 relative z-10 group">
+                <div class="w-12 h-12 rounded-full bg-emerald-500 text-white flex items-center justify-center font-bold shadow-md shrink-0 ring-4 ring-slate-50 transition-transform duration-300 group-hover:scale-110">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
+                </div>
+                <span class="text-base font-bold text-emerald-700 transition-colors duration-300 group-hover:text-emerald-800">Javna objava za predprijavljene uporabnike</span>
+            </div>
+            
             <div class="flex items-center space-x-6 relative z-10 group bg-orange-50 p-2 -ml-2 rounded-xl border border-orange-100 shadow-sm">
                 <div class="w-12 h-12 rounded-full bg-orange-500 text-white flex items-center justify-center font-bold shadow-md shrink-0 ring-4 ring-orange-100 animate-pulse transition-transform duration-300 group-hover:scale-110">
                     <!-- Ikona strele/kladiva za mobilne -->
                     <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clip-rule="evenodd"></path></svg>
                 </div>
-                <span class="text-base font-bold text-orange-600 transition-colors duration-300 group-hover:text-orange-700">Vzpostavitev strežnika<br>in baze podatkov</span>
-            </div>
-            
-            <div class="flex items-center space-x-6 relative z-10 group opacity-70">
-                <div class="w-12 h-12 rounded-full bg-white border-2 border-slate-300 text-slate-400 flex items-center justify-center font-bold shrink-0 ring-4 ring-slate-50 transition-colors duration-300 group-hover:border-slate-400">
-                    4
-                </div>
-                <span class="text-base font-medium text-slate-500">Javna objava</span>
+                <span class="text-base font-bold text-orange-600 transition-colors duration-300 group-hover:text-orange-700">Javna objava</span>
             </div>
         </div>
     </div>
@@ -298,7 +325,7 @@
   <script>
     // --- 1. NASTAVITVE ZA FIREBASE ---
     firebase.initializeApp({
-      databaseURL: "https://jasa-petrinjak-zvezki-default-rtdb.europe-west1.firebasedatabase.app"
+      databaseURL: "https://digitnotes-bdeb7-default-rtdb.europe-west1.firebasedatabase.app/"
     });
     const db = firebase.database();
 
