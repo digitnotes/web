@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="sl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DigitNotes - Aplikacija</title>
+    
+    <link rel="icon" type="image/png" href="logo_zvezki.png">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Vektorske ikone (FontAwesome) - Brez emojijev za UI! -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Firebase SDK (Compat različica za enostavnejšo uporabo v enem fajlu) -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+
+    <!-- jsPDF za generiranje PDF zvezkov -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+    <style>
+        /* Skrivanje pogledov, ki niso aktivni */
+        .view-hidden { display: none !important; }
+        
+        /* Prilagoditev za stranski meni na računalniku in spodnji meni na telefonu */
+        @media (min-width: 768px) {
+            .app-container { flex-direction: row; }
+            .content-area { padding-right: 80px; /* prostor za desni meni */ }
+            .side-menu { 
+                top: 0; right: 0; bottom: 0; width: 80px; 
+                flex-direction: column; border-left: 1px solid #e2e8f0; border-top: none;
+            }
+        }
+        @media (max-width: 767px) {
+            .app-container { flex-direction: column; }
+            .content-area { padding-bottom: 70px; /* prostor za spodnji meni */ }
+            .side-menu { 
+                bottom: 0; left: 0; right: 0; height: 70px; 
+                flex-direction: row; border-top: 1px solid #e2e8f0; border-left: none;
+            }
+        }
+
+        /* Animacija obarvanja ure v urniku */
+        .status-red { border-left: 4px solid #ef4444; background-color: #fef2f2; }
+        .status-orange { border-left: 4px solid #f97316; background-color: #fff7ed; }
+        .status-green { border-left: 4px solid #10b981; background-color: #f0fdf4; }
+
+        /* Slika zvezka hover efekti */
+        .notebook-img-container:hover .img-overlay { opacity: 1; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans antialiased h-screen w-screen overflow-hidden flex">
+
+    <!-- ========================================== -->
+    <!-- 1. PRIJAVA (LOGIN VIEW)                    -->
+    <!-- ========================================== -->
+    <div id="view-login" class="w-full h-full flex flex-col items-center justify-center bg-emerald-50 relative">
+        <div class="absolute top-0 right-0 -mr-20 -mt-20 w-64 h-64 rounded-full bg-emerald-200 opacity-50 blur-3xl"></div>
+        <div class="bg-white p-8 rounded-2xl shadow-xl w-11/12 max-w-md z-10 border border-slate-100">
+            <div class="text-center mb-8">
+                <img src="logo_zvezki.png" alt="Logo" class="h-16 mx-auto mb-4" onerror="this.style.display='none'">
+                <h1 class="text-3xl font-bold text-emerald-700">Prijava</h1>
+                <p class="text-sm text-slate-500 mt-2">Dobrodošli v DigitNotes aplikaciji</p>
+            </div>
+            
+            <form id="login-form" class="space-y-5">
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1"><i class="fa-solid fa-user mr-2 text-emerald-500"></i>Uporabniško ime</label>
+                    <input type="text" id="login-username" required class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-emerald-500 outline-none transition-all">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1"><i class="fa-solid fa-lock mr-2 text-emerald-500"></i>Geslo</label>
+                    <input type="password" id="login-password" required class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-emerald-500 outline-none transition-all">
+                </div>
+                <div class="flex items-center">
+                    <input type="checkbox" id="login-remember" class="w-4 h-4 text-emerald-600 border-slate-300 rounded focus:ring-emerald-500">
+                    <label for="login-remember" class="ml-2 block text-sm text-slate-700">Ohrani me prijavljenega</label>
+                </div>
+                
+                <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 px-4 rounded-xl shadow-md transition-colors">
+                    Vstopi
+                </button>
+            </form>
+            <div class="mt-6 text-center text-xs text-slate-500">
+                <p>Možnosti registracije ni. V primeru pozabljenega gesla se obrnite na <a href="#" class="text-emerald-600 font-bold hover:underline">informacije</a>.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- GLAVNA APLIKACIJA (APP VIEW)               -->
+    <!-- ========================================== -->
+    <div id="view-app" class="view-hidden w-full h-full app-container relative bg-slate-50">
+        
+        <!-- OSREDNJA VSEBINA (Preklapljanje med stranmi) -->
+        <main class="content-area w-full h-full overflow-y-auto overflow-x-hidden p-4 md:p-8">
+            
+            <!-- 2. DOMAČA STRAN -->
+            <section id="page-home" class="max-w-4xl mx-auto view-hidden">
+                <div class="flex justify-between items-end border-b border-slate-200 pb-4 mb-6">
+                    <div>
+                        <h2 class="text-3xl font-extrabold text-slate-800">Pozdravljen, <span id="user-greeting-name" class="text-emerald-600">Uporabnik</span>!</h2>
+                        <p class="text-slate-500 mt-1">Tukaj je tvoj pregled za današnji dan.</p>
+                    </div>
+                    <div class="text-right">
+                        <div id="current-time" class="text-2xl font-bold text-slate-700">00:00</div>
+                        <div id="current-date" class="text-sm text-slate-500">Ponedeljek, 1. januar</div>
+                    </div>
+                </div>
+
+                <h3 class="text-xl font-bold mb-4 text-slate-700"><i class="fa-regular fa-calendar-check mr-2"></i>Tvoj današnji urnik</h3>
+                <div id="home-schedule-list" class="space-y-3 bg-white p-4 rounded-xl shadow-sm border border-slate-100">
+                    <!-- Dinamično generirano -->
+                    <div class="text-center p-4 text-slate-400 italic">Nalagam urnik...</div>
+                </div>
+            </section>
+
+            <!-- 3. URNIK -->
+            <section id="page-schedule" class="max-w-5xl mx-auto view-hidden">
+                <div class="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
+                    <h2 class="text-3xl font-extrabold text-slate-800"><i class="fa-solid fa-calendar-days mr-3 text-emerald-600"></i>Urnik</h2>
+                    <div class="flex bg-white rounded-lg p-1 shadow-sm border border-slate-200">
+                        <input type="date" id="schedule-date-picker" class="px-3 py-2 outline-none text-slate-700 font-medium">
+                        <button class="px-4 py-2 bg-slate-100 hover:bg-slate-200 rounded-md text-sm font-bold ml-1 transition-colors"><i class="fa-solid fa-list mr-1"></i> Tedenski pogled</button>
+                    </div>
+                </div>
+
+                <div id="full-schedule-list" class="space-y-4">
+                    <!-- Zgled ene ure -->
+                    <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex justify-between items-center cursor-pointer hover:shadow-md transition-shadow status-red" onclick="openClassModal('1', 'Matematika')">
+                        <div class="flex items-center gap-4">
+                            <div class="bg-slate-100 w-10 h-10 rounded-full flex items-center justify-center font-bold text-slate-600">1.</div>
+                            <div>
+                                <h4 class="font-bold text-lg">Matematika</h4>
+                                <p class="text-xs text-slate-500">Prof. Novak | Opomba: Manjkajo zapiski!</p>
+                            </div>
+                        </div>
+                        <div class="flex gap-2 text-slate-400">
+                            <i class="fa-solid fa-triangle-exclamation text-red-500"></i>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 5. ZVEZKI -->
+            <section id="page-notebooks" class="max-w-6xl mx-auto view-hidden">
+                <h2 class="text-3xl font-extrabold text-slate-800 mb-6"><i class="fa-solid fa-book-open mr-3 text-emerald-600"></i>Zvezki</h2>
+                
+                <div id="notebooks-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <!-- Dinamično zgenerirano -->
+                </div>
+
+                <!-- Detajl zvezka (skrito po privzetem) -->
+                <div id="notebook-detail" class="view-hidden">
+                    <button onclick="closeNotebookDetail()" class="mb-4 text-slate-500 hover:text-slate-800 font-bold"><i class="fa-solid fa-arrow-left mr-2"></i>Nazaj na seznam</button>
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-100 mb-6 flex justify-between items-center">
+                        <div>
+                            <h3 id="detail-notebook-title" class="text-2xl font-bold">Matematika <span class="text-2xl">📐</span></h3>
+                            <p class="text-slate-500 mt-1">Ocene: 4, 5, 3</p>
+                        </div>
+                        <div class="flex gap-3">
+                            <button class="bg-blue-50 text-blue-600 px-4 py-2 rounded-lg font-bold hover:bg-blue-100 transition"><i class="fa-solid fa-share-nodes mr-2"></i>Deli</button>
+                            <button onclick="generatePDF()" class="bg-emerald-50 text-emerald-600 px-4 py-2 rounded-lg font-bold hover:bg-emerald-100 transition"><i class="fa-solid fa-file-pdf mr-2"></i>Prenesi PDF</button>
+                        </div>
+                    </div>
+                    
+                    <h4 class="font-bold text-lg mb-4 text-slate-700">Fotografije zvezka</h4>
+                    <div id="notebook-photos" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                        <!-- Slike -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- 4. NASTAVITVE -->
+            <section id="page-settings" class="max-w-4xl mx-auto view-hidden">
+                <h2 class="text-3xl font-extrabold text-slate-800 mb-6"><i class="fa-solid fa-gear mr-3 text-emerald-600"></i>Nastavitve</h2>
+                
+                <div class="flex gap-4 border-b border-slate-200 mb-6 overflow-x-auto pb-2">
+                    <button class="settings-tab-btn active text-emerald-600 font-bold border-b-2 border-emerald-600 pb-2 px-2" data-target="set-notebooks">Zvezki</button>
+                    <button class="settings-tab-btn text-slate-500 font-bold hover:text-slate-700 pb-2 px-2" data-target="set-schedule">Urnik</button>
+                    <button class="settings-tab-btn text-slate-500 font-bold hover:text-slate-700 pb-2 px-2" data-target="set-account">Račun</button>
+                </div>
+
+                <div id="set-notebooks" class="settings-pane space-y-4">
+                    <div class="bg-white p-5 rounded-xl border border-slate-100 shadow-sm flex flex-col md:flex-row gap-4 items-end">
+                        <div class="flex-grow w-full">
+                            <label class="block text-sm text-slate-600 font-bold mb-1">Ime predmeta</label>
+                            <input type="text" placeholder="Npr. Slovenščina" class="w-full border rounded-lg p-2">
+                        </div>
+                        <div class="flex-grow w-full">
+                            <label class="block text-sm text-slate-600 font-bold mb-1">Učitelj</label>
+                            <input type="text" placeholder="Npr. Prof. Horvat" class="w-full border rounded-lg p-2">
+                        </div>
+                        <div class="w-24 shrink-0">
+                            <label class="block text-sm text-slate-600 font-bold mb-1">Emoji</label>
+                            <input type="text" placeholder="📚" class="w-full border rounded-lg p-2 text-center text-xl">
+                        </div>
+                        <button class="bg-emerald-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-emerald-700 h-[42px]"><i class="fa-solid fa-plus"></i></button>
+                    </div>
+                    <!-- Seznam dodanih zvezkov -->
+                    <div id="settings-notebook-list" class="bg-white rounded-xl border border-slate-100 shadow-sm"></div>
+                </div>
+
+                <div id="set-schedule" class="settings-pane view-hidden space-y-6">
+                    <div class="bg-white p-5 rounded-xl border border-slate-100 shadow-sm">
+                        <h3 class="font-bold text-lg mb-4">Nastavitev stalnega urnika</h3>
+                        <p class="text-sm text-slate-500 mb-4">Izberi predmet iz seznama ustvarjenih zvezkov. Pusti prazno za prosto uro ali izberi 'Malica'.</p>
+                        <!-- Matrika urnika bi se generirala tukaj (pon-pet, 1-9) -->
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left text-sm">
+                                <thead>
+                                    <tr>
+                                        <th class="p-2">Ura</th>
+                                        <th class="p-2">Ponedeljek</th>
+                                        <th class="p-2">Torek</th>
+                                        <!-- ... -->
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td class="p-2 font-bold">1.</td>
+                                        <td class="p-2"><select class="border p-1 rounded w-full"><option>Prazno</option><option>Malica</option><option>Matematika</option></select></td>
+                                        <td class="p-2"><select class="border p-1 rounded w-full"><option>Prazno</option></select></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-orange-50 border border-orange-200 p-5 rounded-xl">
+                        <h3 class="font-bold text-lg mb-2 text-orange-800"><i class="fa-solid fa-power-off mr-2"></i>Dotični urnik (Izklop urnika)</h3>
+                        <p class="text-sm text-orange-700 mb-3">Izberi dan, ko aplikacija od tebe ne bo zahtevala zapiskov (npr. športni dan).</p>
+                        <div class="flex gap-2">
+                            <input type="date" class="border p-2 rounded-lg outline-none">
+                            <button class="bg-orange-600 text-white font-bold px-4 py-2 rounded-lg hover:bg-orange-700">Izklopi</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="set-account" class="settings-pane view-hidden space-y-4">
+                    <div class="bg-white p-5 rounded-xl border border-slate-100 shadow-sm space-y-4 max-w-md">
+                        <div>
+                            <label class="block text-sm text-slate-600 font-bold mb-1">Novo uporabniško ime</label>
+                            <input type="text" class="w-full border rounded-lg p-2">
+                        </div>
+                        <div>
+                            <label class="block text-sm text-slate-600 font-bold mb-1">Novo geslo</label>
+                            <input type="password" class="w-full border rounded-lg p-2">
+                        </div>
+                        <button class="bg-emerald-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-emerald-700 w-full">Shrani spremembe</button>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+
+        <!-- STALNI MENI (Spodaj na tel, desno na PC) -->
+        <nav class="side-menu fixed bg-white shadow-[0_0_15px_rgba(0,0,0,0.05)] z-40 flex items-center justify-around md:justify-start md:pt-8 md:gap-8">
+            <button class="nav-btn group flex flex-col items-center p-2 text-slate-400 hover:text-emerald-600 transition-colors" data-page="page-home" title="Domov">
+                <i class="fa-solid fa-house text-xl md:text-2xl mb-1"></i>
+                <span class="text-[10px] font-bold">DOMOV</span>
+            </button>
+            <button class="nav-btn group flex flex-col items-center p-2 text-slate-400 hover:text-emerald-600 transition-colors" data-page="page-schedule" title="Urnik">
+                <i class="fa-solid fa-calendar-day text-xl md:text-2xl mb-1"></i>
+                <span class="text-[10px] font-bold">URNIK</span>
+            </button>
+            <button class="nav-btn group flex flex-col items-center p-2 text-slate-400 hover:text-emerald-600 transition-colors" data-page="page-notebooks" title="Zvezki">
+                <i class="fa-solid fa-book-open text-xl md:text-2xl mb-1"></i>
+                <span class="text-[10px] font-bold">ZVEZKI</span>
+            </button>
+            <button class="nav-btn group flex flex-col items-center p-2 text-slate-400 hover:text-emerald-600 transition-colors" data-page="page-settings" title="Nastavitve">
+                <i class="fa-solid fa-gear text-xl md:text-2xl mb-1"></i>
+                <span class="text-[10px] font-bold">NASTAVITVE</span>
+            </button>
+            <div class="md:mt-auto md:mb-8">
+                <button onclick="logout()" class="group flex flex-col items-center p-2 text-rose-400 hover:text-rose-600 transition-colors" title="Odjava">
+                    <i class="fa-solid fa-right-from-bracket text-xl md:text-2xl mb-1"></i>
+                    <span class="text-[10px] font-bold">ODJAVA</span>
+                </button>
+            </div>
+        </nav>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- ADMIN POGLED (ADMIN VIEW)                  -->
+    <!-- ========================================== -->
+    <div id="view-admin" class="view-hidden w-full h-full bg-slate-900 text-slate-100 overflow-y-auto p-8 relative">
+        <div class="max-w-6xl mx-auto">
+            <div class="flex justify-between items-center mb-8 border-b border-slate-700 pb-4">
+                <h1 class="text-3xl font-bold text-emerald-400"><i class="fa-solid fa-shield-halved mr-3"></i>Nadzorna plošča Admin</h1>
+                <button onclick="logout()" class="bg-rose-600 hover:bg-rose-700 text-white font-bold py-2 px-4 rounded-lg"><i class="fa-solid fa-power-off mr-2"></i>Odjava</button>
+            </div>
+
+            <!-- Dodaj uporabnika -->
+            <div class="bg-slate-800 p-6 rounded-xl border border-slate-700 mb-8">
+                <h2 class="text-xl font-bold mb-4">Dodaj uporabnika</h2>
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <input type="email" placeholder="E-pošta" class="bg-slate-700 border-none rounded p-2 text-white outline-none focus:ring-2 focus:ring-emerald-500">
+                    <input type="text" placeholder="Ime in priimek" class="bg-slate-700 border-none rounded p-2 text-white outline-none focus:ring-2 focus:ring-emerald-500">
+                    <input type="text" placeholder="Uporabniško ime" class="bg-slate-700 border-none rounded p-2 text-white outline-none focus:ring-2 focus:ring-emerald-500">
+                    <input type="text" placeholder="Geslo" class="bg-slate-700 border-none rounded p-2 text-white outline-none focus:ring-2 focus:ring-emerald-500">
+                </div>
+                <button class="mt-4 bg-emerald-600 hover:bg-emerald-700 font-bold py-2 px-4 rounded shadow"><i class="fa-solid fa-user-plus mr-2"></i>Ustvari uporabnika</button>
+            </div>
+
+            <!-- Tabela uporabnikov -->
+            <div class="bg-slate-800 rounded-xl border border-slate-700 overflow-hidden">
+                <table class="w-full text-left">
+                    <thead class="bg-slate-950">
+                        <tr>
+                            <th class="p-4">Uporabnik</th>
+                            <th class="p-4">E-pošta</th>
+                            <th class="p-4 text-center">Št. zvezkov (Limit)</th>
+                            <th class="p-4 text-center">Št. slik</th>
+                            <th class="p-4 text-right">Akcije</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-700">
+                        <!-- Primer uporabnika -->
+                        <tr class="hover:bg-slate-700/50 transition">
+                            <td class="p-4 font-bold">Janez Novak<br><span class="text-xs text-slate-400 font-normal">@janez123</span></td>
+                            <td class="p-4">janez@sola.si</td>
+                            <td class="p-4 text-center">5 <button class="text-emerald-400 ml-2 text-xs" title="Spremeni limit"><i class="fa-solid fa-pen"></i></button></td>
+                            <td class="p-4 text-center">142</td>
+                            <td class="p-4 text-right space-x-2">
+                                <button class="bg-blue-600 p-2 rounded text-sm hover:bg-blue-500" title="Uredi zvezke"><i class="fa-solid fa-book"></i></button>
+                                <button class="bg-slate-600 p-2 rounded text-sm hover:bg-slate-500" title="Uredi profil"><i class="fa-solid fa-pen-to-square"></i></button>
+                                <button class="bg-rose-600 p-2 rounded text-sm hover:bg-rose-500" title="Izbriši"><i class="fa-solid fa-trash"></i></button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- MODALNA OKNA                               -->
+    <!-- ========================================== -->
+    
+    <!-- Modal za oddajo podatkov o uri (Urnik) -->
+    <div id="class-modal" class="view-hidden fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden transform scale-100 transition-transform">
+            <div class="bg-slate-50 px-6 py-4 border-b border-slate-100 flex justify-between items-center">
+                <div>
+                    <h3 id="modal-class-title" class="text-xl font-bold text-slate-800">Matematika</h3>
+                    <p class="text-xs text-slate-500">Dodajanje informacij za izbrano uro</p>
+                </div>
+                <button onclick="closeModal('class-modal')" class="text-slate-400 hover:text-slate-700"><i class="fa-solid fa-xmark text-2xl"></i></button>
+            </div>
+            
+            <div class="p-6 space-y-6">
+                <!-- Zapiski -->
+                <div class="flex flex-col gap-2">
+                    <label class="font-bold text-slate-700 flex items-center"><i class="fa-solid fa-camera mr-2 text-emerald-500"></i>Zapiski</label>
+                    <div class="flex gap-2">
+                        <button class="flex-1 bg-emerald-50 border border-emerald-200 text-emerald-700 py-2 rounded-lg font-bold hover:bg-emerald-100"><i class="fa-solid fa-upload mr-2"></i>Naloži</button>
+                        <button class="flex-1 bg-slate-50 border border-slate-200 text-slate-600 py-2 rounded-lg font-bold hover:bg-slate-100"><i class="fa-solid fa-ban mr-2"></i>Brez zapiskov</button>
+                    </div>
+                </div>
+
+                <!-- Domača naloga -->
+                <div class="flex flex-col gap-2">
+                    <label class="font-bold text-slate-700 flex items-center"><i class="fa-solid fa-house mr-2 text-blue-500"></i>Domača naloga</label>
+                    <textarea class="w-full border border-slate-200 rounded-lg p-3 outline-none focus:border-blue-500 resize-none h-20" placeholder="Vpiši navodila..."></textarea>
+                </div>
+
+                <!-- Ocenjevanje -->
+                <div class="flex flex-col gap-2">
+                    <label class="font-bold text-slate-700 flex items-center"><i class="fa-solid fa-star mr-2 text-orange-500"></i>Ocenjevanje</label>
+                    <div class="flex gap-2">
+                        <input type="text" placeholder="Opis preverjanja" class="flex-grow border border-slate-200 rounded-lg p-2 outline-none focus:border-orange-500">
+                        <input type="number" min="1" max="5" placeholder="Ocena" class="w-20 border border-slate-200 rounded-lg p-2 text-center outline-none focus:border-orange-500">
+                    </div>
+                </div>
+                
+                <!-- Opombe -->
+                <div class="flex flex-col gap-2">
+                    <label class="font-bold text-slate-700 flex items-center"><i class="fa-solid fa-comment mr-2 text-slate-500"></i>Opombe</label>
+                    <input type="text" class="w-full border border-slate-200 rounded-lg p-2 outline-none">
+                </div>
+            </div>
+            
+            <div class="bg-slate-50 px-6 py-4 border-t border-slate-100 text-right">
+                <button class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 px-6 rounded-lg shadow-md transition-colors" onclick="saveClassData()">Shrani</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Prikaz slike v zvezku na celem zaslonu -->
+    <div id="photo-modal" class="view-hidden fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4">
+        <button onclick="closeModal('photo-modal')" class="absolute top-4 right-4 text-white hover:text-rose-400 z-50 text-3xl"><i class="fa-solid fa-xmark"></i></button>
+        
+        <button class="absolute left-4 top-1/2 -translate-y-1/2 text-white/50 hover:text-white text-5xl z-50"><i class="fa-solid fa-chevron-left"></i></button>
+        <button class="absolute right-4 top-1/2 -translate-y-1/2 text-white/50 hover:text-white text-5xl z-50"><i class="fa-solid fa-chevron-right"></i></button>
+        
+        <img src="" id="fs-photo-img" class="max-h-full max-w-full object-contain pointer-events-auto" oncontextmenu="showPhotoContext(event)">
+        
+        <!-- Meni ob desnem kliku / dolgem pritisku na sliko -->
+        <div id="photo-context-menu" class="view-hidden absolute bg-white rounded-lg shadow-2xl p-2 w-48 z-50 transform scale-95">
+            <div class="text-xs text-slate-400 px-2 py-1 mb-1 border-b" id="photo-context-name">01_MAT_01012000</div>
+            <button class="w-full text-left px-3 py-2 hover:bg-slate-100 rounded text-sm font-bold text-slate-700"><i class="fa-solid fa-rotate mr-2"></i>Zamenjaj sliko</button>
+            <button class="w-full text-left px-3 py-2 hover:bg-slate-100 rounded text-sm font-bold text-slate-700"><i class="fa-solid fa-download mr-2"></i>Prenesi</button>
+            <button class="w-full text-left px-3 py-2 hover:bg-rose-50 rounded text-sm font-bold text-rose-600" onclick="deletePhoto()"><i class="fa-solid fa-trash mr-2"></i>Izbriši</button>
+        </div>
+    </div>
+
+
+    <script>
+        // ==========================================
+        // FIREBASE INICIALIZACIJA
+        // ==========================================
+        const firebaseConfig = {
+            databaseURL: "https://digitnotes-bdeb7-default-rtdb.europe-west1.firebasedatabase.app/"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+
+        // ==========================================
+        // OSNOVNA LOGIKA UPORABNIŠKEGA VMESNIKA
+        // ==========================================
+        
+        const views = {
+            login: document.getElementById('view-login'),
+            app: document.getElementById('view-app'),
+            admin: document.getElementById('view-admin')
+        };
+        
+        const pages = {
+            home: document.getElementById('page-home'),
+            schedule: document.getElementById('page-schedule'),
+            notebooks: document.getElementById('page-notebooks'),
+            settings: document.getElementById('page-settings')
+        };
+
+        // Skrij vse, pokaži določeno
+        function showView(viewName) {
+            Object.values(views).forEach(v => v.classList.add('view-hidden'));
+            views[viewName].classList.remove('view-hidden');
+        }
+
+        function showPage(pageId) {
+            Object.values(pages).forEach(p => p.classList.add('view-hidden'));
+            pages[pageId.replace('page-', '')].classList.remove('view-hidden');
+            
+            // Obarvaj aktivni gumb
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                if(btn.dataset.page === pageId) {
+                    btn.classList.add('text-emerald-600');
+                    btn.classList.remove('text-slate-400');
+                } else {
+                    btn.classList.remove('text-emerald-600');
+                    btn.classList.add('text-slate-400');
+                }
+            });
+        }
+
+        // Event listenerji za navigacijo
+        document.querySelectorAll('.nav-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                showPage(btn.dataset.page);
+            });
+        });
+
+        // ==========================================
+        // PRIJAVA IN AVTENTIKACIJA
+        // ==========================================
+        
+        document.getElementById('login-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const user = document.getElementById('login-username').value;
+            const pass = document.getElementById('login-password').value;
+
+            if (user === 'ADMIN' && pass === 'Admin') {
+                showView('admin');
+            } else {
+                // Navaden uporabnik - tukaj bi šla prava avtentikacija
+                document.getElementById('user-greeting-name').innerText = user;
+                showView('app');
+                showPage('page-home');
+                startClock();
+                mockDataLoad(); // Za prikaz UI
+            }
+        });
+
+        function logout() {
+            // Počisti podatke in vrni na prijavo
+            showView('login');
+            document.getElementById('login-password').value = '';
+        }
+
+        // Ura in datum
+        function startClock() {
+            const timeEl = document.getElementById('current-time');
+            const dateEl = document.getElementById('current-date');
+            const dnevi = ['Nedelja', 'Ponedeljek', 'Torek', 'Sreda', 'Četrtek', 'Petek', 'Sobota'];
+            
+            setInterval(() => {
+                const zdaj = new Date();
+                timeEl.innerText = zdaj.toLocaleTimeString('sl-SI', {hour: '2-digit', minute:'2-digit'});
+                dateEl.innerText = `${dnevi[zdaj.getDay()]}, ${zdaj.toLocaleDateString('sl-SI')}`;
+            }, 1000);
+        }
+
+        // ==========================================
+        // NASTAVITVE (TABI)
+        // ==========================================
+        document.querySelectorAll('.settings-tab-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                // Odstrani active classe
+                document.querySelectorAll('.settings-tab-btn').forEach(b => {
+                    b.classList.remove('text-emerald-600', 'border-b-2', 'border-emerald-600');
+                    b.classList.add('text-slate-500');
+                });
+                // Skrij panele
+                document.querySelectorAll('.settings-pane').forEach(p => p.classList.add('view-hidden'));
+                
+                // Aktiviraj
+                btn.classList.add('text-emerald-600', 'border-b-2', 'border-emerald-600');
+                btn.classList.remove('text-slate-500');
+                document.getElementById(btn.dataset.target).classList.remove('view-hidden');
+            });
+        });
+
+        // ==========================================
+        // MODALNA OKNA & INTERAKCIJE
+        // ==========================================
+        function openClassModal(hour, name) {
+            document.getElementById('modal-class-title').innerText = `${hour}. ura - ${name}`;
+            document.getElementById('class-modal').classList.remove('view-hidden');
+        }
+
+        function closeModal(id) {
+            document.getElementById(id).classList.add('view-hidden');
+            if(id === 'photo-modal') hidePhotoContext();
+        }
+
+        function saveClassData() {
+            // Tukaj bi se podatki shranili v Firebase Realtime DB
+            // Obarvanje glede na logiko (rdeča, oranžna, zelena)
+            alert('Shranjeno v Firebase!');
+            closeModal('class-modal');
+        }
+
+        // ==========================================
+        // ZVEZKI, SLIKE IN GENERIRANJE PDF
+        // ==========================================
+        
+        function closeNotebookDetail() {
+            document.getElementById('notebook-detail').classList.add('view-hidden');
+            document.getElementById('notebooks-grid').classList.remove('view-hidden');
+        }
+
+        // Kontekstni meni za slike (Zamenjaj, Izbriši, Prenesi)
+        const contextMenu = document.getElementById('photo-context-menu');
+        
+        function showPhotoContext(e) {
+            e.preventDefault();
+            contextMenu.style.left = e.clientX + 'px';
+            contextMenu.style.top = e.clientY + 'px';
+            contextMenu.classList.remove('view-hidden');
+        }
+        
+        function hidePhotoContext() {
+            contextMenu.classList.add('view-hidden');
+        }
+        
+        document.addEventListener('click', hidePhotoContext);
+        
+        function deletePhoto() {
+            if(confirm('POZOR: Brisanje slike bo vplivalo na urnik in vse slike za njo se bodo preštevilčile. Nadaljujem?')) {
+                // Firebase logika brisanja in preštevilčevanja bi prišla sem
+                alert('Slika izbrisana in zaporedja posodobljena.');
+                hidePhotoContext();
+                closeModal('photo-modal');
+            }
+        }
+
+        // jsPDF Generiranje
+        function generatePDF() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            
+            // Naslovnica
+            doc.setFontSize(30);
+            
+            // Konverzija šumnikov - zahteva
+            const title = "Matematika".replace(/[čšžČŠŽ]/g, match => {
+                const map = {'č':'c','š':'s','ž':'z','Č':'C','Š':'S','Ž':'Z'};
+                return map[match];
+            });
+            
+            doc.text(title, 105, 100, null, null, "center");
+            doc.setFontSize(14);
+            doc.text("Avtor: " + document.getElementById('user-greeting-name').innerText, 105, 120, null, null, "center");
+            
+            // Stran 2 (Vsebina)
+            doc.addPage();
+            doc.text("Tukaj bi bile vstavljene slike...", 20, 20);
+            
+            // Noga
+            const pageCount = doc.internal.getNumberOfPages();
+            for(let i = 1; i <= pageCount; i++) {
+                doc.setPage(i);
+                doc.setFontSize(10);
+                doc.text('Stran ' + i, 105, 290, null, null, "center");
+            }
+            
+            doc.save(`Zvezek_${title}.pdf`);
+        }
+
+
+        // ==========================================
+        // MOCK PODATKI ZA VIZUALIZACIJO
+        // ==========================================
+        function mockDataLoad() {
+            // Generiranje grid-a zvezkov (Vključuje EMOJI kot zahtevano v navodilih izključno za zvezke)
+            const grid = document.getElementById('notebooks-grid');
+            grid.innerHTML = `
+                <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-100 cursor-pointer hover:-translate-y-1 hover:shadow-md transition-all group" onclick="document.getElementById('notebooks-grid').classList.add('view-hidden'); document.getElementById('notebook-detail').classList.remove('view-hidden');">
+                    <div class="flex justify-between items-start mb-4">
+                        <span class="text-4xl">📐</span>
+                        <span class="bg-slate-100 text-slate-500 text-xs font-bold px-2 py-1 rounded-full"><i class="fa-solid fa-image mr-1"></i> 42</span>
+                    </div>
+                    <h3 class="font-bold text-xl group-hover:text-emerald-600 transition-colors">Matematika</h3>
+                    <p class="text-sm text-slate-500 mt-1">Prof. Novak</p>
+                </div>
+                <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-100 cursor-pointer hover:-translate-y-1 hover:shadow-md transition-all group">
+                    <div class="flex justify-between items-start mb-4">
+                        <span class="text-4xl">🧪</span>
+                        <span class="bg-slate-100 text-slate-500 text-xs font-bold px-2 py-1 rounded-full"><i class="fa-solid fa-image mr-1"></i> 15</span>
+                    </div>
+                    <h3 class="font-bold text-xl group-hover:text-emerald-600 transition-colors">Kemija</h3>
+                    <p class="text-sm text-slate-500 mt-1">Prof. Kovač</p>
+                </div>
+            `;
+
+            // Nastavitve urnika - seznam zvezkov
+            document.getElementById('settings-notebook-list').innerHTML = `
+                <div class="flex justify-between items-center p-3 border-b border-slate-100 last:border-0">
+                    <div><span class="mr-2">📐</span> <strong>Matematika</strong> (Prof. Novak)</div>
+                    <button class="text-rose-500 hover:text-rose-700 p-2"><i class="fa-solid fa-trash"></i></button>
+                </div>
+            `;
+        }
+
+    </script>
+</body>
+</html>
