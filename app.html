@@ -109,7 +109,7 @@ function logout(){localStorage.removeItem('dn_s');sessionStorage.removeItem('dn_
 // ================= PRIJAVA =================
 function renderLogin(){
   $('app').innerHTML=`
-  <nav class="w-full bg-white/80 backdrop-blur-md shadow-sm py-4 px-6 flex items-center space-x-3 sticky top-0 z-20"><img src="logo_zvezki.png" alt="DigitNotes" class="h-10 w-auto object-contain"><span class="text-xl font-bold text-emerald-700 tracking-tight">DigitNotes</span><a href="https://digitnotes.github.io/web/" title="Domov" style="margin-left:auto !important" class="p-2 rounded-xl text-slate-500 hover:text-emerald-700 hover:bg-emerald-50 transition">${ic('home','w-6 h-6')}</a></nav>
+  <nav class="w-full bg-white/80 backdrop-blur-md shadow-sm py-4 px-6 flex items-center justify-between sticky top-0 z-20"><div class="flex items-center space-x-3"><img src="logo_zvezki.png" alt="DigitNotes" class="h-10 w-auto object-contain"><span class="text-xl font-bold text-emerald-700 tracking-tight">DigitNotes</span></div><a href="https://digitnotes.github.io/web/" title="Domov" class="p-2 rounded-xl text-slate-500 hover:text-emerald-700 hover:bg-emerald-50 transition">${ic('home','w-6 h-6')}</a></nav>
   <main class="relative overflow-hidden min-h-[85vh] flex items-center justify-center px-4 py-10">
     <div class="absolute top-0 right-0 -mr-20 -mt-20 w-64 h-64 rounded-full bg-emerald-100 opacity-60 blur-3xl -z-10"></div>
     <div class="absolute bottom-0 left-0 -ml-20 -mb-20 w-80 h-80 rounded-full bg-teal-100 opacity-60 blur-3xl -z-10"></div>
