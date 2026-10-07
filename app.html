@@ -105,7 +105,7 @@ function logout(){localStorage.removeItem('dn_s');sessionStorage.removeItem('dn_
 // ================= PRIJAVA =================
 function renderLogin(){
   $('app').innerHTML=`
-  <nav class="w-full bg-white/80 backdrop-blur-md shadow-sm py-4 px-6 flex items-center space-x-3 sticky top-0 z-20">${logo}<span class="text-xl font-bold text-emerald-700 tracking-tight">DigitNotes</span></nav>
+  <nav class="w-full bg-white/80 backdrop-blur-md shadow-sm py-4 px-6 flex items-center space-x-3 sticky top-0 z-20"><a href="https://digitnotes.github.io/web/" title="Domov" class="p-2 rounded-xl text-slate-500 hover:text-emerald-700 hover:bg-emerald-50 transition">${ic('home','w-6 h-6')}</a><img src="logo_zvezki.png" alt="DigitNotes" class="h-10 w-auto object-contain"><span class="text-xl font-bold text-emerald-700 tracking-tight">DigitNotes</span></nav>
   <main class="relative overflow-hidden min-h-[85vh] flex items-center justify-center px-4 py-10">
     <div class="absolute top-0 right-0 -mr-20 -mt-20 w-64 h-64 rounded-full bg-emerald-100 opacity-60 blur-3xl -z-10"></div>
     <div class="absolute bottom-0 left-0 -ml-20 -mb-20 w-80 h-80 rounded-full bg-teal-100 opacity-60 blur-3xl -z-10"></div>
@@ -120,6 +120,11 @@ function renderLogin(){
         <div id="le" class="hidden text-sm text-red-600 bg-red-50 rounded-xl px-3 py-2"></div>
         <button class="btn btn-p w-full" onclick="login()">Prijavi se</button>
         <p class="text-xs text-slate-500 text-center">Pozabljeno geslo? Obrni se na <a class="text-emerald-700 font-semibold underline" href="mailto:informacije@digitnotes.si">informacije</a>.</p>
+      </div>
+      <div class="mt-6 pt-4 border-t border-slate-100 flex flex-wrap items-center justify-center gap-2">
+        <span class="w-full text-center text-sm font-semibold text-slate-700 flex items-center justify-center gap-2">${ic('pdf','w-5 h-5 text-emerald-600')} Navodila za uporabo</span>
+        <a href="DigitNotes_navodila.pdf" target="_blank" rel="noopener" class="btn btn-s !py-2 text-sm">${ic('notes','w-4 h-4')} Odpri</a>
+        <a href="DigitNotes_navodila.pdf" download class="btn btn-s !py-2 text-sm">${ic('dl','w-4 h-4')} Prenesi</a>
       </div>
     </div></main>`;
 }
@@ -150,6 +155,7 @@ function shell(inner){
   <main class="max-w-4xl mx-auto p-4 md:p-8">${inner}</main>
   <nav class="fixed z-30 bg-white border-slate-200 bottom-0 left-0 right-0 border-t flex justify-around px-1 md:top-0 md:left-auto md:right-0 md:bottom-0 md:w-60 md:border-t-0 md:border-l md:flex-col md:justify-start md:gap-1 md:p-4 md:pt-24">
    ${items.map(i=>btn(...i)).join('')}
+   <a href="DigitNotes_navodila.pdf" target="_blank" rel="noopener" class="flex md:flex-row flex-col items-center md:gap-3 gap-0.5 md:px-4 px-2 py-2 md:py-3 rounded-xl md:w-full text-xs md:text-sm font-semibold text-slate-500 hover:bg-slate-100">${ic('pdf','w-6 h-6 md:w-5 md:h-5')}<span>Navodila</span></a>
    <button onclick="logout()" class="flex md:flex-row flex-col items-center md:gap-3 gap-0.5 md:px-4 px-2 py-2 md:py-3 rounded-xl md:w-full text-xs md:text-sm font-semibold text-slate-500 hover:bg-red-50 hover:text-red-600 md:mt-auto">${ic('out','w-6 h-6 md:w-5 md:h-5')}<span>Odjava</span></button>
   </nav></div>`;
 }
