@@ -8,6 +8,9 @@
 <link rel="shortcut icon" type="image/png" href="icon_zvezki.png">
 <link rel="apple-touch-icon" href="icon_zvezki.png">
 <meta name="apple-mobile-web-app-title" content="DigitNotes">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#059669">
+<meta name="mobile-web-app-capable" content="yes">
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
@@ -65,7 +68,9 @@ const P={
  home:'<path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/>'
 };
 const ic=(n,c='w-5 h-5')=>`<svg class="${c} shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${P[n]}</svg>`;
-const logo=`<div class="h-10 w-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center shadow">${ic('book','w-6 h-6')}</div>`;
+P.bell='<path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 0 1-3.4 0"/>';
+P.send='<path d="M22 2 11 13M22 2l-7 20-4-9-9-4z"/>';
+const logo=`<img src="logo_zvezki.png" alt="DigitNotes" class="h-10 w-auto object-contain">`;
 
 // ================= POMOČNIKI =================
 const $=id=>document.getElementById(id);
@@ -79,7 +84,7 @@ const abbr=n=>nodia(n).replace(/[^a-zA-Z]/g,'').slice(0,3).toUpperCase()||'ZVE';
 const uid8=()=>Math.random().toString(36).slice(2,10)+Date.now().toString(36).slice(-4);
 function toast(m,err){const t=document.createElement('div');t.className=`mb-2 px-4 py-3 rounded-xl shadow-xl text-sm font-semibold text-white ${err?'bg-red-600':'bg-slate-800'}`;t.textContent=m;$('toast').appendChild(t);setTimeout(()=>t.remove(),3500)}
 function modal(html,wide){const m=$('modal');m.innerHTML=`<div class="bg-white rounded-2xl shadow-2xl w-full ${wide?'max-w-2xl':'max-w-md'} max-h-[92vh] overflow-y-auto p-6">${html}</div>`;m.classList.remove('hidden');m.classList.add('flex')}
-function closeModal(){$('modal').classList.add('hidden');$('modal').classList.remove('flex')}
+function closeModal(){IBOPEN=false;$('modal').classList.add('hidden');$('modal').classList.remove('flex')}
 let _cf=null;
 function conf(msg,fn,label='Potrdi'){_cf=fn;modal(`<div class="flex items-start gap-3 mb-5"><div class="text-amber-500">${ic('alert','w-7 h-7')}</div><p class="text-slate-700">${msg}</p></div><div class="flex gap-2 justify-end"><button class="btn btn-s" onclick="closeModal()">Prekliči</button><button class="btn btn-d" onclick="closeModal();_cf()">${label}</button></div>`)}
 function resize(file,max=1400){return new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>{const i=new Image();i.onload=()=>{const k=Math.min(1,max/Math.max(i.width,i.height));const c=document.createElement('canvas');c.width=i.width*k;c.height=i.height*k;c.getContext('2d').drawImage(i,0,0,c.width,c.height);res(c.toDataURL('image/jpeg',.72))};i.onerror=rej;i.src=r.result};r.onerror=rej;r.readAsDataURL(file)})}
@@ -99,12 +104,12 @@ function boot(){
   renderLogin();
 }
 function start(sess){
-  U=sess;if(ref)ref.off();
-  if(U.role==='admin'){ref=db.ref('u');ref.on('value',s=>{A=s.val()||{};render()});S.view='admin'}
-  else{ref=db.ref('u/'+U.id);ref.on('value',s=>{D=s.val()||{};if(!D.profile){logout();return}render()});S.view='home'}
+  U=sess;if(ref)ref.off();if(ibRef){ibRef.off();ibRef=null}if(sentRef){sentRef.off();sentRef=null}IB={data:{},un:0,init:false};
+  if(U.role==='admin'){ref=db.ref('u');ref.on('value',s=>{A=s.val()||{};render()});sentRef=db.ref('sent');sentRef.on('value',s=>{SENT=s.val()||{};if(S.view==='admin')render()});S.view='admin'}
+  else{ref=db.ref('u/'+U.id);ref.on('value',s=>{D=s.val()||{};if(!D.profile){logout();return}render()});ibRef=db.ref('inbox/'+U.id);ibRef.on('value',s=>ibUpdate(s.val()||{}));S.view='home'}
   if(SHARE){openShared()}
 }
-function logout(){localStorage.removeItem('dn_s');sessionStorage.removeItem('dn_s');if(ref)ref.off();U=null;D={};A={};SH=null;renderLogin()}
+function logout(){localStorage.removeItem('dn_s');sessionStorage.removeItem('dn_s');if(ref)ref.off();if(ibRef){ibRef.off();ibRef=null}if(sentRef){sentRef.off();sentRef=null}IBOPEN=false;U=null;D={};A={};SH=null;renderLogin()}
 
 // ================= PRIJAVA =================
 function renderLogin(){
@@ -150,12 +155,82 @@ async function login(){
 }
 
 // ================= OKVIR =================
+// ================= OBVESTILA =================
+let IB={data:{},un:0,init:false},IBOPEN=false,IBSEL=null,ibRef=null,sentRef=null,SENT={};
+const fmtT=t=>new Date(t).toLocaleString('sl-SI',{day:'numeric',month:'numeric',year:'numeric',hour:'2-digit',minute:'2-digit'});
+function bellHtml(){
+  if(!U||U.role!=='user')return'';
+  return`<button onclick="openInbox()" title="Obvestila" class="relative p-2.5 rounded-xl text-slate-500 hover:text-emerald-700 hover:bg-emerald-50 transition">${ic('bell','w-6 h-6')}<span id="bellb" class="${IB.un?'':'hidden'} absolute top-1 right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-[11px] font-bold flex items-center justify-center ring-2 ring-white">${IB.un}</span></button>`;
+}
+function updBell(){const b=$('bellb');if(b){b.textContent=IB.un;b.classList.toggle('hidden',!IB.un)}}
+function ibUpdate(n){
+  const arr=Object.values(n),un=arr.filter(m=>!m.read).length;
+  if(IB.init&&un>IB.un){const last=arr.filter(m=>!m.read).sort((a,b)=>b.t-a.t)[0];toast('Novo obvestilo: '+last.title)}
+  IB.data=n;IB.un=un;IB.init=true;updBell();if(IBOPEN)renderInbox();
+}
+function openInbox(){IBOPEN=true;IBSEL=null;renderInbox()}
+function renderInbox(){
+  const ids=Object.keys(IB.data).sort((a,b)=>IB.data[b].t-IB.data[a].t);
+  let h;
+  if(IBSEL&&IB.data[IBSEL]){
+    const m=IB.data[IBSEL];
+    h=`<div class="flex justify-between items-center mb-4"><button class="btn btn-s !py-2" onclick="IBSEL=null;renderInbox()">${ic('l','w-4 h-4')} Nazaj</button><button class="btn btn-s !p-2" onclick="closeModal()">${ic('x')}</button></div>
+    <h3 class="text-xl font-bold mb-1">${esc(m.title)}</h3><p class="text-xs text-slate-400 mb-4">${fmtT(m.t)}</p>
+    <p class="whitespace-pre-wrap text-slate-700 leading-relaxed mb-5">${esc(m.text)}</p>
+    <div class="flex justify-end"><button class="btn btn-d" onclick="delMsg('${IBSEL}')">${ic('trash','w-4 h-4')} Izbriši</button></div>`;
+  }else{
+    h=`<div class="flex justify-between items-center mb-4"><h3 class="text-xl font-bold flex items-center gap-2">${ic('bell')} Obvestila</h3><button class="btn btn-s !p-2" onclick="closeModal()">${ic('x')}</button></div>
+    ${ids.length?`<div class="space-y-2">${ids.map(id=>{const m=IB.data[id];return`<button onclick="readMsg('${id}')" class="w-full text-left flex gap-3 p-3 rounded-xl border hover:shadow transition ${m.read?'bg-white border-slate-200':'bg-emerald-50 border-emerald-300'}"><span class="mt-1.5 w-2.5 h-2.5 rounded-full shrink-0 ${m.read?'bg-transparent':'bg-emerald-500'}"></span><span class="min-w-0 flex-1"><span class="block truncate ${m.read?'font-semibold':'font-bold'}">${esc(m.title)}</span><span class="block text-sm text-slate-500 truncate">${esc(m.text)}</span><span class="block text-xs text-slate-400 mt-0.5">${fmtT(m.t)}</span></span></button>`}).join('')}</div>
+    ${IB.un?`<div class="mt-4 text-right"><button class="btn btn-s !py-2 text-sm" onclick="readAll()">${ic('check','w-4 h-4')} Označi vse kot prebrano</button></div>`:''}`:'<div class="p-8 text-center text-slate-500">Nimaš obvestil.</div>'}`;
+  }
+  modal(h);
+}
+function readMsg(id){IBSEL=id;if(!IB.data[id]?.read)db.ref(`inbox/${U.id}/${id}/read`).set(true);renderInbox()}
+function readAll(){const up={};Object.entries(IB.data).forEach(([k,m])=>{if(!m.read)up[`inbox/${U.id}/${k}/read`]=true});db.ref().update(up)}
+function delMsg(id){IBSEL=null;db.ref(`inbox/${U.id}/${id}`).remove()}
+// ---- admin: pošiljanje ----
+function msgForm(pre){
+  const users=Object.keys(A).filter(k=>A[k].profile);
+  if(!users.length)return toast('Ni uporabnikov, ki bi jim lahko poslal sporočilo.',true);
+  modal(`<div class="flex justify-between items-center mb-4"><h3 class="text-lg font-bold flex items-center gap-2">${ic('send')} Novo sporočilo</h3><button class="btn btn-s !p-2" onclick="closeModal()">${ic('x')}</button></div><div class="space-y-3">
+   <div><label class="lbl">Naslov</label><input id="mf_t" class="inp" placeholder="Naslov obvestila"></div>
+   <div><label class="lbl">Sporočilo</label><textarea id="mf_x" rows="5" class="inp" placeholder="Besedilo sporočila…"></textarea></div>
+   <div><label class="lbl">Prejemniki</label>
+    <label class="flex items-center gap-2 text-sm mb-1 cursor-pointer"><input type="radio" name="mf_m" value="all" class="accent-emerald-600" ${pre?'':'checked'} onchange="mfMode()"> Vsi uporabniki (${users.length})</label>
+    <label class="flex items-center gap-2 text-sm cursor-pointer"><input type="radio" name="mf_m" value="sel" class="accent-emerald-600" ${pre?'checked':''} onchange="mfMode()"> Izbrani uporabniki</label>
+    <div id="mf_l" class="${pre?'':'hidden'} mt-2 border border-slate-200 rounded-xl p-2 max-h-48 overflow-y-auto">
+     <button type="button" class="text-xs font-semibold text-emerald-700 mb-1" onclick="document.querySelectorAll('.mf_c').forEach(c=>c.checked=true)">Izberi vse</button>
+     ${users.map(u=>`<label class="flex items-center gap-2 text-sm py-1 cursor-pointer"><input type="checkbox" class="mf_c accent-emerald-600" value="${u}" ${u===pre?'checked':''}> ${esc(A[u].profile.name)} <span class="text-slate-400">@${esc(A[u].profile.username)}</span></label>`).join('')}</div></div>
+   <div class="flex gap-2 justify-end pt-2"><button class="btn btn-s" onclick="closeModal()">Prekliči</button><button class="btn btn-p" onclick="sendMsg()">${ic('send','w-4 h-4')} Pošlji</button></div></div>`);
+}
+function mfMode(){$('mf_l').classList.toggle('hidden',document.querySelector('input[name=mf_m]:checked').value!=='sel')}
+async function sendMsg(){
+  const t=$('mf_t').value.trim(),x=$('mf_x').value.trim(),mode=document.querySelector('input[name=mf_m]:checked').value;
+  if(!t||!x)return toast('Vpiši naslov in besedilo.',true);
+  const to=mode==='all'?Object.keys(A).filter(k=>A[k].profile):[...document.querySelectorAll('.mf_c:checked')].map(e=>e.value);
+  if(!to.length)return toast('Izberi vsaj enega uporabnika.',true);
+  const mid=db.ref().push().key,now=Date.now(),up={};
+  to.forEach(u=>up[`inbox/${u}/${mid}`]={title:t,text:x,t:now,read:false});
+  up[`sent/${mid}`]={title:t,text:x,t:now,all:mode==='all',to};
+  try{await db.ref().update(up);closeModal();toast(`Sporočilo poslano (${to.length}).`)}catch(e){toast('Pošiljanje ni uspelo.',true)}
+}
+function sentHtml(){
+  const ids=Object.keys(SENT).sort((a,b)=>SENT[b].t-SENT[a].t);
+  return`<h2 class="font-bold text-lg mt-8 mb-3 flex items-center gap-2">${ic('send')} Poslana sporočila</h2>`+(ids.length?`<div class="space-y-2">${ids.map(id=>{const m=SENT[id],to=Object.values(m.to||[]);const names=m.all?`Vsi uporabniki (${to.length})`:to.map(u=>A[u]?.profile?.name||'(izbrisan)').join(', ');return`<div class="card p-4 flex gap-3 items-start"><div class="flex-1 min-w-0"><b>${esc(m.title)}</b><p class="text-sm text-slate-600 whitespace-pre-wrap">${esc(m.text)}</p><p class="text-xs text-slate-400 mt-1">${fmtT(m.t)} · Prejemniki: ${esc(names)}</p></div><button class="btn btn-d !p-2" title="Umakni sporočilo" onclick="delSent('${id}')">${ic('trash','w-4 h-4')}</button></div>`}).join('')}</div>`:'<div class="card p-6 text-center text-slate-500">Še ni poslanih sporočil.</div>');
+}
+function delSent(id){
+  conf('Sporočilo se bo umaknilo tudi iz obvestil vseh prejemnikov. Nadaljujem?',async()=>{
+    const up={};Object.values(SENT[id]?.to||[]).forEach(u=>up[`inbox/${u}/${id}`]=null);up[`sent/${id}`]=null;
+    await db.ref().update(up);toast('Sporočilo umaknjeno.');
+  },'Umakni');
+}
+
 const NAV=[['home','Domov','home'],['sched','Urnik','cal'],['nbs','Zvezki','book'],['set','Nastavitve','gear']];
 function shell(inner){
   const items=U.role==='admin'?[['admin','Uporabniki','users']]:NAV;
   const btn=(v,l,i)=>`<button onclick="go('${v}')" class="flex md:flex-row flex-col items-center md:gap-3 gap-0.5 md:px-4 px-2 py-2 md:py-3 rounded-xl md:w-full text-xs md:text-sm font-semibold transition ${S.view===v||(v==='nbs'&&S.view==='nb')?'text-emerald-700 bg-emerald-50':'text-slate-500 hover:bg-slate-100'}">${ic(i,'w-6 h-6 md:w-5 md:h-5')}<span>${l}</span></button>`;
   return `<div class="min-h-screen md:pr-60 pb-24 md:pb-0">
-  <header class="bg-white/80 backdrop-blur-md shadow-sm py-3 px-5 flex items-center gap-3 sticky top-0 z-20">${logo}<span class="text-xl font-bold text-emerald-700">DigitNotes</span></header>
+  <header class="bg-white/80 backdrop-blur-md shadow-sm py-3 px-5 flex items-center justify-between sticky top-0 z-20"><div class="flex items-center gap-3">${logo}<span class="text-xl font-bold text-emerald-700">DigitNotes</span></div>${bellHtml()}</header>
   <main class="max-w-4xl mx-auto p-4 md:p-8">${inner}</main>
   <nav class="fixed z-30 bg-white border-slate-200 bottom-0 left-0 right-0 border-t flex justify-around px-1 md:top-0 md:left-auto md:right-0 md:bottom-0 md:w-60 md:border-t-0 md:border-l md:flex-col md:justify-start md:gap-1 md:p-4 md:pt-24">
    ${items.map(i=>btn(...i)).join('')}
@@ -493,8 +568,8 @@ async function acSave(){
 // ================= ADMIN =================
 function vAdmin(){
   const ids=Object.keys(A).filter(k=>A[k].profile);
-  return`<div class="flex justify-between items-center mb-4"><h1 class="text-2xl font-bold flex items-center gap-2">${ic('shield')} Uporabniki</h1><button class="btn btn-p" onclick="userForm()">${ic('plus')} Dodaj uporabnika</button></div>
-  <div class="space-y-2">${ids.map(id=>{const p=A[id].profile;const nn=Object.keys(A[id].nb||{}).length;return`<div class="card p-4 flex items-center gap-3 flex-wrap"><button class="flex-1 text-left min-w-[200px]" onclick="S.au='${id}';S.view='adminu';render()"><b>${esc(p.name)}</b> <span class="text-slate-400">@${esc(p.username)}</span><p class="text-xs text-slate-500">${esc(p.email)} · ${nn} zvezkov${p.max!==undefined&&p.max!==''?' (omejitev '+p.max+')':''}</p></button><button class="btn btn-s !p-2" onclick="userForm('${id}')">${ic('edit','w-4 h-4')}</button><button class="btn btn-d !p-2" onclick="delUser('${id}')">${ic('trash','w-4 h-4')}</button></div>`}).join('')||'<div class="card p-8 text-center text-slate-500">Še ni uporabnikov.</div>'}</div>`;
+  return`<div class="flex justify-between items-center mb-4"><h1 class="text-2xl font-bold flex items-center gap-2">${ic('shield')} Uporabniki</h1><div class="flex gap-2"><button class="btn btn-s" onclick="msgForm()">${ic('send','w-4 h-4')} Sporočilo</button><button class="btn btn-p" onclick="userForm()">${ic('plus')} Dodaj uporabnika</button></div></div>
+  <div class="space-y-2">${ids.map(id=>{const p=A[id].profile;const nn=Object.keys(A[id].nb||{}).length;return`<div class="card p-4 flex items-center gap-3 flex-wrap"><button class="flex-1 text-left min-w-[200px]" onclick="S.au='${id}';S.view='adminu';render()"><b>${esc(p.name)}</b> <span class="text-slate-400">@${esc(p.username)}</span><p class="text-xs text-slate-500">${esc(p.email)} · ${nn} zvezkov${p.max!==undefined&&p.max!==''?' (omejitev '+p.max+')':''}</p></button><button class="btn btn-s !p-2" title="Pošlji sporočilo" onclick="msgForm('${id}')">${ic('send','w-4 h-4')}</button><button class="btn btn-s !p-2" onclick="userForm('${id}')">${ic('edit','w-4 h-4')}</button><button class="btn btn-d !p-2" onclick="delUser('${id}')">${ic('trash','w-4 h-4')}</button></div>`}).join('')||'<div class="card p-8 text-center text-slate-500">Še ni uporabnikov.</div>'}</div>`+sentHtml();
 }
 function userForm(id){
   const p=(id&&A[id]?.profile)||{};
@@ -520,7 +595,7 @@ async function userSave(id){
 function delUser(id){
   conf(`Izbrisal se bo uporabnik <b>${esc(A[id].profile.name)}</b> z vsemi zvezki in fotografijami.`,async()=>{
     await db.ref('idx/'+A[id].profile.username.toLowerCase()).remove();
-    await db.ref('pd/'+id).remove();await db.ref('u/'+id).remove();toast('Uporabnik izbrisan.');
+    await db.ref('pd/'+id).remove();await db.ref('inbox/'+id).remove();await db.ref('u/'+id).remove();toast('Uporabnik izbrisan.');
   },'Izbriši');
 }
 function vAdminUser(){
@@ -539,6 +614,7 @@ function setMax(){
 }
 // admin ne sme preseči omejitve pri ročnem dodajanju – omejitev velja za uporabnika; admin jo lahko prosto spreminja.
 
+if('serviceWorker' in navigator&&location.protocol.startsWith('http'))navigator.serviceWorker.register('sw.js').catch(()=>{});
 boot();
 </script>
 </body>
