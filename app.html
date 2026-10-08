@@ -14,6 +14,7 @@
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-messaging-compat.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
   body{-webkit-tap-highlight-color:transparent}
@@ -36,7 +37,11 @@
 
 <script>
 // ================= FIREBASE =================
-firebase.initializeApp({databaseURL:"https://digitnotes-bdeb7-default-rtdb.europe-west1.firebasedatabase.app"});
+// ----- PUSH OBVESTILA (Firebase Cloud Messaging) -----
+// Za obvestila, ko je aplikacija ZAPRTA, izpolni spodnje podatke (Firebase konzola → Project settings).
+const FB_EXTRA={ /* apiKey:"...", projectId:"digitnotes-bdeb7", messagingSenderId:"...", appId:"..." */ };
+const VAPID_KEY=""; // Project settings → Cloud Messaging → Web Push certificates → Key pair
+firebase.initializeApp({databaseURL:"https://digitnotes-bdeb7-default-rtdb.europe-west1.firebasedatabase.app",...FB_EXTRA});
 const db=firebase.database();
 
 // ================= IKONE (vektorske SVG) =================
@@ -74,6 +79,7 @@ const logo=`<img src="logo_zvezki.png" alt="DigitNotes" class="h-10 w-auto objec
 
 // ================= POMOČNIKI =================
 const $=id=>document.getElementById(id);
+const isApp=()=>(window.matchMedia&&matchMedia('(display-mode: standalone)').matches)||navigator.standalone===true;
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const iso=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 const pd=iso=>new Date(iso+'T00:00:00');
@@ -106,10 +112,11 @@ function boot(){
 function start(sess){
   U=sess;if(ref)ref.off();if(ibRef){ibRef.off();ibRef=null}if(sentRef){sentRef.off();sentRef=null}IB={data:{},un:0,init:false};
   if(U.role==='admin'){ref=db.ref('u');ref.on('value',s=>{A=s.val()||{};render()});sentRef=db.ref('sent');sentRef.on('value',s=>{SENT=s.val()||{};if(S.view==='admin')render()});S.view='admin'}
-  else{ref=db.ref('u/'+U.id);ref.on('value',s=>{D=s.val()||{};if(!D.profile){logout();return}render()});ibRef=db.ref('inbox/'+U.id);ibRef.on('value',s=>ibUpdate(s.val()||{}));S.view='home'}
+  else{ref=db.ref('u/'+U.id);ref.on('value',s=>{D=s.val()||{};if(!D.profile){logout();return}render()});ibRef=db.ref('inbox/'+U.id);ibRef.on('value',s=>ibUpdate(s.val()||{}));pushSetup();S.view='home'}
   if(SHARE){openShared()}
 }
-function logout(){localStorage.removeItem('dn_s');sessionStorage.removeItem('dn_s');if(ref)ref.off();if(ibRef){ibRef.off();ibRef=null}if(sentRef){sentRef.off();sentRef=null}IBOPEN=false;U=null;D={};A={};SH=null;renderLogin()}
+function logout(){try{const k=localStorage.getItem('dn_tok');if(k&&U&&U.role==='user')db.ref(`tokens/${U.id}/${k}`).remove();localStorage.removeItem('dn_tok')}catch(e){}
+  localStorage.removeItem('dn_s');sessionStorage.removeItem('dn_s');if(ref)ref.off();if(ibRef){ibRef.off();ibRef=null}if(sentRef){sentRef.off();sentRef=null}IBOPEN=false;U=null;D={};A={};SH=null;renderLogin()}
 
 // ================= PRIJAVA =================
 function renderLogin(){
@@ -125,7 +132,7 @@ function renderLogin(){
       <div class="space-y-4">
         <div><label class="lbl">Uporabniško ime</label><div class="relative"><span class="absolute left-3 top-3.5 text-slate-400">${ic('user','w-5 h-5')}</span><input id="lu" class="inp pl-11" autocomplete="username"></div></div>
         <div><label class="lbl">Geslo</label><div class="relative"><span class="absolute left-3 top-3.5 text-slate-400">${ic('lock','w-5 h-5')}</span><input id="lp" type="password" class="inp pl-11" autocomplete="current-password" onkeydown="if(event.key==='Enter')login()"></div></div>
-        <label class="flex items-center gap-2 text-sm text-slate-600 cursor-pointer"><input id="lr" type="checkbox" class="w-4 h-4 accent-emerald-600"> Ostani prijavljen v tem računalniku</label>
+        ${isApp()?'<p class="text-xs text-slate-500">V aplikaciji ostaneš prijavljen, dokler se ne odjaviš.</p>':'<label class="flex items-center gap-2 text-sm text-slate-600 cursor-pointer"><input id="lr" type="checkbox" class="w-4 h-4 accent-emerald-600"> Ostani prijavljen v tem računalniku</label>'}
         <div id="le" class="hidden text-sm text-red-600 bg-red-50 rounded-xl px-3 py-2"></div>
         <button class="btn btn-p w-full" onclick="login()">Prijavi se</button>
         <p class="text-xs text-slate-500 text-center">Pozabljeno geslo? Obrni se na <a class="text-emerald-700 font-semibold underline" href="mailto:informacije@digitnotes.si">informacije</a>.</p>
@@ -150,7 +157,7 @@ async function login(){
     }catch(e){return fail('Napaka povezave s strežnikom.')}
   }
   if(!sess)return fail('Napačno uporabniško ime ali geslo.');
-  ($('lr').checked?localStorage:sessionStorage).setItem('dn_s',JSON.stringify(sess));
+  (isApp()||$('lr').checked?localStorage:sessionStorage).setItem('dn_s',JSON.stringify(sess));
   start(sess);
 }
 
@@ -162,10 +169,35 @@ function bellHtml(){
   if(!U||U.role!=='user')return'';
   return`<button onclick="openInbox()" title="Obvestila" class="relative p-2.5 rounded-xl text-slate-500 hover:text-emerald-700 hover:bg-emerald-50 transition">${ic('bell','w-6 h-6')}<span id="bellb" class="${IB.un?'':'hidden'} absolute top-1 right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-[11px] font-bold flex items-center justify-center ring-2 ring-white">${IB.un}</span></button>`;
 }
-function updBell(){const b=$('bellb');if(b){b.textContent=IB.un;b.classList.toggle('hidden',!IB.un)}}
+function updBell(){const b=$('bellb');if(b){b.textContent=IB.un;b.classList.toggle('hidden',!IB.un)}
+  try{if(isApp()&&navigator.setAppBadge)(IB.un?navigator.setAppBadge(IB.un):navigator.clearAppBadge()).catch(()=>{})}catch(e){}}
+// ---- sistemska obvestila (samo v nameščeni aplikaciji) ----
+function notifOK(){return isApp()&&'Notification' in window&&'serviceWorker' in navigator}
+function localNotif(id,m){
+  if(!notifOK()||Notification.permission!=='granted'||!document.hidden)return;
+  navigator.serviceWorker.ready.then(r=>r.showNotification(m.title,{body:m.text,icon:'icon_zvezki.png',badge:'icon_zvezki.png',tag:id,data:{url:'app.html'}})).catch(()=>{});
+}
+async function pushSetup(){
+  if(!notifOK()||!U||U.role!=='user'||Notification.permission!=='granted')return;
+  if(!VAPID_KEY||!FB_EXTRA.messagingSenderId||!firebase.messaging||!(firebase.messaging.isSupported&&firebase.messaging.isSupported()))return;
+  try{
+    const reg=await navigator.serviceWorker.ready;
+    const tok=await firebase.messaging().getToken({vapidKey:VAPID_KEY,serviceWorkerRegistration:reg});
+    if(tok){const k=tok.slice(-24);await db.ref(`tokens/${U.id}/${k}`).set(tok);localStorage.setItem('dn_tok',k)}
+  }catch(e){console.warn('push',e)}
+}
+async function enableNotif(){
+  const r=await Notification.requestPermission();
+  if(r==='granted'){toast('Obvestila na telefonu so vklopljena.');pushSetup()}else toast('Obvestila niso dovoljena. Vklopiš jih v nastavitvah telefona.',true);
+  render();
+}
+function notifBanner(){
+  if(!U||U.role!=='user'||!notifOK()||Notification.permission!=='default')return'';
+  return`<div class="card p-4 mb-5 flex flex-wrap items-center gap-3 border-emerald-200 bg-emerald-50"><span class="text-emerald-600">${ic('bell','w-7 h-7')}</span><div class="flex-1 min-w-[200px]"><b>Vklopi obvestila</b><p class="text-sm text-slate-600">Prejmi sporočila administratorja kot obvestila na telefonu.</p></div><button class="btn btn-p" onclick="enableNotif()">Vklopi</button></div>`;
+}
 function ibUpdate(n){
   const arr=Object.values(n),un=arr.filter(m=>!m.read).length;
-  if(IB.init&&un>IB.un){const last=arr.filter(m=>!m.read).sort((a,b)=>b.t-a.t)[0];toast('Novo obvestilo: '+last.title)}
+  if(IB.init&&un>IB.un){const lastE=Object.entries(n).filter(([,m])=>!m.read).sort((a,b)=>b[1].t-a[1].t)[0];toast('Novo obvestilo: '+lastE[1].title);localNotif(lastE[0],lastE[1])}
   IB.data=n;IB.un=un;IB.init=true;updBell();if(IBOPEN)renderInbox();
 }
 function openInbox(){IBOPEN=true;IBSEL=null;renderInbox()}
@@ -291,7 +323,7 @@ function dayList(date,compact){
 // ================= DOMOV =================
 function vHome(){
   const now=new Date();
-  return`<div class="flex flex-wrap justify-between items-end gap-2 mb-6">
+  return`${notifBanner()}<div class="flex flex-wrap justify-between items-end gap-2 mb-6">
    <div><p class="text-sm text-slate-500">Dobrodošel nazaj</p><h1 class="text-2xl md:text-3xl font-bold">Pozdravljen, <span class="text-emerald-700">${esc(D.profile?.name?.split(' ')[0]||'')}</span>!</h1></div>
    <div class="text-right"><p class="text-sm text-slate-500 capitalize">${fmt(iso(now))}</p><p id="clock" class="text-2xl font-bold text-emerald-700 tabular-nums"></p></div></div>
    <h2 class="font-bold text-lg mb-3 flex items-center gap-2">${ic('cal')} Današnji urnik</h2>${dayList(iso(now))}`;
