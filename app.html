@@ -250,7 +250,11 @@ function tick(){const c=$('clock');if(c)c.textContent=new Date().toLocaleTimeStr
 setInterval(tick,1000);
 
 // ================= URNIK LOGIKA =================
-const startMin=h=>7*60+30+(h-1)*55;
+const DT={1:['07:10','07:55'],2:['08:00','08:45'],3:['08:50','09:35'],4:['09:40','10:25'],5:['10:30','11:15'],6:['11:20','12:05'],7:['12:10','12:55'],8:['13:00','13:45'],9:['13:50','14:35']};
+function tm(h){const t=D.times?.[h];return t&&t.s&&t.e?[t.s,t.e]:DT[h]}
+const toMin=x=>{const p=x.split(':');return +p[0]*60+ +p[1]};
+const fm=x=>x.replace(/^0/,'');
+const tr=h=>fm(tm(h)[0])+'–'+fm(tm(h)[1]);
 function slot(date,h){const wd=(pd(date).getDay()+6)%7;return wd>4?null:D.tt?.[wd+'_'+h]||null}
 function nbOf(id){return D.nb?.[id]}
 function status(date,h){
@@ -259,7 +263,7 @@ function status(date,h){
   if(l?.saved)return'ok';
   if(l?.assess)return'orange';
   const now=new Date(),dd=pd(date),y=new Date();y.setDate(y.getDate()-1);y.setHours(0,0,0,0);
-  const past=dd<new Date(now.getFullYear(),now.getMonth(),now.getDate())||(iso(now)===date&&now.getHours()*60+now.getMinutes()>startMin(h)+45);
+  const past=dd<new Date(now.getFullYear(),now.getMonth(),now.getDate())||(iso(now)===date&&now.getHours()*60+now.getMinutes()>=toMin(tm(h)[1]));
   if(past&&dd>=y)return'red';
   return'open';
 }
@@ -271,14 +275,14 @@ function dayList(date,compact){
   let out='';
   for(let h=1;h<=9;h++){
     const s=slot(date,h),st=status(date,h);
-    if(!s){if(!compact)out+=`<div class="flex items-center gap-3 px-4 py-2 text-slate-300 text-sm"><span class="w-8 text-center font-bold">${h}.</span>prosto</div>`;continue}
-    if(s.malica){out+=`<div class="flex items-center gap-3 px-4 py-3 rounded-xl bg-slate-100 text-slate-500"><span class="w-8 text-center font-bold">${h}.</span>${ic('coffee')}<span class="font-semibold">Malica</span></div>`;continue}
+    if(!s){if(!compact)out+=`<div class="flex items-center gap-3 px-4 py-2 text-slate-300 text-sm"><span class="w-8 text-center font-bold">${h}.</span>prosto<span class="ml-auto text-xs">${tr(h)}</span></div>`;continue}
+    if(s.malica){out+=`<div class="flex items-center gap-3 px-4 py-3 rounded-xl bg-slate-100 text-slate-500"><span class="w-8 text-center font-bold">${h}.</span>${ic('coffee')}<span class="font-semibold">Malica</span><span class="ml-auto text-xs">${tr(h)}</span></div>`;continue}
     const n=nbOf(s.nid),l=D.ls?.[date+'_'+h]||{};
     const pc=Object.values(D.pm?.[s.nid]||{}).filter(p=>p.l===date+'_'+h).length;
     out+=`<button onclick="openLesson('${date}',${h})" class="w-full text-left flex items-center gap-3 px-4 py-3 rounded-xl border-2 transition hover:shadow-md ${ST[st]}">
       <span class="w-8 text-center font-bold text-slate-500">${h}.</span>
       <span class="text-2xl">${esc(n?.emoji||'')}</span>
-      <span class="flex-1 min-w-0"><span class="block font-bold truncate">${esc(n?.name||'(izbrisan zvezek)')}</span><span class="block text-xs text-slate-500 truncate">${esc(s.teacher||'')}</span></span>
+      <span class="flex-1 min-w-0"><span class="block font-bold truncate">${esc(n?.name||'(izbrisan zvezek)')}</span><span class="block text-xs text-slate-500 truncate">${tr(h)}${s.teacher?' · '+esc(s.teacher):''}</span></span>
       <span class="flex gap-1.5 text-slate-500">${(l.notes||pc||l.noNotes)?ic('notes','w-4 h-4'):''}${l.hw?ic('hw','w-4 h-4'):''}${l.assess?ic('grade','w-4 h-4 text-orange-500'):''}${st==='red'?ic('alert','w-4 h-4 text-red-500'):''}${st==='ok'?ic('check','w-4 h-4 text-emerald-600'):''}</span></button>`;
   }
   return`<div class="space-y-2">${out}</div>`;
@@ -318,7 +322,7 @@ function openLesson(date,h){
   const s=slot(date,h),n=nbOf(s.nid);if(!n)return toast('Zvezek za to uro ne obstaja več.',true);
   LM={date,h,key:date+'_'+h,nid:s.nid,teacher:s.teacher,l:{...(D.ls?.[date+'_'+h]||{})}};
   const L=LM.l;
-  modal(`<div class="flex justify-between items-start mb-4"><div><div class="text-3xl mb-1">${esc(n.emoji||'')}</div><h3 class="text-xl font-bold">${esc(n.name)}</h3><p class="text-sm text-slate-500">${h}. ura · ${fmt(date)}${s.teacher?' · '+esc(s.teacher):''}</p></div><button class="btn btn-s !p-2" onclick="closeModal()">${ic('x')}</button></div>
+  modal(`<div class="flex justify-between items-start mb-4"><div><div class="text-3xl mb-1">${esc(n.emoji||'')}</div><h3 class="text-xl font-bold">${esc(n.name)}</h3><p class="text-sm text-slate-500">${h}. ura (${tr(h)}) · ${fmt(date)}${s.teacher?' · '+esc(s.teacher):''}</p></div><button class="btn btn-s !p-2" onclick="closeModal()">${ic('x')}</button></div>
   <div class="space-y-5">
    <section><h4 class="font-bold flex items-center gap-2 mb-2 text-emerald-700">${ic('notes')} Zapiski</h4>
      <textarea id="lm_notes" rows="3" class="inp" placeholder="Povzetek snovi…">${esc(L.notes||'')}</textarea>
@@ -533,10 +537,23 @@ function setTt(){
   const off=Object.keys(D.off||{}).sort();
   return`<h2 class="font-bold text-lg mb-3">Nastavitve urnika</h2><p class="text-sm text-slate-500 mb-3">Izbereš lahko le predmete, za katere imaš vpisane zvezke. Pri predmetu z več učitelji izbereš, kdo te uči.</p>
   <div class="card p-3 overflow-x-auto mb-8"><table class="w-full"><thead><tr><th></th>${DAYS.map(d=>`<th class="text-left text-sm p-1">${d}</th>`).join('')}</tr></thead><tbody>${rows}</tbody></table></div>
+  ${timesHtml()}
   <h2 class="font-bold text-lg mb-1">Dotični urnik</h2><p class="text-sm text-slate-500 mb-3">Izklopi urnik za določen dan ali obdobje – aplikacija takrat ne bo zahtevala zapiskov.</p>
   <div class="card p-4"><div class="flex flex-wrap gap-2 items-end"><div><label class="lbl">Od</label><input id="of1" type="date" class="inp"></div><div><label class="lbl">Do (neobvezno)</label><input id="of2" type="date" class="inp"></div><button class="btn btn-p" onclick="offAdd()">Izklopi urnik</button></div>
   <div class="flex flex-wrap gap-2 mt-4">${off.map(d=>`<span class="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-amber-50 border border-amber-200 text-sm">${d.split('-').reverse().join('.')}<button onclick="db.ref('u/${U.id}/off/${d}').remove()">${ic('x','w-3.5 h-3.5')}</button></span>`).join('')||'<span class="text-sm text-slate-400">Noben dan ni izklopljen.</span>'}</div></div>`;
 }
+function timesHtml(){
+  let r='';
+  for(let h=1;h<=9;h++){const t=tm(h);r+=`<div class="flex items-center gap-2"><span class="w-8 font-bold text-slate-500">${h}.</span><input type="time" class="inp !w-auto" value="${t[0]}" onchange="timeSet(${h},'s',this.value)"><span class="text-slate-400">–</span><input type="time" class="inp !w-auto" value="${t[1]}" onchange="timeSet(${h},'e',this.value)"></div>`}
+  return`<h2 class="font-bold text-lg mb-1 flex items-center gap-2">${ic('clock')} Čas ur</h2><p class="text-sm text-slate-500 mb-3">Ko se ura zaključi in nima shranjenih zapiskov, se obarva rdeče. Čase ur lahko prilagodiš svoji šoli.</p><div class="card p-4 space-y-2 mb-8">${r}<button class="btn btn-s mt-2" onclick="timesReset()">Povrni privzete čase</button></div>`;
+}
+function timeSet(h,k,v){
+  if(!v)return render();
+  const c=tm(h),n={s:c[0],e:c[1]};n[k]=v;
+  if(toMin(n.e)<=toMin(n.s)){toast('Konec ure mora biti po začetku.',true);return render()}
+  db.ref(`u/${U.id}/times/${h}`).set(n);
+}
+function timesReset(){conf('Povrnem privzete čase ur?',()=>db.ref(`u/${U.id}/times`).remove().then(()=>toast('Privzeti časi povrnjeni.')),'Povrni')}
 function ttSet(d,h,v){
   const r=db.ref(`u/${U.id}/tt/${d}_${h}`);
   if(!v)r.remove();else if(v==='M')r.set({malica:true});else{const i=v.indexOf('|');r.set({nid:v.slice(0,i),teacher:v.slice(i+1)})}
@@ -615,6 +632,7 @@ function setMax(){
 // admin ne sme preseči omejitve pri ročnem dodajanju – omejitev velja za uporabnika; admin jo lahko prosto spreminja.
 
 if('serviceWorker' in navigator&&location.protocol.startsWith('http'))navigator.serviceWorker.register('sw.js').catch(()=>{});
+setInterval(()=>{if(U&&U.role==='user'&&(S.view==='home'||S.view==='sched')&&$('modal').classList.contains('hidden'))render()},30000);
 boot();
 </script>
 </body>
