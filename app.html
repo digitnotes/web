@@ -37,10 +37,10 @@
 
 <script>
 // ================= FIREBASE =================
-const APP_VER='v2026.10.09';
+const APP_VER='v2026.10.09b';
 // ----- PUSH OBVESTILA (Firebase Cloud Messaging) -----
 // Za obvestila, ko je aplikacija ZAPRTA, izpolni spodnje podatke (Firebase konzola → Project settings).
-const FB_EXTRA={ apiKey:"AIzaSyCTIn1jN09GqzelNaTf5-SjERWJ8LGzq6U", projectId:"digitnotes-bdeb7", messagingSenderId:"762195001129", appId:"1:762195001129:web:fb2dbe296092e25edb4138" };
+const FB_EXTRA={ /* apiKey:"AIzaSyCTIn1jN09GqzelNaTf5-SjERWJ8LGzq6U", projectId:"digitnotes-bdeb7", messagingSenderId:"762195001129", appId:"1:762195001129:web:fb2dbe296092e25edb4138" */ };
 const AI_URL=""; // URL Cloud Function-a aiAssist (glej functions/index.js)
 const VAPID_KEY="BOqT2Xs9f2xOKA99Q0LgjgYUXfI_Bk2qp_4YifxNazfBLoq4Rhr_OOB1Z7uHHg4vnTBqofyE7VN0s7SP0KfVlVM"; // Project settings → Cloud Messaging → Web Push certificates → Key pair
 firebase.initializeApp({databaseURL:"https://digitnotes-bdeb7-default-rtdb.europe-west1.firebasedatabase.app",...FB_EXTRA});
@@ -175,15 +175,15 @@ function bellHtml(){
 function updBell(){const b=$('bellb');if(b){b.textContent=IB.un;b.classList.toggle('hidden',!IB.un)}
   try{if(isApp()&&navigator.setAppBadge)(IB.un?navigator.setAppBadge(IB.un):navigator.clearAppBadge()).catch(()=>{})}catch(e){}}
 // ---- sistemska obvestila (samo v nameščeni aplikaciji) ----
-function notifOK(){return isApp()&&'Notification' in window&&'serviceWorker' in navigator}
+function notifOK(){return 'Notification' in window&&'serviceWorker' in navigator&&(isApp()||!/iPhone|iPad|iPod/.test(navigator.userAgent))}
 function localNotif(id,m){
   playChime();
-  if(!pushOn())showSys(id,m.title,m.text);
+  showSys(id,m.title,m.text);
 }
 const pushOn=()=>!!(VAPID_KEY&&FB_EXTRA.messagingSenderId);
 function showSys(tag,title,body){
   if(!notifOK()||Notification.permission!=='granted')return;
-  navigator.serviceWorker.ready.then(r=>r.showNotification(title,{body,icon:'icon_zvezki.png',badge:'icon_zvezki.png',tag,renotify:true,vibrate:[200,100,200,100,300],data:{url:'app.html'}})).catch(()=>{});
+  navigator.serviceWorker.ready.then(r=>r.showNotification(title,{body,icon:'icon_zvezki.png',badge:'icon_zvezki.png',tag,renotify:false,vibrate:[200,100,200,100,300],data:{url:'app.html'}})).catch(()=>{});
 }
 // zvonenje v aplikaciji (zvok se ustvari sproti, brez datotek)
 let AC=null;
@@ -194,14 +194,17 @@ function playChime(){
   [[880,0],[1318.5,.16],[1760,.32]].forEach(([f,t])=>{const o=AC.createOscillator(),g=AC.createGain();o.type='sine';o.frequency.value=f;o.connect(g);g.connect(AC.destination);const st=AC.currentTime+t;g.gain.setValueAtTime(0,st);g.gain.linearRampToValueAtTime(.25,st+.02);g.gain.exponentialRampToValueAtTime(.001,st+.8);o.start(st);o.stop(st+.85)});
   try{navigator.vibrate&&navigator.vibrate([150,80,150])}catch(e){}
 }
+let PUSHERR='';
 async function pushSetup(){
   if(!notifOK()||!U||U.role!=='user'||Notification.permission!=='granted')return;
-  if(!VAPID_KEY||!FB_EXTRA.messagingSenderId||!firebase.messaging||!(firebase.messaging.isSupported&&firebase.messaging.isSupported()))return;
+  if(!VAPID_KEY||!FB_EXTRA.messagingSenderId){PUSHERR='V app.html manjkata FB_EXTRA in/ali VAPID_KEY.';return}
+  if(!firebase.messaging||!(firebase.messaging.isSupported&&firebase.messaging.isSupported())){PUSHERR='Ta brskalnik ne podpira push obvestil.';return}
   try{
     const reg=await navigator.serviceWorker.ready;
     const tok=await firebase.messaging().getToken({vapidKey:VAPID_KEY,serviceWorkerRegistration:reg});
-    if(tok){const k=tok.slice(-24);await db.ref(`tokens/${U.id}/${k}`).set(tok);localStorage.setItem('dn_tok',k)}
-  }catch(e){console.warn('push',e)}
+    if(tok){const k=tok.slice(-24);await db.ref(`tokens/${U.id}/${k}`).set(tok);localStorage.setItem('dn_tok',k);PUSHERR=''}
+  }catch(e){PUSHERR=((e.code||'')+' '+(e.message||'')).trim();console.warn('push',e)}
+  if(S.view==='set')render();
 }
 async function enableNotif(){
   const r=await Notification.requestPermission();
@@ -294,7 +297,7 @@ async function pwForceSave(){
 let WKD=null;
 function sysNotify(tag,title,body){
   playChime();if(!document.hidden)toast(title+': '+body);
-  if(!pushOn())showSys(tag,title,body);
+  showSys(tag,title,body);
 }
 function testNotif(){
   unlockAudio();
@@ -334,7 +337,18 @@ function autoTick(){
 setInterval(autoTick,30000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)autoTick()});
 function remindCard(){
   const on=!!D.settings?.remind;
-  return`<div class="card p-5 max-w-md mt-6"><h3 class="font-bold flex items-center gap-2 mb-2">${ic('bell')} Opomna sporočila</h3><label class="flex items-start gap-2 text-sm cursor-pointer"><input type="checkbox" class="w-4 h-4 mt-0.5 accent-emerald-600" ${on?'checked':''} onchange="remindSet(this.checked)"><span>Po koncu vsake ure me opomni, naj naložim fotografije zapiskov.</span></label><p class="text-xs text-slate-500 mt-2">Opomniki delujejo samo, če so vklopljeni, in se ne shranjujejo med obvestila. Za prikaz na telefonu mora biti aplikacija nameščena in obvestila dovoljena.</p><div class="mt-4 pt-3 border-t border-slate-100 space-y-3"><label class="flex items-center gap-2 text-sm cursor-pointer"><input type="checkbox" class="w-4 h-4 accent-emerald-600" ${localStorage.getItem('dn_snd')==='0'?'':'checked'} onchange="localStorage.setItem('dn_snd',this.checked?'1':'0');if(this.checked){unlockAudio();playChime()}"> Zvonenje v aplikaciji</label><button class="btn btn-s !py-2 text-sm" onclick="testNotif()">${ic('bell','w-4 h-4')} Pošlji testno obvestilo</button></div></div>`;
+  return`<div class="card p-5 max-w-md mt-6"><h3 class="font-bold flex items-center gap-2 mb-2">${ic('bell')} Opomna sporočila</h3><label class="flex items-start gap-2 text-sm cursor-pointer"><input type="checkbox" class="w-4 h-4 mt-0.5 accent-emerald-600" ${on?'checked':''} onchange="remindSet(this.checked)"><span>Po koncu vsake ure me opomni, naj naložim fotografije zapiskov.</span></label><p class="text-xs text-slate-500 mt-2">Opomniki delujejo samo, če so vklopljeni, in se ne shranjujejo med obvestila. Za prikaz na telefonu mora biti aplikacija nameščena in obvestila dovoljena.</p><div class="mt-4 pt-3 border-t border-slate-100 space-y-3">${diagHtml()}<label class="flex items-center gap-2 text-sm cursor-pointer"><input type="checkbox" class="w-4 h-4 accent-emerald-600" ${localStorage.getItem('dn_snd')==='0'?'':'checked'} onchange="localStorage.setItem('dn_snd',this.checked?'1':'0');if(this.checked){unlockAudio();playChime()}"> Zvonenje v aplikaciji</label><button class="btn btn-s !py-2 text-sm" onclick="testNotif()">${ic('bell','w-4 h-4')} Pošlji testno obvestilo</button></div></div>`;
+}
+function diagHtml(){
+  const row=(ok,t)=>`<div class="flex items-start gap-2 text-xs ${ok?'text-emerald-700':'text-red-600'}">${ic(ok?'check':'x','w-4 h-4')}<span>${t}</span></div>`;
+  const perm='Notification' in window?Notification.permission:'ni podprto';
+  return`<div class="rounded-xl bg-slate-50 border border-slate-200 p-3 space-y-1"><p class="text-xs font-bold text-slate-600 mb-1">Stanje obvestil na tej napravi</p>
+  ${row(isApp()||!/iPhone|iPad|iPod/.test(navigator.userAgent),isApp()?'Aplikacija je nameščena':'Aplikacija ni nameščena (na iPhonu je namestitev obvezna)')}
+  ${row(perm==='granted','Dovoljenje za obvestila: '+perm)}
+  ${row(!!(navigator.serviceWorker&&navigator.serviceWorker.controller),'Service worker je aktiven')}
+  ${row(pushOn(),'Push strežnik nastavljen v kodi (FB_EXTRA, VAPID_KEY)')}
+  ${row(!!localStorage.getItem('dn_tok'),'Naprava je prijavljena za push (obvestila ob zaprti aplikaciji)')}
+  ${PUSHERR?`<p class="text-xs text-red-600 break-words">Napaka: ${esc(PUSHERR)}</p>`:''}</div>`;
 }
 function remindSet(v){db.ref(`u/${U.id}/settings/remind`).set(v);if(v&&notifOK()&&Notification.permission==='default')enableNotif()}
 // ---- AI pomočnik (demo) ----
