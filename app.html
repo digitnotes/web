@@ -37,6 +37,7 @@
 
 <script>
 // ================= FIREBASE =================
+const APP_VER='v2026.10.09';
 // ----- PUSH OBVESTILA (Firebase Cloud Messaging) -----
 // Za obvestila, ko je aplikacija ZAPRTA, izpolni spodnje podatke (Firebase konzola → Project settings).
 const FB_EXTRA={ /* apiKey:"...", projectId:"digitnotes-bdeb7", messagingSenderId:"...", appId:"..." */ };
@@ -176,8 +177,22 @@ function updBell(){const b=$('bellb');if(b){b.textContent=IB.un;b.classList.togg
 // ---- sistemska obvestila (samo v nameščeni aplikaciji) ----
 function notifOK(){return isApp()&&'Notification' in window&&'serviceWorker' in navigator}
 function localNotif(id,m){
-  if(!notifOK()||Notification.permission!=='granted'||!document.hidden)return;
-  navigator.serviceWorker.ready.then(r=>r.showNotification(m.title,{body:m.text,icon:'icon_zvezki.png',badge:'icon_zvezki.png',tag:id,data:{url:'app.html'}})).catch(()=>{});
+  playChime();
+  if(!pushOn())showSys(id,m.title,m.text);
+}
+const pushOn=()=>!!(VAPID_KEY&&FB_EXTRA.messagingSenderId);
+function showSys(tag,title,body){
+  if(!notifOK()||Notification.permission!=='granted')return;
+  navigator.serviceWorker.ready.then(r=>r.showNotification(title,{body,icon:'icon_zvezki.png',badge:'icon_zvezki.png',tag,renotify:true,vibrate:[200,100,200,100,300],data:{url:'app.html'}})).catch(()=>{});
+}
+// zvonenje v aplikaciji (zvok se ustvari sproti, brez datotek)
+let AC=null;
+function unlockAudio(){try{AC=AC||new (window.AudioContext||window.webkitAudioContext)();if(AC.state==='suspended')AC.resume()}catch(e){}}
+['pointerdown','keydown','touchstart'].forEach(ev=>document.addEventListener(ev,unlockAudio,{passive:true}));
+function playChime(){
+  if(localStorage.getItem('dn_snd')==='0'||document.hidden||!AC||AC.state!=='running')return;
+  [[880,0],[1318.5,.16],[1760,.32]].forEach(([f,t])=>{const o=AC.createOscillator(),g=AC.createGain();o.type='sine';o.frequency.value=f;o.connect(g);g.connect(AC.destination);const st=AC.currentTime+t;g.gain.setValueAtTime(0,st);g.gain.linearRampToValueAtTime(.25,st+.02);g.gain.exponentialRampToValueAtTime(.001,st+.8);o.start(st);o.stop(st+.85)});
+  try{navigator.vibrate&&navigator.vibrate([150,80,150])}catch(e){}
 }
 async function pushSetup(){
   if(!notifOK()||!U||U.role!=='user'||Notification.permission!=='granted')return;
@@ -278,8 +293,16 @@ async function pwForceSave(){
 // ---- opomniki po uri + vikend obvestilo ----
 let WKD=null;
 function sysNotify(tag,title,body){
-  if(document.hidden&&notifOK()&&Notification.permission==='granted')navigator.serviceWorker.ready.then(r=>r.showNotification(title,{body,icon:'icon_zvezki.png',badge:'icon_zvezki.png',tag,data:{url:'app.html'}})).catch(()=>{});
-  else if(!document.hidden)toast(title+': '+body);
+  playChime();if(!document.hidden)toast(title+': '+body);
+  if(!pushOn())showSys(tag,title,body);
+}
+function testNotif(){
+  unlockAudio();
+  if(!notifOK())return toast('Sistemska obvestila delujejo samo v nameščeni aplikaciji.',true);
+  if(Notification.permission==='default')return enableNotif();
+  if(Notification.permission==='denied')return toast('Obvestila so v telefonu blokirana – vklopi jih v nastavitvah naprave.',true);
+  playChime();toast('Testno obvestilo poslano.');
+  showSys('test','DigitNotes','Testno obvestilo – če to vidiš na zaslonu telefona, obvestila delujejo.');
 }
 function autoTick(){
   if(!U||U.role!=='user'||!D.profile||D.profile.mustChange)return;
@@ -311,14 +334,17 @@ function autoTick(){
 setInterval(autoTick,30000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)autoTick()});
 function remindCard(){
   const on=!!D.settings?.remind;
-  return`<div class="card p-5 max-w-md mt-6"><h3 class="font-bold flex items-center gap-2 mb-2">${ic('bell')} Opomna sporočila</h3><label class="flex items-start gap-2 text-sm cursor-pointer"><input type="checkbox" class="w-4 h-4 mt-0.5 accent-emerald-600" ${on?'checked':''} onchange="remindSet(this.checked)"><span>Po koncu vsake ure me opomni, naj naložim fotografije zapiskov.</span></label><p class="text-xs text-slate-500 mt-2">Opomniki delujejo samo, če so vklopljeni, in se ne shranjujejo med obvestila. Za prikaz na telefonu mora biti aplikacija nameščena in obvestila dovoljena.</p></div>`;
+  return`<div class="card p-5 max-w-md mt-6"><h3 class="font-bold flex items-center gap-2 mb-2">${ic('bell')} Opomna sporočila</h3><label class="flex items-start gap-2 text-sm cursor-pointer"><input type="checkbox" class="w-4 h-4 mt-0.5 accent-emerald-600" ${on?'checked':''} onchange="remindSet(this.checked)"><span>Po koncu vsake ure me opomni, naj naložim fotografije zapiskov.</span></label><p class="text-xs text-slate-500 mt-2">Opomniki delujejo samo, če so vklopljeni, in se ne shranjujejo med obvestila. Za prikaz na telefonu mora biti aplikacija nameščena in obvestila dovoljena.</p><div class="mt-4 pt-3 border-t border-slate-100 space-y-3"><label class="flex items-center gap-2 text-sm cursor-pointer"><input type="checkbox" class="w-4 h-4 accent-emerald-600" ${localStorage.getItem('dn_snd')==='0'?'':'checked'} onchange="localStorage.setItem('dn_snd',this.checked?'1':'0');if(this.checked){unlockAudio();playChime()}"> Zvonenje v aplikaciji</label><button class="btn btn-s !py-2 text-sm" onclick="testNotif()">${ic('bell','w-4 h-4')} Pošlji testno obvestilo</button></div></div>`;
 }
 function remindSet(v){db.ref(`u/${U.id}/settings/remind`).set(v);if(v&&notifOK()&&Notification.permission==='default')enableNotif()}
 // ---- AI pomočnik (demo) ----
+let _ag=0;
+function aiLogo(c='w-6 h-6'){const id='ag'+(++_ag);return`<svg class="${c} shrink-0" viewBox="0 0 32 32"><defs><linearGradient id="${id}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#10b981"/><stop offset="1" stop-color="#0d9488"/></linearGradient></defs><rect width="32" height="32" rx="9" fill="url(#${id})"/><path d="M15 6l2.2 6.1L23.5 14l-6.3 1.9L15 22l-2.2-6.1L6.5 14l6.3-1.9z" fill="#fff"/><path d="M24.5 19l.9 2.6 2.6.9-2.6.9-.9 2.6-.9-2.6-2.6-.9 2.6-.9z" fill="#fff" opacity=".9"/></svg>`}
+const betaPill=()=>`<span class="text-[10px] font-extrabold tracking-wider px-1.5 py-0.5 rounded-md bg-gradient-to-r from-emerald-500 to-teal-500 text-white align-middle">BETA</span>`;
 let AIU=0;const ymNow=()=>new Date().toISOString().slice(0,7);
 function aiOpen(){
   if(!D.profile?.ai?.on)return;
-  modal(`<div class="flex justify-between items-center mb-4"><h3 class="text-lg font-bold flex items-center gap-2">${ic('spark')} AI pomočnik <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-amber-100 text-amber-700">DEMO</span></h3><button class="btn btn-s !p-2" onclick="closeModal()">${ic('x')}</button></div>
+  modal(`<div class="flex justify-between items-center mb-4"><h3 class="text-lg font-bold flex items-center gap-2">${aiLogo('w-7 h-7')} AI pomočnik ${betaPill()}</h3><button class="btn btn-s !p-2" onclick="closeModal()">${ic('x')}</button></div>
   <p class="text-sm text-slate-500 mb-3">Iz zapiskov v tem zvezku pripravi povzetek ali kartice za učenje.</p>
   <div class="space-y-3"><div class="flex gap-4 text-sm"><label class="flex items-center gap-2 cursor-pointer"><input type="radio" name="ai_m" value="sum" checked class="accent-emerald-600"> Povzetek</label><label class="flex items-center gap-2 cursor-pointer"><input type="radio" name="ai_m" value="cards" class="accent-emerald-600"> Flashcards</label></div>
   <div><label class="lbl">Število zadnjih fotografij (0–8)</label><input id="ai_n" type="number" min="0" max="8" value="4" class="inp !w-28"></div>
@@ -527,7 +553,7 @@ function nbHtml(c){
   const ph=sortedPhotos(c);
   return`<button class="btn btn-s mb-4" onclick="go('${c.owner?'nbs':'home'}')">${ic('l')} Nazaj</button>
   <div class="flex flex-wrap items-center gap-4 mb-5"><span class="text-5xl">${esc(c.nb.emoji||'')}</span><div class="flex-1"><h1 class="text-2xl font-bold">${esc(c.nb.name)}</h1><p class="text-sm text-slate-500">${ph.length} fotografij · avtor: ${esc(c.author||'')}</p></div>
-   <div class="flex flex-wrap gap-2"><button class="btn btn-p" onclick="makePdf()">${ic('pdf')} PDF</button>${c.owner&&D.profile?.ai?.on?`<button class="btn btn-s" onclick="aiOpen()">${ic('spark')} AI</button>`:''}${c.owner?`<button class="btn btn-s" onclick="shareNb()">${ic('share')} Deli</button><label class="btn btn-s cursor-pointer">${ic('plus')} Fotografije<input type="file" accept="image/*" multiple class="hidden" onchange="nbUpload(this)"></label>`:''}</div></div>
+   <div class="flex flex-wrap gap-2"><button class="btn btn-p" onclick="makePdf()">${ic('pdf')} PDF</button>${c.owner&&D.profile?.ai?.on?`<button class="btn btn-s" onclick="aiOpen()">${aiLogo('w-5 h-5')} AI ${betaPill()}</button>`:''}${c.owner?`<button class="btn btn-s" onclick="shareNb()">${ic('share')} Deli</button><label class="btn btn-s cursor-pointer">${ic('plus')} Fotografije<input type="file" accept="image/*" multiple class="hidden" onchange="nbUpload(this)"></label>`:''}</div></div>
   ${c.grades.length?`<div class="card p-4 mb-5"><h3 class="font-bold flex items-center gap-2 mb-2 text-orange-600">${ic('grade')} Ocene</h3><div class="flex flex-wrap gap-2">${c.grades.map(g=>`<span class="px-3 py-1.5 rounded-xl bg-orange-50 border border-orange-200 text-sm"><b>${esc(g.g)}</b> <span class="text-slate-500">· ${esc(g.t||'')} · ${g.d.split('-').reverse().join('.')}</span></span>`).join('')}</div></div>`:''}
   <h3 class="font-bold mb-2">Fotografije</h3>
   ${ph.length?`<div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">${ph.map((p,i)=>`<div class="group" ${c.owner?`oncontextmenu="showCtx(event,'${p.id}');return false" ontouchstart="lp(event,'${p.id}')" ontouchend="lpx()" ontouchmove="lpx()"`:''} onclick="openViewer(${i})"><img data-pid="${p.id}" data-uid="${c.uid}" class="aspect-[3/4] w-full object-cover rounded-xl border bg-slate-100 cursor-pointer group-hover:shadow-lg transition"><p class="text-[11px] text-slate-500 mt-1 truncate">${p.name}</p></div>`).join('')}</div>`:`<div class="card p-8 text-center text-slate-500">Zvezek je prazen.</div>`}
@@ -753,7 +779,7 @@ function vAdminUser(){
   setTimeout(aiUsageFetch,0);return`<button class="btn btn-s mb-4" onclick="go('admin')">${ic('l')} Nazaj</button>
   <h1 class="text-2xl font-bold">${esc(p.name)}</h1><p class="text-sm text-slate-500 mb-4">@${esc(p.username)} · ${esc(p.email)}</p>
   <div class="card p-4 mb-5 flex flex-wrap items-end gap-3"><div><label class="lbl">Največje število zvezkov</label><input id="mx" type="number" min="0" class="inp !w-40" placeholder="brez omejitve" value="${p.max??''}"></div><button class="btn btn-p" onclick="setMax()">Shrani omejitev</button></div>
-  <div class="card p-4 mb-5"><h3 class="font-bold flex items-center gap-2 mb-3">${ic('spark')} AI pomočnik (demo)</h3><div class="flex flex-wrap items-end gap-3"><label class="flex items-center gap-2 text-sm cursor-pointer pb-3"><input id="ai_on" type="checkbox" class="w-4 h-4 accent-emerald-600" ${p.ai?.on?'checked':''}> Omogočeno</label><div><label class="lbl">Uporab na mesec</label><input id="ai_l" type="number" min="0" class="inp !w-32" value="${p.ai?.limit??10}"></div><button class="btn btn-p" onclick="setAi()">Shrani</button></div><p class="text-xs text-slate-500 mt-2">Porabljeno ta mesec: <b id="aiu">…</b></p></div>
+  <div class="card p-4 mb-5"><h3 class="font-bold flex items-center gap-2 mb-3">${aiLogo('w-6 h-6')} AI pomočnik ${betaPill()}</h3><div class="flex flex-wrap items-end gap-3"><label class="flex items-center gap-2 text-sm cursor-pointer pb-3"><input id="ai_on" type="checkbox" class="w-4 h-4 accent-emerald-600" ${p.ai?.on?'checked':''}> Omogočeno</label><div><label class="lbl">Uporab na mesec</label><input id="ai_l" type="number" min="0" class="inp !w-32" value="${p.ai?.limit??10}"></div><button class="btn btn-p" onclick="setAi()">Shrani</button></div><p class="text-xs text-slate-500 mt-2">Porabljeno ta mesec: <b id="aiu">…</b></p></div>
   <div class="flex justify-between items-center mb-3"><h2 class="font-bold text-lg">Zvezki (${ids.length})</h2><button class="btn btn-p" onclick="adminAddNb()">${ic('plus')} Dodaj zvezek</button></div>
   <div class="space-y-2">${ids.map(id=>{const n=u.nb[id];return`<div class="card p-4 flex items-center gap-3"><span class="text-3xl">${esc(n.emoji||'')}</span><div class="flex-1"><b>${esc(n.name)}</b><p class="text-xs text-slate-500 flex items-center gap-1">${ic('img','w-3.5 h-3.5')} ${pcount(id,u.pm)} naloženih slik</p></div><button class="btn btn-s !p-2" onclick="nbForm('${id}','${S.au}')">${ic('edit','w-4 h-4')}</button><button class="btn btn-d !p-2" onclick="delNb('${id}','${S.au}')">${ic('trash','w-4 h-4')}</button></div>`}).join('')||'<div class="card p-6 text-center text-slate-500">Uporabnik nima zvezkov.</div>'}</div>`;
 }
@@ -764,7 +790,23 @@ function setMax(){
 }
 // admin ne sme preseči omejitve pri ročnem dodajanju – omejitev velja za uporabnika; admin jo lahko prosto spreminja.
 
-if('serviceWorker' in navigator&&location.protocol.startsWith('http'))navigator.serviceWorker.register('sw.js').catch(()=>{});
+let SWREG=null;
+if('serviceWorker' in navigator&&location.protocol.startsWith('http'))navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).then(r=>{SWREG=r}).catch(()=>{});
+// samodejna posodobitev: ob vsakem odprtju in na 10 minut preveri, ali je na strežniku nova različica
+async function checkUpdate(){
+  if(!location.protocol.startsWith('http'))return;
+  try{
+    if(SWREG)SWREG.update().catch(()=>{});
+    const t=await (await fetch(location.origin+location.pathname,{cache:'no-store'})).text();
+    const m=t.match(/const APP_VER='([^']+)'/);
+    if(m&&m[1]!==APP_VER){
+      const busy=!$('modal').classList.contains('hidden')||/INPUT|TEXTAREA|SELECT/.test((document.activeElement||{}).tagName||'');
+      if(!busy)location.reload();
+    }
+  }catch(e){}
+}
+checkUpdate();setInterval(checkUpdate,600000);
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)checkUpdate()});
 setInterval(()=>{if(U&&U.role==='user'&&(S.view==='home'||S.view==='sched')&&$('modal').classList.contains('hidden'))render()},30000);
 boot();
 </script>
