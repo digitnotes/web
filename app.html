@@ -40,6 +40,7 @@
 // ----- PUSH OBVESTILA (Firebase Cloud Messaging) -----
 // Za obvestila, ko je aplikacija ZAPRTA, izpolni spodnje podatke (Firebase konzola → Project settings).
 const FB_EXTRA={ /* apiKey:"...", projectId:"digitnotes-bdeb7", messagingSenderId:"...", appId:"..." */ };
+const AI_URL=""; // URL Cloud Function-a aiAssist (glej functions/index.js)
 const VAPID_KEY=""; // Project settings → Cloud Messaging → Web Push certificates → Key pair
 firebase.initializeApp({databaseURL:"https://digitnotes-bdeb7-default-rtdb.europe-west1.firebasedatabase.app",...FB_EXTRA});
 const db=firebase.database();
@@ -75,6 +76,7 @@ const P={
 const ic=(n,c='w-5 h-5')=>`<svg class="${c} shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${P[n]}</svg>`;
 P.bell='<path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 0 1-3.4 0"/>';
 P.send='<path d="M22 2 11 13M22 2l-7 20-4-9-9-4z"/>';
+P.spark='<path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9zM19 16l.8 2.2L22 19l-2.2.8L19 22l-.8-2.2L16 19l2.2-.8z"/>';
 const logo=`<img src="logo_zvezki.png" alt="DigitNotes" class="h-10 w-auto object-contain">`;
 
 // ================= POMOČNIKI =================
@@ -153,7 +155,7 @@ async function login(){
   else{
     try{
       const id=(await db.ref('idx/'+u.toLowerCase()).once('value')).val();
-      if(id){const pr=(await db.ref(`u/${id}/profile`).once('value')).val();if(pr&&pr.password===p)sess={role:'user',id}}
+      if(id){const pr=(await db.ref(`u/${id}/profile`).once('value')).val();if(pr&&(pr.ph?pr.ph===await sha(id,p):pr.password===p))sess={role:'user',id}}
     }catch(e){return fail('Napaka povezave s strežnikom.')}
   }
   if(!sess)return fail('Napačno uporabniško ime ali geslo.');
@@ -257,6 +259,101 @@ function delSent(id){
   },'Umakni');
 }
 
+// ================= GESLO, OPOMNIKI, AI =================
+async function sha(uid,p){try{const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode('dn:'+uid+':'+p));return [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('')}catch(e){return null}}
+async function passUpd(p){const h=await sha(U.id,p);return h?{ph:h,password:null,pwSet:true}:{password:p,ph:null,pwSet:true}}
+function pwForce(){
+  modal(`<h3 class="text-lg font-bold flex items-center gap-2 mb-2">${ic('lock')} Zamenjaj geslo</h3><p class="text-sm text-slate-600 mb-4">Prijavljaš se prvič (ali ti je administrator ponastavil geslo), zato moraš izbrati svoje novo geslo.</p>
+  <div class="space-y-3"><div><label class="lbl">Novo geslo (vsaj 6 znakov)</label><input id="fp_n" type="password" class="inp" autocomplete="new-password"></div><div><label class="lbl">Ponovi novo geslo</label><input id="fp_r" type="password" class="inp" autocomplete="new-password" onkeydown="if(event.key==='Enter')pwForceSave()"></div>
+  <div class="flex gap-2 justify-between pt-2"><button class="btn btn-s" onclick="logout();closeModal()">${ic('out','w-4 h-4')} Odjava</button><button class="btn btn-p" onclick="pwForceSave()">${ic('check','w-4 h-4')} Shrani geslo</button></div></div>`);
+}
+async function pwForceSave(){
+  const a=$('fp_n').value,b=$('fp_r').value;
+  if(a.length<6)return toast('Geslo mora imeti vsaj 6 znakov.',true);
+  if(a!==b)return toast('Gesli se ne ujemata.',true);
+  if(a===D.profile.password)return toast('Novo geslo mora biti drugačno od začasnega.',true);
+  const up=await passUpd(a);up.mustChange=null;
+  await db.ref(`u/${U.id}/profile`).update(up);closeModal();toast('Geslo zamenjano.');
+}
+// ---- opomniki po uri + vikend obvestilo ----
+let WKD=null;
+function sysNotify(tag,title,body){
+  if(document.hidden&&notifOK()&&Notification.permission==='granted')navigator.serviceWorker.ready.then(r=>r.showNotification(title,{body,icon:'icon_zvezki.png',badge:'icon_zvezki.png',tag,data:{url:'app.html'}})).catch(()=>{});
+  else if(!document.hidden)toast(title+': '+body);
+}
+function autoTick(){
+  if(!U||U.role!=='user'||!D.profile||D.profile.mustChange)return;
+  const now=new Date(),date=iso(now),nm=now.getHours()*60+now.getMinutes(),wd=(now.getDay()+6)%7;
+  if(wd>4||D.off?.[date])return;
+  const hs=[];for(let h=1;h<=9;h++){const s=slot(date,h);if(s&&!s.malica)hs.push(h)}
+  if(!hs.length)return;
+  if(D.settings?.remind){
+    for(const h of hs){
+      const e=toMin(tm(h)[1]),key=`rem_${date}_${h}`;
+      if(nm>=e&&nm<e+10&&localStorage.getItem('dn_rem')!==key){
+        localStorage.setItem('dn_rem',key);
+        const nx=[1,2,3,4,5,6,7,8,9].filter(x=>x>h&&slot(date,x))[0],s2=nx&&slot(date,nx);
+        const nt=!s2?'To je bila zadnja ura današnjega dne.':s2.malica?'Sledi malica.':`Sledi ${nbOf(s2.nid)?.name||'naslednja ura'}.`;
+        sysNotify(key,'Opomnik: konec ure',`Ura ${nbOf(slot(date,h).nid)?.name||''} se je zaključila. ${nt} Ne pozabi naložiti fotografij zapiskov!`);
+      }
+    }
+  }
+  if(wd===4&&WKD!==date){
+    const last=hs[hs.length-1],e=toMin(tm(last)[1]);
+    if(nm>=e&&nm<e+180){
+      WKD=date;
+      const mon=new Date(now);mon.setDate(now.getDate()-4);let n=0;
+      for(let i=0;i<5;i++){const x=new Date(mon);x.setDate(mon.getDate()+i);const k=iso(x);if(D.off?.[k])continue;for(let h=1;h<=9;h++){const s=slot(k,h);if(s&&!s.malica&&!D.ls?.[k+'_'+h]?.saved)n++}}
+      db.ref(`inbox/${U.id}/wk_${date}`).transaction(c=>c||{title:'Lep vikend!',text:`Tvoja zadnja ura v tem tednu se je zaključila. Preden začneš vikend, preveri, ali imaš vpisane vse ure za celoten teden. ${n?`Še ${n} ur ni shranjenih.`:'Vse ure so shranjene – odlično!'}`,t:Date.now(),read:false});
+    }
+  }
+}
+setInterval(autoTick,30000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)autoTick()});
+function remindCard(){
+  const on=!!D.settings?.remind;
+  return`<div class="card p-5 max-w-md mt-6"><h3 class="font-bold flex items-center gap-2 mb-2">${ic('bell')} Opomna sporočila</h3><label class="flex items-start gap-2 text-sm cursor-pointer"><input type="checkbox" class="w-4 h-4 mt-0.5 accent-emerald-600" ${on?'checked':''} onchange="remindSet(this.checked)"><span>Po koncu vsake ure me opomni, naj naložim fotografije zapiskov.</span></label><p class="text-xs text-slate-500 mt-2">Opomniki delujejo samo, če so vklopljeni, in se ne shranjujejo med obvestila. Za prikaz na telefonu mora biti aplikacija nameščena in obvestila dovoljena.</p></div>`;
+}
+function remindSet(v){db.ref(`u/${U.id}/settings/remind`).set(v);if(v&&notifOK()&&Notification.permission==='default')enableNotif()}
+// ---- AI pomočnik (demo) ----
+let AIU=0;const ymNow=()=>new Date().toISOString().slice(0,7);
+function aiOpen(){
+  if(!D.profile?.ai?.on)return;
+  modal(`<div class="flex justify-between items-center mb-4"><h3 class="text-lg font-bold flex items-center gap-2">${ic('spark')} AI pomočnik <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-amber-100 text-amber-700">DEMO</span></h3><button class="btn btn-s !p-2" onclick="closeModal()">${ic('x')}</button></div>
+  <p class="text-sm text-slate-500 mb-3">Iz zapiskov v tem zvezku pripravi povzetek ali kartice za učenje.</p>
+  <div class="space-y-3"><div class="flex gap-4 text-sm"><label class="flex items-center gap-2 cursor-pointer"><input type="radio" name="ai_m" value="sum" checked class="accent-emerald-600"> Povzetek</label><label class="flex items-center gap-2 cursor-pointer"><input type="radio" name="ai_m" value="cards" class="accent-emerald-600"> Flashcards</label></div>
+  <div><label class="lbl">Število zadnjih fotografij (0–8)</label><input id="ai_n" type="number" min="0" max="8" value="4" class="inp !w-28"></div>
+  <p id="ai_use" class="text-xs text-slate-500"></p><button id="ai_go" class="btn btn-p w-full" onclick="aiRun()">${ic('spark','w-4 h-4')} Ustvari</button><div id="ai_out"></div></div>`,true);
+  db.ref(`aiuse/${U.id}/${ymNow()}`).once('value').then(s=>{AIU=s.val()||0;aiUse()});
+}
+function aiUse(){const e=$('ai_use');if(e)e.textContent=`Uporaba ta mesec: ${AIU} / ${D.profile.ai.limit||0}`}
+async function aiRun(){
+  const out=$('ai_out'),mode=document.querySelector('input[name=ai_m]:checked').value,ai=D.profile.ai,bad=m=>out.innerHTML=`<div class="p-3 rounded-xl bg-red-50 text-red-700 text-sm">${esc(m)}</div>`;
+  if(!AI_URL)return out.innerHTML='<div class="p-3 rounded-xl bg-amber-50 text-amber-800 text-sm">AI strežnik še ni povezan (AI_URL v kodi je prazen).</div>';
+  if(AIU>=(ai.limit||0))return bad('Mesečna omejitev uporabe AI je dosežena.');
+  const c=nbCtx(),n=Math.min(8,Math.max(0,+$('ai_n').value||0));
+  const texts=Object.entries(D.ls||{}).filter(([k,l])=>l.nid===S.nb&&l.notes).sort().slice(-20).map(([k,l])=>k.split('_')[0]+': '+l.notes);
+  const ph=n?sortedPhotos(c).slice(-n):[];
+  if(!texts.length&&!ph.length)return toast('V tem zvezku ni zapiskov za obdelavo.',true);
+  $('ai_go').disabled=true;out.innerHTML='<p class="text-sm text-slate-500">Pripravljam… (lahko traja do pol minute)</p>';
+  try{
+    const images=[];for(const p of ph){const d=await getPhoto(c.uid,p.id);if(d)images.push(d)}
+    const r=await fetch(AI_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({uid:U.id,secret:D.profile.ph||D.profile.password,mode,subject:c.nb.name,texts,images})});
+    const j=await r.json();if(!r.ok)throw new Error(j.error||'Napaka strežnika');
+    AIU++;aiUse();out.innerHTML=aiRender(mode,j.text);
+  }catch(e){bad(e.message)}
+  if($('ai_go'))$('ai_go').disabled=false;
+}
+function aiRender(mode,t){
+  if(mode==='cards'){
+    let a=[];try{a=JSON.parse(t.slice(t.indexOf('['),t.lastIndexOf(']')+1))}catch(e){}
+    if(!a.length)return'<div class="p-3 rounded-xl bg-red-50 text-red-700 text-sm">Kartic ni bilo mogoče prebrati. Poskusi znova.</div>';
+    return`<p class="text-xs text-slate-500 mb-2">Klikni kartico za odgovor.</p><div class="grid sm:grid-cols-2 gap-2">${a.map(x=>`<button class="text-left p-4 rounded-xl border-2 border-emerald-200 bg-emerald-50 hover:shadow transition" onclick="this.querySelector('.fa').classList.toggle('hidden')"><b class="block">${esc(x.q)}</b><span class="fa hidden block mt-2 pt-2 border-t border-emerald-200 text-sm text-slate-700">${esc(x.a)}</span></button>`).join('')}</div>`;
+  }
+  return`<div class="p-4 rounded-xl bg-slate-50 border border-slate-200 whitespace-pre-wrap text-sm leading-relaxed">${esc(t)}</div>`;
+}
+function aiUsageFetch(){if(!S.au)return;db.ref(`aiuse/${S.au}/${ymNow()}`).once('value').then(s=>{const e=$('aiu');if(e)e.textContent=s.val()||0})}
+function setAi(){const on=$('ai_on').checked,l=Math.max(0,parseInt($('ai_l').value)||0);db.ref(`u/${S.au}/profile/ai`).set({on,limit:l}).then(()=>toast('Nastavitve AI shranjene.'))}
+
 const NAV=[['home','Domov','home'],['sched','Urnik','cal'],['nbs','Zvezki','book'],['set','Nastavitve','gear']];
 function shell(inner){
   const items=U.role==='admin'?[['admin','Uporabniki','users']]:NAV;
@@ -277,6 +374,7 @@ function render(){
   if(U.role==='admin')h=S.view==='adminu'?vAdminUser():vAdmin();
   else h={home:vHome,sched:vSched,nbs:vNbs,nb:vNb,set:vSet,shared:vShared}[S.view]();
   $('app').innerHTML=shell(h);hydrate();tick();
+  if(U.role==='user'&&D.profile?.mustChange&&!$('fp_n'))pwForce();
 }
 function tick(){const c=$('clock');if(c)c.textContent=new Date().toLocaleTimeString('sl-SI',{hour:'2-digit',minute:'2-digit',second:'2-digit'})}
 setInterval(tick,1000);
@@ -429,7 +527,7 @@ function nbHtml(c){
   const ph=sortedPhotos(c);
   return`<button class="btn btn-s mb-4" onclick="go('${c.owner?'nbs':'home'}')">${ic('l')} Nazaj</button>
   <div class="flex flex-wrap items-center gap-4 mb-5"><span class="text-5xl">${esc(c.nb.emoji||'')}</span><div class="flex-1"><h1 class="text-2xl font-bold">${esc(c.nb.name)}</h1><p class="text-sm text-slate-500">${ph.length} fotografij · avtor: ${esc(c.author||'')}</p></div>
-   <div class="flex flex-wrap gap-2"><button class="btn btn-p" onclick="makePdf()">${ic('pdf')} PDF</button>${c.owner?`<button class="btn btn-s" onclick="shareNb()">${ic('share')} Deli</button><label class="btn btn-s cursor-pointer">${ic('plus')} Fotografije<input type="file" accept="image/*" multiple class="hidden" onchange="nbUpload(this)"></label>`:''}</div></div>
+   <div class="flex flex-wrap gap-2"><button class="btn btn-p" onclick="makePdf()">${ic('pdf')} PDF</button>${c.owner&&D.profile?.ai?.on?`<button class="btn btn-s" onclick="aiOpen()">${ic('spark')} AI</button>`:''}${c.owner?`<button class="btn btn-s" onclick="shareNb()">${ic('share')} Deli</button><label class="btn btn-s cursor-pointer">${ic('plus')} Fotografije<input type="file" accept="image/*" multiple class="hidden" onchange="nbUpload(this)"></label>`:''}</div></div>
   ${c.grades.length?`<div class="card p-4 mb-5"><h3 class="font-bold flex items-center gap-2 mb-2 text-orange-600">${ic('grade')} Ocene</h3><div class="flex flex-wrap gap-2">${c.grades.map(g=>`<span class="px-3 py-1.5 rounded-xl bg-orange-50 border border-orange-200 text-sm"><b>${esc(g.g)}</b> <span class="text-slate-500">· ${esc(g.t||'')} · ${g.d.split('-').reverse().join('.')}</span></span>`).join('')}</div></div>`:''}
   <h3 class="font-bold mb-2">Fotografije</h3>
   ${ph.length?`<div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">${ph.map((p,i)=>`<div class="group" ${c.owner?`oncontextmenu="showCtx(event,'${p.id}');return false" ontouchstart="lp(event,'${p.id}')" ontouchend="lpx()" ontouchmove="lpx()"`:''} onclick="openViewer(${i})"><img data-pid="${p.id}" data-uid="${c.uid}" class="aspect-[3/4] w-full object-cover rounded-xl border bg-slate-100 cursor-pointer group-hover:shadow-lg transition"><p class="text-[11px] text-slate-500 mt-1 truncate">${p.name}</p></div>`).join('')}</div>`:`<div class="card p-8 text-center text-slate-500">Zvezek je prazen.</div>`}
@@ -600,7 +698,7 @@ function setAc(){
   return`<h2 class="font-bold text-lg mb-3">Nastavitve računa</h2><div class="card p-5 space-y-4 max-w-md">
    <div><label class="lbl">Uporabniško ime</label><input id="ac_u" class="inp" value="${esc(p.username)}"></div>
    <div><label class="lbl">Novo geslo</label><input id="ac_p" type="password" class="inp" placeholder="Pusti prazno, če ga ne spreminjaš"></div>
-   <button class="btn btn-p" onclick="acSave()">Shrani spremembe</button></div>`;
+   <button class="btn btn-p" onclick="acSave()">Shrani spremembe</button></div>${remindCard()}`;
 }
 async function acSave(){
   const u=$('ac_u').value.trim(),p=$('ac_p').value,old=D.profile.username;
@@ -610,7 +708,7 @@ async function acSave(){
     if(ex||u.toLowerCase()==='admin')return toast('To uporabniško ime je zasedeno.',true);
     await db.ref('idx/'+old.toLowerCase()).remove();await db.ref('idx/'+u.toLowerCase()).set(U.id);
   }
-  const up={username:u};if(p){if(p.length<4)return toast('Geslo je prekratko.',true);up.password=p}
+  const up={username:u};if(p){if(p.length<4)return toast('Geslo je prekratko.',true);Object.assign(up,await passUpd(p));up.mustChange=null}
   await db.ref(`u/${U.id}/profile`).update(up);$('ac_p').value='';toast('Račun posodobljen.');
 }
 
@@ -626,19 +724,21 @@ function userForm(id){
    <div><label class="lbl">Ime in priimek</label><input id="uf_n" class="inp" value="${esc(p.name)}"></div>
    <div><label class="lbl">E-poštni naslov</label><input id="uf_e" type="email" class="inp" value="${esc(p.email)}"></div>
    <div><label class="lbl">Uporabniško ime</label><input id="uf_u" class="inp" value="${esc(p.username)}"></div>
-   <div><label class="lbl">Geslo</label><input id="uf_p" class="inp" value="${esc(p.password)}"></div>
+   <div><label class="lbl">Geslo</label><input id="uf_p" class="inp" value="${p.pwSet?'':esc(p.password)}" placeholder="${p.pwSet?'Uporabnik je geslo zamenjal – vpiši novo, če ga želiš ponastaviti':''}"><p class="text-xs text-slate-500 mt-1">${p.pwSet?'Obstoječega gesla ne vidiš. Novo geslo bo moral uporabnik ob prvi prijavi zamenjati.':'Uporabnik bo moral geslo ob prvi prijavi zamenjati.'}</p></div>
    <div class="flex gap-2 justify-end pt-2"><button class="btn btn-s" onclick="closeModal()">Prekliči</button><button class="btn btn-p" onclick="userSave('${id||''}')">Shrani</button></div></div>`);
 }
 async function userSave(id){
   const v=k=>$(k).value.trim(),name=v('uf_n'),email=v('uf_e'),un=v('uf_u'),pw=$('uf_p').value;
-  if(!name||!email||!un||!pw)return toast('Izpolni vsa polja.',true);
+  const locked=!!(id&&A[id].profile.pwSet);
+  if(!name||!email||!un||(!pw&&!locked))return toast('Izpolni vsa polja.',true);
   if(!/^\S+@\S+\.\S+$/.test(email))return toast('Neveljaven e-poštni naslov.',true);
   const k=un.toLowerCase();const ex=(await db.ref('idx/'+k).once('value')).val();
   if((ex&&ex!==id)||k==='admin')return toast('Uporabniško ime je zasedeno.',true);
   const nid=id||uid8();
   if(id&&A[id].profile.username.toLowerCase()!==k)await db.ref('idx/'+A[id].profile.username.toLowerCase()).remove();
   await db.ref('idx/'+k).set(nid);
-  await db.ref(`u/${nid}/profile`).update({name,email,username:un,password:pw});
+  const upd={name,email,username:un};if(pw){upd.password=pw;upd.ph=null;upd.pwSet=null;upd.mustChange=true}
+  await db.ref(`u/${nid}/profile`).update(upd);
   closeModal();toast('Uporabnik shranjen.');
 }
 function delUser(id){
@@ -650,9 +750,10 @@ function delUser(id){
 function vAdminUser(){
   const u=A[S.au];if(!u?.profile){S.view='admin';return vAdmin()}
   const p=u.profile,ids=Object.keys(u.nb||{});
-  return`<button class="btn btn-s mb-4" onclick="go('admin')">${ic('l')} Nazaj</button>
+  setTimeout(aiUsageFetch,0);return`<button class="btn btn-s mb-4" onclick="go('admin')">${ic('l')} Nazaj</button>
   <h1 class="text-2xl font-bold">${esc(p.name)}</h1><p class="text-sm text-slate-500 mb-4">@${esc(p.username)} · ${esc(p.email)}</p>
   <div class="card p-4 mb-5 flex flex-wrap items-end gap-3"><div><label class="lbl">Največje število zvezkov</label><input id="mx" type="number" min="0" class="inp !w-40" placeholder="brez omejitve" value="${p.max??''}"></div><button class="btn btn-p" onclick="setMax()">Shrani omejitev</button></div>
+  <div class="card p-4 mb-5"><h3 class="font-bold flex items-center gap-2 mb-3">${ic('spark')} AI pomočnik (demo)</h3><div class="flex flex-wrap items-end gap-3"><label class="flex items-center gap-2 text-sm cursor-pointer pb-3"><input id="ai_on" type="checkbox" class="w-4 h-4 accent-emerald-600" ${p.ai?.on?'checked':''}> Omogočeno</label><div><label class="lbl">Uporab na mesec</label><input id="ai_l" type="number" min="0" class="inp !w-32" value="${p.ai?.limit??10}"></div><button class="btn btn-p" onclick="setAi()">Shrani</button></div><p class="text-xs text-slate-500 mt-2">Porabljeno ta mesec: <b id="aiu">…</b></p></div>
   <div class="flex justify-between items-center mb-3"><h2 class="font-bold text-lg">Zvezki (${ids.length})</h2><button class="btn btn-p" onclick="adminAddNb()">${ic('plus')} Dodaj zvezek</button></div>
   <div class="space-y-2">${ids.map(id=>{const n=u.nb[id];return`<div class="card p-4 flex items-center gap-3"><span class="text-3xl">${esc(n.emoji||'')}</span><div class="flex-1"><b>${esc(n.name)}</b><p class="text-xs text-slate-500 flex items-center gap-1">${ic('img','w-3.5 h-3.5')} ${pcount(id,u.pm)} naloženih slik</p></div><button class="btn btn-s !p-2" onclick="nbForm('${id}','${S.au}')">${ic('edit','w-4 h-4')}</button><button class="btn btn-d !p-2" onclick="delNb('${id}','${S.au}')">${ic('trash','w-4 h-4')}</button></div>`}).join('')||'<div class="card p-6 text-center text-slate-500">Uporabnik nima zvezkov.</div>'}</div>`;
 }
