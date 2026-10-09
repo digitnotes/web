@@ -40,9 +40,9 @@
 const APP_VER='v2026.10.09';
 // ----- PUSH OBVESTILA (Firebase Cloud Messaging) -----
 // Za obvestila, ko je aplikacija ZAPRTA, izpolni spodnje podatke (Firebase konzola → Project settings).
-const FB_EXTRA={ /* apiKey:"...", projectId:"digitnotes-bdeb7", messagingSenderId:"...", appId:"..." */ };
+const FB_EXTRA={ apiKey:"AIzaSyCTIn1jN09GqzelNaTf5-SjERWJ8LGzq6U", projectId:"digitnotes-bdeb7", messagingSenderId:"762195001129", appId:"1:762195001129:web:fb2dbe296092e25edb4138" };
 const AI_URL=""; // URL Cloud Function-a aiAssist (glej functions/index.js)
-const VAPID_KEY=""; // Project settings → Cloud Messaging → Web Push certificates → Key pair
+const VAPID_KEY="BOqT2Xs9f2xOKA99Q0LgjgYUXfI_Bk2qp_4YifxNazfBLoq4Rhr_OOB1Z7uHHg4vnTBqofyE7VN0s7SP0KfVlVM"; // Project settings → Cloud Messaging → Web Push certificates → Key pair
 firebase.initializeApp({databaseURL:"https://digitnotes-bdeb7-default-rtdb.europe-west1.firebasedatabase.app",...FB_EXTRA});
 const db=firebase.database();
 
