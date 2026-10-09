@@ -1,0 +1,21 @@
+<!DOCTYPE html><html lang="sl"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Generator ključev</title>
+<style>body{font-family:system-ui,sans-serif;background:#f8fafc;color:#1e293b;max-width:680px;margin:40px auto;padding:0 16px}
+button{background:#059669;color:#fff;border:0;border-radius:12px;padding:12px 20px;font-weight:700;font-size:16px;cursor:pointer}
+textarea{width:100%;box-sizing:border-box;padding:10px;border-radius:10px;border:1px solid #cbd5e1;font-family:monospace;font-size:13px;margin-bottom:8px}
+.box{background:#fff;border:1px solid #e2e8f0;border-radius:16px;padding:20px;margin-top:16px}</style></head><body>
+<h1>DigitNotes – generator ključev</h1>
+<p>Klikni gumb. Ključa nastaneta samo v tvojem brskalniku in se nikamor ne pošljeta. Naredi ju samo enkrat in ju shrani.</p>
+<button onclick="gen()">Ustvari ključa</button>
+<div class="box" id="out" style="display:none">
+<b>1) JAVNI ključ</b> (gre v app.html → VAPID_PUBLIC in v Cloudflare → VAPID_PUBLIC)
+<textarea id="pub" rows="3" readonly onclick="this.select()"></textarea>
+<b>2) ZASEBNI ključ</b> (gre SAMO v Cloudflare → VAPID_PRIVATE, nikamor drugam!)
+<textarea id="priv" rows="2" readonly onclick="this.select()"></textarea></div>
+<script>
+const b64u=b=>btoa(String.fromCharCode(...new Uint8Array(b))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+async function gen(){
+ const k=await crypto.subtle.generateKey({name:'ECDSA',namedCurve:'P-256'},true,['sign']);
+ const pub=await crypto.subtle.exportKey('raw',k.publicKey),jwk=await crypto.subtle.exportKey('jwk',k.privateKey);
+ document.getElementById('pub').value=b64u(pub);document.getElementById('priv').value=jwk.d;document.getElementById('out').style.display='block';
+}
+</script></body></html>
