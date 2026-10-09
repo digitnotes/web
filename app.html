@@ -14,7 +14,6 @@
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-messaging-compat.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
   body{-webkit-tap-highlight-color:transparent}
@@ -37,12 +36,13 @@
 
 <script>
 // ================= FIREBASE =================
-const APP_VER='v2026.10.09b';
+const APP_VER='v2026.10.09c';
 // ----- PUSH OBVESTILA (Firebase Cloud Messaging) -----
 // Za obvestila, ko je aplikacija ZAPRTA, izpolni spodnje podatke (Firebase konzola → Project settings).
-const FB_EXTRA={ /* apiKey:"AIzaSyCTIn1jN09GqzelNaTf5-SjERWJ8LGzq6U", projectId:"digitnotes-bdeb7", messagingSenderId:"762195001129", appId:"1:762195001129:web:fb2dbe296092e25edb4138" */ };
+const FB_EXTRA={ /* apiKey:"...", projectId:"digitnotes-bdeb7", messagingSenderId:"...", appId:"..." */ };
 const AI_URL=""; // URL Cloud Function-a aiAssist (glej functions/index.js)
-const VAPID_KEY="BOqT2Xs9f2xOKA99Q0LgjgYUXfI_Bk2qp_4YifxNazfBLoq4Rhr_OOB1Z7uHHg4vnTBqofyE7VN0s7SP0KfVlVM"; // Project settings → Cloud Messaging → Web Push certificates → Key pair
+const PUSH_URL="digitnotes-push.digitnotes-info.workers.dev";      // naslov Cloudflare Workerja, npr. https://digitnotes-push.TVOJE-IME.workers.dev
+const VAPID_PUBLIC="BMmT_5TH8mYiX5q1TPSD3CVgox5TSS_8iZvQ-aeC-fRfmme9LHWo_oLcJ9mrFpj4YuJ0d_R-q8yVcslbdERGL-Q";  // javni ključ iz vapid_generator.html
 firebase.initializeApp({databaseURL:"https://digitnotes-bdeb7-default-rtdb.europe-west1.firebasedatabase.app",...FB_EXTRA});
 const db=firebase.database();
 
@@ -118,7 +118,7 @@ function start(sess){
   else{ref=db.ref('u/'+U.id);ref.on('value',s=>{D=s.val()||{};if(!D.profile){logout();return}render()});ibRef=db.ref('inbox/'+U.id);ibRef.on('value',s=>ibUpdate(s.val()||{}));pushSetup();S.view='home'}
   if(SHARE){openShared()}
 }
-function logout(){try{const k=localStorage.getItem('dn_tok');if(k&&U&&U.role==='user')db.ref(`tokens/${U.id}/${k}`).remove();localStorage.removeItem('dn_tok')}catch(e){}
+function logout(){try{const k=localStorage.getItem('dn_tok');if(k&&U&&U.role==='user')db.ref(`push/${U.id}/${k}`).remove();localStorage.removeItem('dn_tok');caches.open('dn-meta').then(c=>c.keys().then(ks=>ks.forEach(r=>c.delete(r))))}catch(e){}
   localStorage.removeItem('dn_s');sessionStorage.removeItem('dn_s');if(ref)ref.off();if(ibRef){ibRef.off();ibRef=null}if(sentRef){sentRef.off();sentRef=null}IBOPEN=false;U=null;D={};A={};SH=null;renderLogin()}
 
 // ================= PRIJAVA =================
@@ -180,7 +180,7 @@ function localNotif(id,m){
   playChime();
   showSys(id,m.title,m.text);
 }
-const pushOn=()=>!!(VAPID_KEY&&FB_EXTRA.messagingSenderId);
+const pushOn=()=>!!(PUSH_URL&&VAPID_PUBLIC);
 function showSys(tag,title,body){
   if(!notifOK()||Notification.permission!=='granted')return;
   navigator.serviceWorker.ready.then(r=>r.showNotification(title,{body,icon:'icon_zvezki.png',badge:'icon_zvezki.png',tag,renotify:false,vibrate:[200,100,200,100,300],data:{url:'app.html'}})).catch(()=>{});
@@ -195,15 +195,21 @@ function playChime(){
   try{navigator.vibrate&&navigator.vibrate([150,80,150])}catch(e){}
 }
 let PUSHERR='';
+const b64u2buf=x=>{const p='='.repeat((4-x.length%4)%4),b=atob((x+p).replace(/-/g,'+').replace(/_/g,'/'));return Uint8Array.from(b,c=>c.charCodeAt(0))};
 async function pushSetup(){
   if(!notifOK()||!U||U.role!=='user'||Notification.permission!=='granted')return;
-  if(!VAPID_KEY||!FB_EXTRA.messagingSenderId){PUSHERR='V app.html manjkata FB_EXTRA in/ali VAPID_KEY.';return}
-  if(!firebase.messaging||!(firebase.messaging.isSupported&&firebase.messaging.isSupported())){PUSHERR='Ta brskalnik ne podpira push obvestil.';return}
+  if(!pushOn()){PUSHERR='V app.html manjkata PUSH_URL in/ali VAPID_PUBLIC.';return}
+  if(!('PushManager' in window)){PUSHERR='Ta naprava ne podpira push obvestil.';return}
   try{
     const reg=await navigator.serviceWorker.ready;
-    const tok=await firebase.messaging().getToken({vapidKey:VAPID_KEY,serviceWorkerRegistration:reg});
-    if(tok){const k=tok.slice(-24);await db.ref(`tokens/${U.id}/${k}`).set(tok);localStorage.setItem('dn_tok',k);PUSHERR=''}
-  }catch(e){PUSHERR=((e.code||'')+' '+(e.message||'')).trim();console.warn('push',e)}
+    let sub=await reg.pushManager.getSubscription();
+    if(!sub)sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:b64u2buf(VAPID_PUBLIC)});
+    const k=(await sha(U.id,sub.endpoint)).slice(0,24);
+    await db.ref(`push/${U.id}/${k}`).set(JSON.stringify(sub.toJSON()));
+    localStorage.setItem('dn_tok',k);
+    const c=await caches.open('dn-meta');await c.put(reg.scope+'__uid',new Response(U.id));
+    PUSHERR='';
+  }catch(e){PUSHERR=((e.name||'')+' '+(e.message||'')).trim();console.warn('push',e)}
   if(S.view==='set')render();
 }
 async function enableNotif(){
@@ -264,7 +270,7 @@ async function sendMsg(){
   const mid=db.ref().push().key,now=Date.now(),up={};
   to.forEach(u=>up[`inbox/${u}/${mid}`]={title:t,text:x,t:now,read:false});
   up[`sent/${mid}`]={title:t,text:x,t:now,all:mode==='all',to};
-  try{await db.ref().update(up);closeModal();toast(`Sporočilo poslano (${to.length}).`)}catch(e){toast('Pošiljanje ni uspelo.',true)}
+  try{await db.ref().update(up);if(PUSH_URL)fetch(PUSH_URL.replace(/\/$/,'')+'/run',{mode:'no-cors'}).catch(()=>{});closeModal();toast(`Sporočilo poslano (${to.length}).`)}catch(e){toast('Pošiljanje ni uspelo.',true)}
 }
 function sentHtml(){
   const ids=Object.keys(SENT).sort((a,b)=>SENT[b].t-SENT[a].t);
@@ -346,7 +352,7 @@ function diagHtml(){
   ${row(isApp()||!/iPhone|iPad|iPod/.test(navigator.userAgent),isApp()?'Aplikacija je nameščena':'Aplikacija ni nameščena (na iPhonu je namestitev obvezna)')}
   ${row(perm==='granted','Dovoljenje za obvestila: '+perm)}
   ${row(!!(navigator.serviceWorker&&navigator.serviceWorker.controller),'Service worker je aktiven')}
-  ${row(pushOn(),'Push strežnik nastavljen v kodi (FB_EXTRA, VAPID_KEY)')}
+  ${row(pushOn(),'Push strežnik nastavljen v kodi (PUSH_URL, VAPID_PUBLIC)')}
   ${row(!!localStorage.getItem('dn_tok'),'Naprava je prijavljena za push (obvestila ob zaprti aplikaciji)')}
   ${PUSHERR?`<p class="text-xs text-red-600 break-words">Napaka: ${esc(PUSHERR)}</p>`:''}</div>`;
 }
