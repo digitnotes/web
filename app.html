@@ -36,13 +36,13 @@
 
 <script>
 // ================= FIREBASE =================
-const APP_VER='v2026.10.09c';
+const APP_VER='v2026.10.09d';
 // ----- PUSH OBVESTILA (Firebase Cloud Messaging) -----
 // Za obvestila, ko je aplikacija ZAPRTA, izpolni spodnje podatke (Firebase konzola → Project settings).
 const FB_EXTRA={ /* apiKey:"...", projectId:"digitnotes-bdeb7", messagingSenderId:"...", appId:"..." */ };
 const AI_URL=""; // URL Cloud Function-a aiAssist (glej functions/index.js)
-const PUSH_URL="digitnotes-push.digitnotes-info.workers.dev";      // naslov Cloudflare Workerja, npr. https://digitnotes-push.TVOJE-IME.workers.dev
-const VAPID_PUBLIC="BMmT_5TH8mYiX5q1TPSD3CVgox5TSS_8iZvQ-aeC-fRfmme9LHWo_oLcJ9mrFpj4YuJ0d_R-q8yVcslbdERGL-Q";  // javni ključ iz vapid_generator.html
+const PUSH_URL="";      // naslov Cloudflare Workerja, npr. https://digitnotes-push.TVOJE-IME.workers.dev
+const VAPID_PUBLIC="";  // javni ključ iz vapid_generator.html
 firebase.initializeApp({databaseURL:"https://digitnotes-bdeb7-default-rtdb.europe-west1.firebasedatabase.app",...FB_EXTRA});
 const db=firebase.database();
 
@@ -203,6 +203,7 @@ async function pushSetup(){
   try{
     const reg=await navigator.serviceWorker.ready;
     let sub=await reg.pushManager.getSubscription();
+    if(sub){const cur=new Uint8Array(sub.options.applicationServerKey||[]),want=b64u2buf(VAPID_PUBLIC);if(cur.length!==want.length||cur.some((v,i)=>v!==want[i])){await sub.unsubscribe();sub=null}}
     if(!sub)sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:b64u2buf(VAPID_PUBLIC)});
     const k=(await sha(U.id,sub.endpoint)).slice(0,24);
     await db.ref(`push/${U.id}/${k}`).set(JSON.stringify(sub.toJSON()));
