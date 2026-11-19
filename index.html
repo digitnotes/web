@@ -1,339 +1,761 @@
 <!DOCTYPE html>
 <html lang="sl">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>DigitNotes - Vsi šolski zapiski na enem mestu</title>
-  
-  <!-- Dodana ikona za brskalnik in Google (favicon) -->
-  <link rel="icon" type="image/png" href="logo_zvezki.png">
-  
-  <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Firebase SDK -->
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
-  <!-- EmailJS SDK -->
-  <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
-  <style>
-      /* Dodatne animacije za večjo interaktivnost */
-      @keyframes float {
-          0% { transform: translateY(0px); }
-          50% { transform: translateY(-5px); }
-          100% { transform: translateY(0px); }
-      }
-      .hover-float:hover {
-          animation: float 2s ease-in-out infinite;
-      }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DigitNotes 2.0 – prihaja kmalu | Vsi šolski zapiski na enem mestu</title>
+<meta name="description" content="DigitNotes 2.0 prihaja: urnik, digitalni zvezki, AI pomočnik za učenje, ocene in obvestila – vse na enem mestu.">
+<meta name="theme-color" content="#059669">
+<link rel="icon" type="image/png" href="favicon.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta property="og:title" content="DigitNotes 2.0 prihaja">
+<meta property="og:description" content="Pametnejši način do odličnih ocen. Aplikacija je trenutno v prenovi.">
+<meta property="og:image" content="Logo.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Instrument+Serif:ital@1&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#0b1f1a;--ink2:#334155;--mut:#64748b;--line:#e2e8f0;
+  --bg:#f5faf7;--card:#fff;
+  --g50:#ecfdf5;--g100:#d1fae5;--g200:#a7f3d0;--g400:#34d399;--g500:#10b981;--g600:#059669;--g700:#047857;--g800:#065f46;--g900:#064e3b;--teal:#0f766e;
+  --sun:#fde68a;--sun2:#f59e0b;--rose:#f43f5e;--orange:#f97316;--sky:#0ea5e9;--violet:#8b5cf6;
+  --r:22px;--sh:0 1px 2px rgba(15,23,42,.05),0 8px 30px -12px rgba(15,23,42,.18);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;scroll-padding-top:80px}
+body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:var(--bg);color:var(--ink);-webkit-font-smoothing:antialiased;overflow-x:hidden;line-height:1.55}
+img{max-width:100%;display:block}
+button{font:inherit;cursor:pointer;border:0;background:none;color:inherit}
+a{color:inherit;text-decoration:none}
+.serif{font-family:'Instrument Serif',serif;font-style:italic;font-weight:400;letter-spacing:-.01em}
+.wrap{max-width:1180px;margin:0 auto;padding:0 22px}
+.sec{padding:110px 0}
+.eyebrow{display:inline-flex;align-items:center;gap:8px;font-size:13px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--g700)}
+.eyebrow::before{content:"";width:22px;height:2px;background:var(--g500);border-radius:2px}
+h2.title{font-size:clamp(32px,4.4vw,52px);line-height:1.08;letter-spacing:-.03em;font-weight:800;margin:14px 0 16px}
+.lead{font-size:18px;color:var(--mut);max-width:600px}
+.btn{display:inline-flex;align-items:center;gap:10px;padding:15px 24px;border-radius:16px;font-weight:700;font-size:16px;transition:.25s}
+.btn-p{background:var(--ink);color:#fff;box-shadow:0 10px 30px -10px rgba(11,31,26,.6)}
+.btn-p:hover{transform:translateY(-2px);background:var(--g800)}
+.btn-g{background:#fff;border:1px solid var(--line);color:var(--ink)}
+.btn-g:hover{border-color:var(--g400);transform:translateY(-2px)}
+.btn-lock{background:#fff;border:1.5px dashed #cbd5e1;color:var(--mut)}
+.btn-lock:hover{border-color:var(--orange);color:var(--orange)}
+.ic{width:20px;height:20px;flex-shrink:0}
+
+/* ===== NAV ===== */
+nav.top{position:sticky;top:0;z-index:50;transition:.3s;border-bottom:1px solid transparent}
+nav.top.scrolled{background:rgba(245,250,247,.82);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-color:var(--line)}
+.navin{display:flex;align-items:center;justify-content:space-between;height:74px}
+.brand{display:flex;align-items:center;gap:11px;font-weight:800;font-size:20px;letter-spacing:-.02em}
+.brand img{width:40px;height:40px;border-radius:11px;transition:.4s}
+.brand:hover img{transform:rotate(-8deg) scale(1.06)}
+.brand .v{font-size:11px;font-weight:800;background:var(--ink);color:var(--sun);padding:3px 7px;border-radius:7px;letter-spacing:.04em}
+.navlinks{display:flex;gap:30px;font-weight:600;font-size:15px;color:var(--ink2)}
+.navlinks a{position:relative}
+.navlinks a::after{content:"";position:absolute;left:0;bottom:-5px;height:2px;width:0;background:var(--g500);transition:.25s;border-radius:2px}
+.navlinks a:hover::after{width:100%}
+.navlock{display:flex;align-items:center;gap:8px;padding:10px 16px;border-radius:13px;background:#fff;border:1px solid var(--line);font-weight:700;font-size:14px;color:var(--mut);transition:.2s}
+.navlock:hover{color:var(--orange);border-color:#fed7aa}
+@media(max-width:860px){.navlinks{display:none}}
+
+/* ===== HERO ===== */
+.hero{position:relative;padding:50px 0 90px;overflow:hidden}
+.blob{position:absolute;border-radius:50%;filter:blur(70px);opacity:.55;z-index:-1;animation:drift 18s ease-in-out infinite alternate}
+.b1{width:520px;height:520px;background:#a7f3d0;top:-160px;right:-120px}
+.b2{width:420px;height:420px;background:#fde68a;bottom:-140px;left:-140px;opacity:.35;animation-delay:-6s}
+.b3{width:300px;height:300px;background:#99f6e4;top:40%;left:40%;opacity:.3;animation-delay:-12s}
+@keyframes drift{to{transform:translate(40px,30px) scale(1.08)}}
+.grid-bg{position:absolute;inset:0;z-index:-1;background-image:linear-gradient(rgba(5,150,105,.06) 1px,transparent 1px),linear-gradient(90deg,rgba(5,150,105,.06) 1px,transparent 1px);background-size:44px 44px;mask-image:radial-gradient(ellipse at 50% 30%,#000 30%,transparent 75%);-webkit-mask-image:radial-gradient(ellipse at 50% 30%,#000 30%,transparent 75%)}
+.herogrid{display:grid;grid-template-columns:1.1fr .9fr;gap:40px;align-items:center}
+@media(max-width:960px){.herogrid{grid-template-columns:1fr;text-align:center}.herotext .lead{margin:0 auto}.herocta,.herometa{justify-content:center}}
+.pill{display:inline-flex;align-items:center;gap:10px;padding:7px 14px 7px 7px;border-radius:999px;background:#fff;border:1px solid var(--g200);font-weight:700;font-size:14px;box-shadow:var(--sh)}
+.pill b{background:linear-gradient(135deg,var(--g500),var(--teal));color:#fff;padding:4px 10px;border-radius:999px;font-size:12px;letter-spacing:.04em}
+.pill .dot{width:8px;height:8px;border-radius:50%;background:var(--orange);box-shadow:0 0 0 0 rgba(249,115,22,.6);animation:ping 1.8s infinite}
+@keyframes ping{70%{box-shadow:0 0 0 10px rgba(249,115,22,0)}100%{box-shadow:0 0 0 0 rgba(249,115,22,0)}}
+.hero h1{font-size:clamp(42px,6.4vw,82px);line-height:1;letter-spacing:-.045em;font-weight:800;margin:24px 0 22px}
+.hero h1 .serif{color:var(--g600);font-size:1.08em}
+.hero h1 .two{display:inline-block;background:linear-gradient(135deg,var(--g500),var(--teal));-webkit-background-clip:text;background-clip:text;color:transparent;position:relative}
+.herocta{display:flex;gap:12px;margin-top:32px;flex-wrap:wrap}
+.herometa{display:flex;gap:26px;margin-top:38px;flex-wrap:wrap}
+.herometa div{font-size:14px;color:var(--mut);font-weight:600}
+.herometa b{display:block;font-size:26px;color:var(--ink);letter-spacing:-.02em}
+
+/* ===== PHONE ===== */
+.phonewrap{position:relative;display:flex;justify-content:center;perspective:1400px}
+.phone{position:relative;width:310px;height:640px;border-radius:52px;background:#0b1512;padding:12px;box-shadow:0 0 0 2px #1f2d29,0 50px 100px -30px rgba(6,78,59,.55),inset 0 0 0 2px #2a3a35;transform-style:preserve-3d;transition:transform .2s ease-out}
+.phone::before{content:"";position:absolute;top:22px;left:50%;transform:translateX(-50%);width:96px;height:28px;background:#000;border-radius:20px;z-index:5}
+.screen{position:relative;width:100%;height:100%;border-radius:41px;overflow:hidden;background:#f8fafc;font-size:12px;color:var(--ink)}
+.sbar{display:flex;justify-content:space-between;align-items:center;padding:16px 26px 0;height:46px;font-weight:700;font-size:12px}
+.sbar i{display:inline-flex;gap:4px;align-items:center;font-style:normal}
+.ahead{display:flex;align-items:center;justify-content:space-between;padding:8px 16px 10px}
+.ahead .bl{display:flex;align-items:center;gap:7px;font-weight:800;color:var(--g700);font-size:14px}
+.ahead img{width:24px;height:24px;border-radius:7px}
+.bell{position:relative;width:30px;height:30px;border-radius:10px;display:grid;place-items:center;color:var(--mut)}
+.bell span{position:absolute;top:3px;right:3px;width:14px;height:14px;border-radius:50%;background:var(--rose);color:#fff;font-size:8px;font-weight:800;display:grid;place-items:center;border:2px solid #f8fafc}
+.abody{padding:0 14px;height:calc(100% - 46px - 48px - 62px);overflow:hidden;position:relative}
+.anav{position:absolute;bottom:0;left:0;right:0;height:62px;background:#fff;border-top:1px solid #eef2f7;display:flex;justify-content:space-around;align-items:flex-start;padding-top:9px}
+.anav div{display:flex;flex-direction:column;align-items:center;gap:2px;font-size:9px;font-weight:700;color:#94a3b8}
+.anav div.on{color:var(--g600)}
+.anav svg{width:19px;height:19px}
+
+/* mini UI */
+.m-card{background:#fff;border:1px solid #eef2f7;border-radius:16px;padding:11px;box-shadow:0 1px 2px rgba(0,0,0,.03)}
+.m-h{font-size:10px;color:var(--mut);font-weight:600}
+.m-t{font-size:17px;font-weight:800;letter-spacing:-.02em}
+.m-row{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:12px;border:1.5px solid;margin-bottom:6px;font-weight:700;font-size:11px}
+.m-row .n{width:14px;color:#94a3b8;font-weight:800;text-align:center}
+.m-row .em{font-size:16px}
+.m-row .sub{display:block;font-size:9px;color:var(--mut);font-weight:600}
+.m-row .st{margin-left:auto;font-size:13px}
+.ok{background:#ecfdf5;border-color:#a7f3d0}.red{background:#fff1f2;border-color:#fecdd3}.org{background:#fff7ed;border-color:#fed7aa}.open{background:#fff;border-color:#e2e8f0}.off{background:#f1f5f9;border-color:#e2e8f0;color:#94a3b8;text-decoration:line-through}
+.ringbox{display:flex;align-items:center;gap:12px}
+.ring{position:relative;width:62px;height:62px}
+.ring svg{transform:rotate(-90deg)}
+.ring .rt{position:absolute;inset:0;display:grid;place-items:center;font-weight:800;font-size:14px}
+.ring circle.fg{transition:stroke-dashoffset 1.6s cubic-bezier(.2,.8,.2,1)}
+.chips{display:flex;gap:6px;margin:9px 0}
+.chip{flex:1;border-radius:13px;padding:8px;font-weight:800;font-size:13px}
+.chip small{display:block;font-size:9px;font-weight:600;opacity:.8}
+.c-fire{background:linear-gradient(135deg,#fff7ed,#ffedd5);color:#9a3412}
+.c-next{background:linear-gradient(135deg,#ecfdf5,#d1fae5);color:var(--g800)}
+.secttl{font-weight:800;font-size:12px;margin:10px 0 7px;display:flex;align-items:center;justify-content:space-between}
+.secttl span{font-size:9px;color:var(--mut);font-weight:600}
+
+/* screens switching */
+.scr{position:absolute;inset:46px 0 0 0;opacity:0;transform:translateX(24px) scale(.98);transition:.45s cubic-bezier(.2,.8,.2,1);pointer-events:none}
+.scr.on{opacity:1;transform:none;pointer-events:auto}
+.scr .abody{height:calc(100% - 48px)}
+
+/* vpis */
+.opt{display:flex;align-items:center;gap:10px;width:100%;text-align:left;padding:11px;border-radius:15px;border:1.5px solid #e2e8f0;background:#fff;margin-bottom:7px;transition:.2s;font-weight:800;font-size:12px}
+.opt:hover{transform:translateX(3px)}
+.opt .oi{width:34px;height:34px;border-radius:11px;display:grid;place-items:center;font-size:17px;flex-shrink:0}
+.opt small{display:block;font-size:9.5px;color:var(--mut);font-weight:600}
+.opt.sel{border-color:var(--g500);background:var(--g50);box-shadow:0 0 0 3px var(--g100)}
+.cam{height:170px;border-radius:16px;background:linear-gradient(160deg,#1e293b,#0f172a);position:relative;overflow:hidden;display:grid;place-items:center;margin:6px 0 8px}
+.cam .page{width:62%;height:78%;background:#fffef7;border-radius:4px;transform:rotate(-4deg);box-shadow:0 10px 20px rgba(0,0,0,.4);background-image:repeating-linear-gradient(transparent 0 11px,#dbeafe 11px 12px);position:relative}
+.cam .page::after{content:"";position:absolute;inset:14px 12px;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 120'%3E%3Cg fill='none' stroke='%231e3a8a' stroke-width='1.6' stroke-linecap='round'%3E%3Cpath d='M2 8c6-4 10 4 16 0s10-3 15 1 9-2 14 0'/%3E%3Cpath d='M2 22c8-3 14 3 22-1s12 2 18 0 10-2 20 1'/%3E%3Cpath d='M2 36c5-2 9 3 14 0s9 1 13 0'/%3E%3Cpath d='M10 54h40M30 46v16'/%3E%3Cpath d='M2 76c7-3 12 3 19 0s11 2 17-1 12 2 19 0'/%3E%3Cpath d='M2 90c5-3 11 2 16 0s10 2 15-1'/%3E%3C/g%3E%3C/svg%3E") no-repeat top/contain}
+.cam .corner{position:absolute;width:22px;height:22px;border:3px solid var(--g400)}
+.cam .tl{top:16px;left:40px;border-right:0;border-bottom:0;border-radius:6px 0 0 0}.cam .tr{top:16px;right:40px;border-left:0;border-bottom:0;border-radius:0 6px 0 0}
+.cam .bl2{bottom:16px;left:40px;border-right:0;border-top:0;border-radius:0 0 0 6px}.cam .br{bottom:16px;right:40px;border-left:0;border-top:0;border-radius:0 0 6px 0}
+.shutter{width:46px;height:46px;border-radius:50%;border:4px solid #fff;background:var(--g500);margin:0 auto;display:block;box-shadow:0 0 0 2px var(--g500)}
+.mbtn{display:block;width:100%;padding:10px;border-radius:12px;font-weight:800;font-size:11.5px;text-align:center;margin-top:6px}
+.mbtn.p{background:var(--g600);color:#fff}.mbtn.s{background:#f1f5f9;color:var(--ink2)}
+.gradepick{display:flex;gap:5px;margin:8px 0}
+.gradepick span{flex:1;padding:9px 0;text-align:center;border-radius:10px;background:#f1f5f9;font-weight:800;font-size:14px}
+.gradepick span.on{background:var(--orange);color:#fff}
+.done{text-align:center;padding-top:40px}
+.done .big{width:70px;height:70px;border-radius:50%;background:var(--g500);color:#fff;display:grid;place-items:center;margin:0 auto 12px;font-size:32px;animation:pop .5s cubic-bezier(.2,1.6,.4,1)}
+@keyframes pop{from{transform:scale(0)}}
+
+/* zvezki */
+.nbgrid{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.nb{background:#fff;border:1px solid #eef2f7;border-radius:15px;padding:10px;font-weight:800;font-size:11.5px}
+.nb .e{font-size:22px;width:38px;height:38px;border-radius:12px;display:grid;place-items:center;margin-bottom:6px}
+.nb small{display:block;color:var(--mut);font-weight:600;font-size:9px}
+.thumbs{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.thumb{aspect-ratio:3/4;border-radius:9px;background:#fffef7;border:1px solid #e5e7eb;overflow:hidden;position:relative;background-image:repeating-linear-gradient(transparent 0 7px,#e0e7ff 7px 8px)}
+.thumb svg{position:absolute;inset:6px;width:calc(100% - 12px);height:calc(100% - 12px)}
+.thumb i{position:absolute;bottom:3px;left:4px;font-size:7px;font-style:normal;color:#94a3b8;font-weight:700}
+
+/* AI */
+.chat{display:flex;flex-direction:column;gap:7px}
+.bub{max-width:84%;padding:9px 11px;border-radius:15px;font-size:11px;font-weight:500;line-height:1.4;animation:rise .4s both}
+.bub.u{align-self:flex-end;background:var(--ink);color:#fff;border-bottom-right-radius:5px}
+.bub.a{align-self:flex-start;background:#fff;border:1px solid #eef2f7;border-bottom-left-radius:5px}
+.bub.a b{color:var(--g700)}
+@keyframes rise{from{opacity:0;transform:translateY(8px)}}
+.aimodes{display:flex;gap:5px;margin-bottom:9px;overflow:hidden}
+.aimodes span{padding:6px 9px;border-radius:999px;background:#fff;border:1px solid #e2e8f0;font-weight:700;font-size:9.5px;white-space:nowrap}
+.aimodes span.on{background:var(--g600);color:#fff;border-color:var(--g600)}
+.typing{display:inline-flex;gap:3px}.typing i{width:5px;height:5px;border-radius:50%;background:#94a3b8;animation:blink 1.2s infinite}
+.typing i:nth-child(2){animation-delay:.2s}.typing i:nth-child(3){animation-delay:.4s}
+@keyframes blink{50%{opacity:.25}}
+.inbar{position:absolute;left:14px;right:14px;bottom:10px;display:flex;gap:6px;align-items:center;background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:6px 6px 6px 11px;font-size:10.5px;color:#94a3b8}
+.inbar b{margin-left:auto;width:28px;height:28px;border-radius:10px;background:var(--g600);display:grid;place-items:center;color:#fff}
+
+/* ocene */
+.avg{display:flex;align-items:center;gap:10px;margin-bottom:9px}
+.avg .lab{width:80px;font-weight:700;font-size:10.5px;display:flex;gap:5px;align-items:center}
+.avg .bar{flex:1;height:9px;border-radius:9px;background:#f1f5f9;overflow:hidden}
+.avg .bar i{display:block;height:100%;border-radius:9px;width:0;transition:width 1.2s cubic-bezier(.2,.8,.2,1)}
+.avg .v{width:26px;text-align:right;font-weight:800;font-size:11px}
+.bigavg{display:flex;align-items:flex-end;gap:8px}
+.bigavg b{font-size:40px;letter-spacing:-.04em;line-height:1}
+.gtags{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px}
+.gtags span{padding:5px 8px;border-radius:9px;background:#fff7ed;border:1px solid #fed7aa;font-size:9.5px;font-weight:700}
+
+/* lock screen */
+.lock{position:absolute;inset:0;background:linear-gradient(170deg,#065f46,#0f766e 45%,#134e4a);color:#fff;padding:60px 14px 0}
+.lock .time{text-align:center;font-size:62px;font-weight:300;letter-spacing:-.03em;line-height:1}
+.lock .date{text-align:center;font-size:13px;opacity:.85;margin-bottom:28px;font-weight:600}
+.ntf{display:flex;gap:9px;background:rgba(255,255,255,.2);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-radius:18px;padding:10px;margin-bottom:8px;opacity:0;transform:translateY(-14px) scale(.96);transition:.5s cubic-bezier(.2,.9,.3,1.2)}
+.ntf.in{opacity:1;transform:none}
+.ntf img{width:30px;height:30px;border-radius:8px}
+.ntf b{display:block;font-size:11px}
+.ntf p{font-size:10.5px;opacity:.92;line-height:1.35}
+.ntf .tm{margin-left:auto;font-size:9px;opacity:.7;white-space:nowrap}
+
+/* ===== FLOAT BADGES around hero phone ===== */
+.fb{position:absolute;background:#fff;border:1px solid var(--line);border-radius:16px;padding:10px 13px;box-shadow:var(--sh);font-weight:700;font-size:13px;display:flex;align-items:center;gap:9px;animation:bob 5s ease-in-out infinite;z-index:3}
+.fb .i{width:32px;height:32px;border-radius:10px;display:grid;place-items:center;font-size:16px}
+.fb small{display:block;font-size:11px;color:var(--mut);font-weight:600}
+.fb1{top:150px;left:-90px}.fb2{bottom:150px;right:-40px;animation-delay:-2s}.fb3{bottom:60px;left:-70px;animation-delay:-3.5s}
+@keyframes bob{50%{transform:translateY(-10px)}}
+@media(max-width:560px){.fb{display:none}.phone{transform:scale(.92)}}
+
+/* ===== MARQUEE ===== */
+.marq{border-block:1px solid var(--line);background:#fff;overflow:hidden;padding:18px 0}
+.marq .track{display:flex;gap:46px;width:max-content;animation:mq 34s linear infinite;font-weight:700;color:var(--ink2);font-size:17px}
+.marq span{display:flex;align-items:center;gap:10px;white-space:nowrap}
+@keyframes mq{to{transform:translateX(-50%)}}
+
+/* ===== SHOWCASE ===== */
+.show{display:grid;grid-template-columns:1fr 360px;gap:60px;align-items:center;margin-top:50px}
+@media(max-width:960px){.show{grid-template-columns:1fr}.show .phonewrap{order:-1}}
+.tabs{display:flex;flex-direction:column;gap:10px}
+.tab{position:relative;text-align:left;padding:18px 20px 18px 74px;border-radius:20px;border:1px solid transparent;transition:.3s;overflow:hidden}
+.tab:hover{background:rgba(255,255,255,.6)}
+.tab.on{background:#fff;border-color:var(--line);box-shadow:var(--sh)}
+.tab .ti{position:absolute;left:18px;top:18px;width:42px;height:42px;border-radius:13px;display:grid;place-items:center;font-size:20px;transition:.3s}
+.tab h3{font-size:18px;letter-spacing:-.02em;font-weight:800}
+.tab p{font-size:15px;color:var(--mut);max-height:0;opacity:0;transition:.4s;overflow:hidden}
+.tab.on p{max-height:120px;opacity:1;margin-top:5px}
+.tab .prog{position:absolute;left:0;bottom:0;height:3px;background:var(--g500);width:0}
+.tab.on .prog{animation:prog var(--dur,7s) linear forwards}
+.tabs.paused .tab.on .prog{animation-play-state:paused}
+@keyframes prog{to{width:100%}}
+.hint{font-size:13px;color:var(--mut);margin-top:14px;display:flex;align-items:center;gap:7px}
+
+/* ===== BENTO ===== */
+.bento{display:grid;grid-template-columns:repeat(6,1fr);gap:16px;margin-top:50px}
+.bx{background:#fff;border:1px solid var(--line);border-radius:var(--r);padding:28px;position:relative;overflow:hidden;transition:.35s}
+.bx:hover{transform:translateY(-4px);box-shadow:var(--sh)}
+.bx h3{font-size:21px;letter-spacing:-.02em;font-weight:800;margin:14px 0 6px}
+.bx p{color:var(--mut);font-size:15px}
+.bx .bi{width:46px;height:46px;border-radius:14px;display:grid;place-items:center;font-size:22px}
+.s2{grid-column:span 2}.s3{grid-column:span 3}.s4{grid-column:span 4}
+@media(max-width:900px){.bento{grid-template-columns:1fr 1fr}.s2,.s3,.s4{grid-column:span 2}}
+.bx.dark{background:var(--ink);color:#fff;border-color:var(--ink)}
+.bx.dark p{color:#a7c4bb}
+.optsdemo{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:20px}
+.od{padding:14px;border-radius:16px;border:1.5px solid var(--line);font-weight:800;font-size:14px;display:flex;align-items:center;gap:10px;transition:.25s;background:#fff;text-align:left}
+.od:hover{transform:translateY(-2px)}
+.od .x{font-size:20px}
+.od.sel{border-color:var(--g500);background:var(--g50)}
+.od.dis{opacity:.35;transform:none;cursor:not-allowed}
+.odmsg{margin-top:12px;font-size:14px;color:var(--g700);font-weight:600;min-height:21px}
+
+/* flashcards */
+.deck{position:relative;height:210px;margin-top:20px;perspective:1000px}
+.fc{position:absolute;inset:0;transform-style:preserve-3d;transition:transform .6s cubic-bezier(.3,1.3,.5,1),opacity .4s;cursor:pointer}
+.fc.flip{transform:rotateY(180deg)}
+.fc .f,.fc .b{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;border-radius:20px;padding:22px;display:flex;flex-direction:column;justify-content:center}
+.fc .f{background:linear-gradient(135deg,#134e4a,#065f46);color:#fff}
+.fc .b{background:#fff;color:var(--ink);transform:rotateY(180deg);border:2px solid var(--g400)}
+.fc small{font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;opacity:.7;margin-bottom:8px}
+.fc .q{font-size:20px;font-weight:800;letter-spacing:-.02em;line-height:1.25}
+.fc .tap{position:absolute;bottom:16px;right:18px;font-size:12px;opacity:.6;font-weight:600}
+.fcbtns{display:flex;gap:10px;margin-top:14px}
+.fcbtns button{flex:1;padding:12px;border-radius:14px;font-weight:800;font-size:14px;transition:.2s}
+.fcbtns .no{background:rgba(244,63,94,.14);color:#fda4af}.fcbtns .yes{background:rgba(16,185,129,.18);color:#6ee7b7}
+.fcbtns button:hover{transform:translateY(-2px)}
+.fcscore{margin-top:12px;font-size:13px;color:#a7c4bb;font-weight:600}
+
+/* ===== ROADMAP ===== */
+.road{position:relative;display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin-top:60px}
+.road::before{content:"";position:absolute;top:27px;left:8%;right:8%;height:4px;background:#e2e8f0;border-radius:4px}
+.road .fill{position:absolute;top:27px;left:8%;height:4px;width:0;background:linear-gradient(90deg,var(--g500),var(--g400),var(--orange));border-radius:4px;transition:width 2s cubic-bezier(.2,.8,.2,1)}
+.step{position:relative;text-align:center;z-index:1}
+.step .c{width:58px;height:58px;border-radius:50%;margin:0 auto 14px;display:grid;place-items:center;background:var(--g500);color:#fff;box-shadow:0 0 0 6px var(--bg);font-weight:800}
+.step.now .c{background:var(--orange);width:66px;height:66px;margin-top:-4px;animation:pulse 2s infinite}
+.step.next .c{background:#fff;color:#94a3b8;border:2px dashed #cbd5e1}
+@keyframes pulse{0%{box-shadow:0 0 0 6px var(--bg),0 0 0 6px rgba(249,115,22,.45)}100%{box-shadow:0 0 0 6px var(--bg),0 0 0 22px rgba(249,115,22,0)}}
+.step b{display:block;font-size:14px;letter-spacing:-.01em;line-height:1.3}
+.step small{display:block;font-size:12px;color:var(--mut);margin-top:3px;font-weight:600}
+.step.now b{color:var(--orange)}
+@media(max-width:820px){.road{grid-template-columns:1fr;gap:18px;padding-left:10px}.road::before,.road .fill{left:38px;right:auto;top:20px;bottom:20px;width:4px;height:auto}.road .fill{height:0;transition:height 2s}.step{display:flex;align-items:center;gap:16px;text-align:left}.step .c{margin:0;flex-shrink:0}}
+
+/* ===== LOCKED APP ===== */
+.locked{position:relative;border-radius:34px;background:var(--ink);color:#fff;overflow:hidden;padding:70px 50px;display:grid;grid-template-columns:1.2fr .8fr;gap:40px;align-items:center}
+@media(max-width:860px){.locked{grid-template-columns:1fr;padding:50px 26px;text-align:center}}
+.locked::before{content:"";position:absolute;width:600px;height:600px;border-radius:50%;background:radial-gradient(circle,rgba(16,185,129,.35),transparent 65%);top:-250px;right:-150px}
+.locked::after{content:"";position:absolute;inset:0;background-image:repeating-linear-gradient(-45deg,rgba(255,255,255,.025) 0 14px,transparent 14px 28px)}
+.locked>*{position:relative;z-index:1}
+.locked h2{font-size:clamp(30px,4vw,46px);letter-spacing:-.03em;line-height:1.08;font-weight:800;margin:16px 0 14px}
+.locked p{color:#a7c4bb;font-size:17px;max-width:540px}
+@media(max-width:860px){.locked p{margin:0 auto}}
+.tape{display:inline-flex;align-items:center;gap:8px;background:var(--sun);color:#713f12;font-weight:800;font-size:13px;padding:7px 14px;border-radius:10px;letter-spacing:.04em;text-transform:uppercase;transform:rotate(-2deg)}
+.padlock{width:180px;height:200px;margin:0 auto;position:relative;cursor:pointer}
+.padlock .sh{position:absolute;left:40px;right:40px;top:0;height:110px;border:18px solid #94a3b8;border-bottom:0;border-radius:60px 60px 0 0;transition:.4s}
+.padlock .bd{position:absolute;left:0;right:0;bottom:0;height:120px;border-radius:26px;background:linear-gradient(160deg,var(--g400),var(--teal));display:grid;place-items:center;box-shadow:0 20px 50px -10px rgba(16,185,129,.6)}
+.padlock .kh{width:22px;height:40px;position:relative}
+.padlock .kh::before{content:"";position:absolute;top:0;left:0;width:22px;height:22px;border-radius:50%;background:var(--ink)}
+.padlock .kh::after{content:"";position:absolute;top:14px;left:7px;width:8px;height:26px;border-radius:4px;background:var(--ink)}
+.padlock.shake{animation:shake .5s}
+@keyframes shake{20%,60%{transform:rotate(-7deg)}40%,80%{transform:rotate(7deg)}}
+.locked .btns{display:flex;gap:12px;margin-top:28px;flex-wrap:wrap}
+@media(max-width:860px){.locked .btns{justify-content:center}}
+.btn-w{background:#fff;color:var(--ink)}.btn-w:hover{transform:translateY(-2px)}
+.btn-o{border:1.5px solid rgba(255,255,255,.25);color:#fff}.btn-o:hover{border-color:#fff}
+
+/* ===== FAQ ===== */
+.faq{max-width:780px;margin:44px auto 0}
+.qa{border-bottom:1px solid var(--line)}
+.qa button{width:100%;display:flex;justify-content:space-between;align-items:center;gap:20px;padding:22px 4px;text-align:left;font-weight:700;font-size:18px;letter-spacing:-.01em}
+.qa .pl{width:30px;height:30px;border-radius:50%;background:#fff;border:1px solid var(--line);display:grid;place-items:center;flex-shrink:0;transition:.3s}
+.qa.on .pl{transform:rotate(45deg);background:var(--g600);color:#fff;border-color:var(--g600)}
+.qa .ans{max-height:0;overflow:hidden;transition:max-height .4s ease;color:var(--mut);font-size:16px}
+.qa .ans div{padding:0 4px 22px}
+
+/* ===== FOOTER ===== */
+footer{border-top:1px solid var(--line);background:#fff;padding:34px 0;margin-top:40px}
+.footin{display:flex;justify-content:space-between;align-items:center;gap:20px;flex-wrap:wrap}
+.footin .cp{font-size:14px;color:var(--mut)}
+.author{display:flex;align-items:center;gap:12px;text-align:right}
+.author small{display:block;font-size:12px;color:#94a3b8}
+.author b{font-size:14px;color:var(--ink2);transition:.3s}
+.author:hover b{color:var(--g600)}
+.author img{height:46px;width:auto;transition:transform .8s}
+.author:hover img{transform:rotate(360deg)}
+
+/* ===== MODAL ===== */
+.mod{position:fixed;inset:0;z-index:100;background:rgba(11,31,26,.55);backdrop-filter:blur(6px);display:none;align-items:center;justify-content:center;padding:20px}
+.mod.on{display:flex;animation:fade .25s}
+@keyframes fade{from{opacity:0}}
+.modbox{background:#fff;border-radius:28px;max-width:440px;width:100%;padding:34px;text-align:center;position:relative;animation:rise .35s}
+.modbox .li{width:72px;height:72px;border-radius:22px;background:#fff7ed;color:var(--orange);display:grid;place-items:center;margin:0 auto 18px}
+.modbox h3{font-size:24px;letter-spacing:-.02em;font-weight:800;margin-bottom:10px}
+.modbox p{color:var(--mut);font-size:15.5px}
+.modbox .bar2{height:6px;border-radius:6px;background:#f1f5f9;margin:22px 0 8px;overflow:hidden}
+.modbox .bar2 i{display:block;height:100%;width:72%;border-radius:6px;background:linear-gradient(90deg,var(--g500),var(--orange));background-size:200% 100%;animation:sl 2s linear infinite}
+@keyframes sl{to{background-position:-200% 0}}
+.modbox .x{position:absolute;top:16px;right:16px;width:36px;height:36px;border-radius:12px;background:#f1f5f9;display:grid;place-items:center}
+
+/* reveal */
+.rv{opacity:0;transform:translateY(28px);transition:opacity .8s ease,transform .8s cubic-bezier(.2,.8,.2,1)}
+.rv.in{opacity:1;transform:none}
+.d1{transition-delay:.1s}.d2{transition-delay:.2s}.d3{transition-delay:.3s}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}.rv{opacity:1;transform:none}}
+</style>
 </head>
-<body class="bg-slate-50 text-slate-800 font-sans antialiased flex flex-col min-h-screen selection:bg-emerald-200 selection:text-emerald-900">
+<body>
 
-  <!-- Navigacija -->
-  <nav class="w-full bg-white/80 backdrop-blur-md shadow-sm py-4 px-6 md:px-12 flex justify-between items-center z-20 sticky top-0 transition-all duration-300">
-    <div class="flex items-center space-x-3 group cursor-pointer">
-      <img src="logo_zvezki.png" alt="DigitNotes Logo" class="h-10 w-auto object-contain transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3">
-      <span class="text-xl font-bold text-emerald-700 tracking-tight transition-colors duration-300 group-hover:text-emerald-600">DigitNotes</span>
+<!-- ================= NAV ================= -->
+<nav class="top" id="nav">
+  <div class="wrap navin">
+    <a href="#" class="brand"><img src="Logo.png" alt="DigitNotes logo">DigitNotes <span class="v">2.0</span></a>
+    <div class="navlinks">
+      <a href="#novosti">Novosti</a>
+      <a href="#funkcije">Funkcije</a>
+      <a href="#razvoj">Razvoj</a>
+      <a href="#vprasanja">Vprašanja</a>
     </div>
-    <!-- Dodana ikona za prijavo -->
-    <a href="https://digitnotes.github.io/web/app" class="flex items-center justify-center w-10 h-10 rounded-full bg-emerald-100 text-emerald-600 hover:bg-emerald-200 hover:text-emerald-700 transition-colors duration-300" title="Prijava">
-      <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"></path>
-      </svg>
-    </a>
-  </nav>
+    <button class="navlock" onclick="openLock()" title="Aplikacija je v prenovi">
+      <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><rect x="4" y="11" width="16" height="10" rx="2.5"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
+      Prijava
+    </button>
+  </div>
+</nav>
 
-  <!-- Glavna vsebina -->
-  <main class="flex-grow flex flex-col items-center px-6 py-12 md:py-20 relative overflow-hidden">
-    
-    <!-- Dekorativni elementi v ozadju -->
-    <div class="absolute top-0 right-0 -mr-20 -mt-20 w-64 h-64 rounded-full bg-emerald-100 opacity-50 blur-3xl -z-10 animate-pulse"></div>
-    <div class="absolute bottom-0 left-0 -ml-20 -mb-20 w-80 h-80 rounded-full bg-teal-100 opacity-50 blur-3xl -z-10" style="animation: pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite;"></div>
-
-    <!-- Vrstica napredka (na vrhu) -->
-    <div class="max-w-4xl w-full mb-20 px-4 transform transition-all duration-700 hover:scale-[1.01]">
-        <h2 class="text-2xl font-bold text-slate-800 mb-12 text-center relative inline-block left-1/2 -translate-x-1/2">
-            Stanje razvoja aplikacije
-            <span class="absolute -bottom-2 left-1/2 -translate-x-1/2 w-12 h-1 bg-emerald-500 rounded-full"></span>
-        </h2>
-        
-        <!-- Vrstica napredka za namizne naprave -->
-        <div class="hidden md:flex items-center justify-between w-full relative">
-            <!-- Korak 1 -->
-            <div class="flex flex-col items-center relative z-10 group">
-                <div class="w-14 h-14 rounded-full bg-emerald-500 text-white flex items-center justify-center font-bold shadow-lg ring-4 ring-emerald-50 transition-transform duration-300 group-hover:scale-110">
-                    <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
-                </div>
-                <div class="absolute top-16 text-center w-36 -ml-11 transition-all duration-300 group-hover:-translate-y-1">
-                    <span class="text-sm font-bold text-emerald-700 leading-tight block">Osnovna zasnova</span>
-                </div>
-            </div>
-
-            <!-- Črta 1 -->
-            <div class="flex-auto h-1.5 bg-gradient-to-r from-emerald-500 to-emerald-400 -mx-4 z-0 rounded-full shadow-sm"></div>
-
-            <!-- Korak 2 -->
-            <div class="flex flex-col items-center relative z-10 group">
-                <div class="w-14 h-14 rounded-full bg-emerald-500 text-white flex items-center justify-center font-bold shadow-lg ring-4 ring-emerald-50 transition-transform duration-300 group-hover:scale-110">
-                    <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
-                </div>
-                <div class="absolute top-16 text-center w-36 -ml-11 transition-all duration-300 group-hover:-translate-y-1">
-                    <span class="text-sm font-bold text-emerald-700 leading-tight block">Zaprta demo različica</span>
-                </div>
-            </div>
-
-            <!-- Črta 2 -->
-            <div class="flex-auto h-1.5 bg-gradient-to-r from-emerald-400 to-emerald-400 -mx-4 z-0 rounded-full shadow-sm"></div>
-
-            <!-- Korak 3 -->
-            <div class="flex flex-col items-center relative z-10 group">
-                <div class="w-14 h-14 rounded-full bg-emerald-500 text-white flex items-center justify-center font-bold shadow-lg ring-4 ring-emerald-50 transition-transform duration-300 group-hover:scale-110">
-                    <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
-                </div>
-                <div class="absolute top-16 text-center w-40 -ml-12 transition-all duration-300 group-hover:-translate-y-1 mt-1">
-                    <span class="text-sm font-bold text-emerald-700 leading-tight block">Vzpostavitev strežnika in baze podatkov</span>
-                </div>
-            </div>
-
-            <!-- Črta 3 -->
-            <div class="flex-auto h-1.5 bg-gradient-to-r from-emerald-400 to-orange-400 -mx-4 z-0 rounded-full shadow-sm"></div>
-
-            <!-- Korak 4 (Nova točka - Javna objava za predprijavljene) -->
-            <div class="flex flex-col items-center relative z-10 group">
-                <div class="w-14 h-14 rounded-full bg-emerald-500 text-white flex items-center justify-center font-bold shadow-lg ring-4 ring-emerald-50 transition-transform duration-300 group-hover:scale-110">
-                    <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
-                </div>
-                <div class="absolute top-16 text-center w-40 -ml-12 transition-all duration-300 group-hover:-translate-y-1">
-                    <span class="text-sm font-bold text-emerald-700 leading-tight block">Javna objava za predprijavljene uporabnike</span>
-                </div>
-            </div>
-
-            <!-- Črta 4 -->
-            <div class="flex-auto h-1.5 bg-gradient-to-r from-orange-400 to-slate-200 -mx-4 z-0 rounded-full"></div>
-
-            <!-- Korak 5 (Prej 4. točka - Oranžno kladivo) -->
-            <div class="flex flex-col items-center relative z-10 group cursor-help" title="Trenutno delamo na tem!">
-                <div class="w-16 h-16 -mt-1 rounded-full bg-orange-500 text-white flex items-center justify-center font-bold shadow-xl ring-4 ring-orange-100 transition-transform duration-300 group-hover:scale-110 animate-bounce" style="animation-duration: 2s;">
-                    <!-- Ikona kladiva -->
-                    <svg class="w-8 h-8 transform group-hover:rotate-12 transition-transform duration-300" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                        <path fill-rule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clip-rule="evenodd"></path>
-                    </svg>
-                </div>
-                <div class="absolute top-16 text-center w-36 -ml-11 transition-all duration-300 group-hover:-translate-y-1 mt-1">
-                    <span class="text-sm font-bold text-orange-600 leading-tight block">Javna objava</span>
-                </div>
-            </div>
-        </div>
-
-        <!-- Vrstica napredka za mobilne naprave -->
-        <div class="flex flex-col md:hidden space-y-6 relative">
-             <div class="absolute left-6 top-6 bottom-6 w-1 bg-emerald-100 rounded-full z-0"></div>
-             <div class="absolute left-6 top-6 h-3/4 w-1 bg-emerald-500 rounded-full z-0"></div>
-
-            <div class="flex items-center space-x-6 relative z-10 group">
-                <div class="w-12 h-12 rounded-full bg-emerald-500 text-white flex items-center justify-center font-bold shadow-md shrink-0 ring-4 ring-slate-50 transition-transform duration-300 group-hover:scale-110">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
-                </div>
-                <span class="text-base font-bold text-emerald-700 transition-colors duration-300 group-hover:text-emerald-800">Osnovna zasnova</span>
-            </div>
-            
-            <div class="flex items-center space-x-6 relative z-10 group">
-                <div class="w-12 h-12 rounded-full bg-emerald-500 text-white flex items-center justify-center font-bold shadow-md shrink-0 ring-4 ring-slate-50 transition-transform duration-300 group-hover:scale-110">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
-                </div>
-                <span class="text-base font-bold text-emerald-700 transition-colors duration-300 group-hover:text-emerald-800">Zaprta demo različica</span>
-            </div>
-            
-            <div class="flex items-center space-x-6 relative z-10 group">
-                <div class="w-12 h-12 rounded-full bg-emerald-500 text-white flex items-center justify-center font-bold shadow-md shrink-0 ring-4 ring-slate-50 transition-transform duration-300 group-hover:scale-110">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
-                </div>
-                <span class="text-base font-bold text-emerald-700 transition-colors duration-300 group-hover:text-emerald-800">Vzpostavitev strežnika<br>in baze podatkov</span>
-            </div>
-
-            <!-- Nova točka (Mobilna verzija) -->
-            <div class="flex items-center space-x-6 relative z-10 group">
-                <div class="w-12 h-12 rounded-full bg-emerald-500 text-white flex items-center justify-center font-bold shadow-md shrink-0 ring-4 ring-slate-50 transition-transform duration-300 group-hover:scale-110">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
-                </div>
-                <span class="text-base font-bold text-emerald-700 transition-colors duration-300 group-hover:text-emerald-800">Javna objava za predprijavljene uporabnike</span>
-            </div>
-            
-            <div class="flex items-center space-x-6 relative z-10 group bg-orange-50 p-2 -ml-2 rounded-xl border border-orange-100 shadow-sm">
-                <div class="w-12 h-12 rounded-full bg-orange-500 text-white flex items-center justify-center font-bold shadow-md shrink-0 ring-4 ring-orange-100 animate-pulse transition-transform duration-300 group-hover:scale-110">
-                    <!-- Ikona strele/kladiva za mobilne -->
-                    <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clip-rule="evenodd"></path></svg>
-                </div>
-                <span class="text-base font-bold text-orange-600 transition-colors duration-300 group-hover:text-orange-700">Javna objava</span>
-            </div>
-        </div>
+<!-- ================= HERO ================= -->
+<header class="hero">
+  <div class="blob b1"></div><div class="blob b2"></div><div class="blob b3"></div><div class="grid-bg"></div>
+  <div class="wrap herogrid">
+    <div class="herotext">
+      <span class="pill rv"><b>NOVO</b><span class="dot"></span>Aplikacija je v prenovi – prihaja DigitNotes 2.0</span>
+      <h1 class="rv d1">Tvoj zvezek.<br><span class="serif">Samo</span> <span class="two">pametnejši.</span></h1>
+      <p class="lead rv d2">Urnik, digitalni zvezki, ocene in AI pomočnik, ki se uči iz <em>tvojih</em> zapiskov. DigitNotes 2.0 je popolnoma prenovljen – hitrejši, preprostejši in narejen za telefon.</p>
+      <div class="herocta rv d3">
+        <a href="#novosti" class="btn btn-p">Poglej novosti
+          <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+        <button class="btn btn-lock" onclick="openLock()">
+          <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><rect x="4" y="11" width="16" height="10" rx="2.5"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
+          Aplikacija zaklenjena</button>
+      </div>
+      <div class="herometa rv d3">
+        <div><b data-count="4">0</b>načini vpisa ure</div>
+        <div><b data-count="2">0</b>dotika do vpisa</div>
+        <div><b>24/7</b>obvestila tudi ob zaprti aplikaciji</div>
+      </div>
     </div>
 
-    <!-- Osrednji predstavitveni blok -->
-    <div class="max-w-5xl w-full grid grid-cols-1 lg:grid-cols-2 gap-16 items-start">
-      
-      <!-- Levi del: Predstavitev z izboljšanimi grafikami -->
-      <div class="space-y-8">
-        <div class="transform transition-all duration-500 hover:translate-x-2">
-            <h1 class="text-4xl md:text-5xl font-extrabold text-slate-900 leading-tight mb-4">
-            Pametnejši način do <span class="text-transparent bg-clip-text bg-gradient-to-r from-emerald-500 to-teal-600 inline-block transform transition-transform duration-300 hover:scale-105">odličnih ocen</span>.
-            </h1>
-            
-            <p class="text-lg text-slate-600 leading-relaxed">
-            Pozabi na razmetane zvezke, izgubljene liste in paniko pred testi. <strong class="text-emerald-700">DigitNotes</strong> prinaša red v tvoj šolski vsakdan. Vse, kar potrebuješ, je organizirano in dostopno kjerkoli.
-            </p>
-        </div>
-
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <!-- Kartica 1 -->
-          <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 hover:shadow-xl hover:-translate-y-2 transition-all duration-300 cursor-default group hover-float">
-            <div class="bg-blue-50 w-14 h-14 rounded-2xl flex items-center justify-center text-blue-500 mb-4 transition-colors duration-300 group-hover:bg-blue-500 group-hover:text-white">
-                <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+    <div class="phonewrap rv d2" id="heroPhoneWrap">
+      <div class="fb fb1"><span class="i" style="background:#fff7ed">🔥</span><div>12 dni zapored<small>niz vpisanih ur</small></div></div>
+      <div class="fb fb2"><span class="i" style="background:#ecfdf5">✨</span><div>AI kartice<small>iz tvojih zapiskov</small></div></div>
+      <div class="fb fb3"><span class="i" style="background:#fef3c7">⭐</span><div>Povprečje 4,6<small>matematika</small></div></div>
+      <div class="phone" id="heroPhone">
+        <div class="screen">
+          <div class="sbar"><span>9:41</span><i>▂▄▆ ᯤ ▮</i></div>
+          <div class="ahead"><span class="bl"><img src="Logo.png" alt="">DigitNotes</span><span class="bell"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 0 1-3.4 0"/></svg><span>2</span></span></div>
+          <div class="abody">
+            <div class="m-h">Dobro jutro 👋</div>
+            <div class="m-t" style="margin-bottom:9px">Pozdravljena, Nika!</div>
+            <div class="m-card ringbox">
+              <div class="ring"><svg width="62" height="62"><circle cx="31" cy="31" r="25" stroke="#e2e8f0" stroke-width="7" fill="none"/><circle class="fg heroRing" cx="31" cy="31" r="25" stroke="#10b981" stroke-width="7" fill="none" stroke-linecap="round" stroke-dasharray="157" stroke-dashoffset="157"/></svg><span class="rt">4/6</span></div>
+              <div><b style="font-size:13px">Danes 4 od 6 ur</b><div class="m-h">Še 2 uri do popolnega dne</div></div>
             </div>
-            <h3 class="font-bold text-slate-800 text-lg mb-2 group-hover:text-blue-600 transition-colors">Popolna organizacija</h3>
-            <p class="text-sm text-slate-500 group-hover:text-slate-600 transition-colors">Predmeti, zapiski in gradiva so strukturirani in vedno na dosegu roke.</p>
+            <div class="chips"><div class="chip c-fire">🔥 12<small>dni zapored</small></div><div class="chip c-next">🧪 10:30<small>naslednja: Kemija</small></div></div>
+            <div class="secttl">Današnji urnik <span>sreda, 19. 11.</span></div>
+            <div class="m-row ok"><span class="n">1</span><span class="em">📐</span><span>Matematika<span class="sub">7:10–7:55 · Novak</span></span><span class="st">✅</span></div>
+            <div class="m-row ok"><span class="n">2</span><span class="em">📖</span><span>Slovenščina<span class="sub">8:00–8:45 · Kovač</span></span><span class="st">✅</span></div>
+            <div class="m-row org"><span class="n">3</span><span class="em">🇬🇧</span><span>Angleščina<span class="sub">8:50–9:35 · ocena 5</span></span><span class="st">⭐</span></div>
+            <div class="m-row red"><span class="n">4</span><span class="em">🌍</span><span>Geografija<span class="sub">9:40–10:25 · vpiši uro</span></span><span class="st">⚠️</span></div>
+            <div class="m-row open"><span class="n">5</span><span class="em">🧪</span><span>Kemija<span class="sub">10:30–11:15</span></span></div>
           </div>
-
-          <!-- Kartica 2 -->
-          <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 hover:shadow-xl hover:-translate-y-2 transition-all duration-300 cursor-default group hover-float" style="animation-delay: 0.2s;">
-            <div class="bg-purple-50 w-14 h-14 rounded-2xl flex items-center justify-center text-purple-500 mb-4 transition-colors duration-300 group-hover:bg-purple-500 group-hover:text-white">
-                <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
-            </div>
-            <h3 class="font-bold text-slate-800 text-lg mb-2 group-hover:text-purple-600 transition-colors">Pametni urnik</h3>
-            <p class="text-sm text-slate-500 group-hover:text-slate-600 transition-colors">Sinhroniziran urnik z obvestili o nalogah in preverjanjih znanja.</p>
-          </div>
-
-           <!-- Kartica 3 -->
-           <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 hover:shadow-xl hover:-translate-y-2 transition-all duration-300 cursor-default group hover-float" style="animation-delay: 0.4s;">
-            <div class="bg-emerald-50 w-14 h-14 rounded-2xl flex items-center justify-center text-emerald-500 mb-4 transition-colors duration-300 group-hover:bg-emerald-500 group-hover:text-white">
-                <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-            </div>
-            <h3 class="font-bold text-slate-800 text-lg mb-2 group-hover:text-emerald-600 transition-colors">Sledenje ocenam</h3>
-            <p class="text-sm text-slate-500 group-hover:text-slate-600 transition-colors">Analitika tvojega uspeha, izračuni povprečij in ciljanje ocen.</p>
-          </div>
-
-           <!-- Kartica 4 -->
-           <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 hover:shadow-xl hover:-translate-y-2 transition-all duration-300 cursor-default group hover-float" style="animation-delay: 0.6s;">
-            <div class="bg-rose-50 w-14 h-14 rounded-2xl flex items-center justify-center text-rose-500 mb-4 transition-colors duration-300 group-hover:bg-rose-500 group-hover:text-white">
-                <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
-            </div>
-            <h3 class="font-bold text-slate-800 text-lg mb-2 group-hover:text-rose-600 transition-colors">Skupna raba</h3>
-            <p class="text-sm text-slate-500 group-hover:text-slate-600 transition-colors">Enostavno deljenje zapiskov s sošolci in sodelovanje pri projektih.</p>
+          <div class="anav">
+            <div class="on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>Domov</div>
+            <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>Urnik</div>
+            <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V3H6.5A2.5 2.5 0 0 0 4 5.5z"/></svg>Zvezki</div>
+            <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/></svg>Uči se</div>
+            <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="5"/><path d="M15.5 13.9 17 22l-5-3-5 3 1.5-8.1"/></svg>Ocene</div>
           </div>
         </div>
       </div>
-
-      <!-- Desni del: Zaklenjen obrazec -->
-      <div class="relative transform transition-transform duration-500 hover:scale-[1.02]">
-          <!-- Obrazec (vizualno pod senco) -->
-          <div class="bg-white p-8 rounded-2xl shadow-xl border border-slate-100 relative overflow-hidden opacity-40 select-none pointer-events-none filter blur-[2px]">
-            <div class="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-emerald-400 to-teal-500"></div>
-            <h2 class="text-2xl font-bold mb-2">Oddaj predprijavo</h2>
-            <p class="text-sm text-slate-500 mb-6 pb-4 border-b border-slate-100">
-              Število mest za testiranje je zelo omejeno!
-            </p>
-
-            <form class="space-y-4">
-              <div>
-                <label class="block text-sm font-medium text-slate-700 mb-1">Ime in priimek</label>
-                <input type="text" disabled class="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50">
-              </div>
-              
-              <div>
-                <label class="block text-sm font-medium text-slate-700 mb-1">E-poštni naslov</label>
-                <input type="email" disabled class="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50">
-              </div>
-
-              <div>
-                <label class="block text-sm font-medium text-slate-700 mb-1">Izberi uporabniško ime</label>
-                <input type="text" disabled placeholder="npr. ninja123" class="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50">
-              </div>
-
-              <div>
-                <label class="block text-sm font-medium text-slate-700 mb-1">Izmišljena 6-mestna koda (Geslo)</label>
-                <input type="text" disabled placeholder="123456" class="w-full px-4 py-3 rounded-xl border border-slate-200 text-center tracking-widest font-mono text-lg bg-slate-50">
-              </div>
-
-              <button type="button" disabled class="w-full bg-emerald-600 text-white font-bold py-3 px-4 rounded-xl shadow-md mt-2">
-                <span>Pošlji prijavo</span>
-              </button>
-            </form>
-          </div>
-
-          <!-- Overlay z obvestilom (čez obrazec) -->
-          <div class="absolute inset-0 z-10 flex flex-col items-center justify-center p-8 text-center bg-slate-900/10 backdrop-blur-[1px] rounded-2xl group">
-              <div class="bg-white p-6 rounded-2xl shadow-2xl border border-slate-200 max-w-sm w-full transform transition-transform duration-500 group-hover:scale-105">
-                <div class="mx-auto flex items-center justify-center h-14 w-14 rounded-full bg-slate-50 mb-4 shadow-inner">
-                    <svg class="h-7 w-7 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                    </svg>
-                </div>
-                <h3 class="text-xl font-bold text-slate-900 mb-2">Predprijave so zaključene</h3>
-                <p class="text-sm text-slate-600 leading-relaxed mb-4">
-                    Zaradi zamika izida so predprijave trenutno <strong class="text-slate-800">zaprte</strong>. 
-                    <br><br>
-                    Prijava in kreiranje računa bosta ponovno omogočena ob uradni izdaji spletne strani do konca leta 2026.
-                </p>
-                <div class="w-full h-1 bg-slate-100 rounded-full mt-4 overflow-hidden">
-                    <div class="h-full bg-slate-300 w-1/2 mx-auto rounded-full animate-pulse"></div>
-                </div>
-              </div>
-          </div>
-      </div>
-      
     </div>
+  </div>
+</header>
 
-    <!-- Obvestilo o zamiku prestavljeno na dno z rahlo animacijo -->
-    <div class="max-w-5xl w-full mt-20 bg-amber-50 text-amber-900 border-l-4 border-amber-500 p-6 rounded-r-2xl shadow-md relative transform transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
-      <div class="flex items-start">
-        <div class="flex-shrink-0 mt-1">
-            <svg class="h-6 w-6 text-amber-500 animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-            </svg>
-        </div>
-        <div class="ml-4">
-            <h3 class="text-lg leading-6 font-bold text-amber-800">Obvestilo o poteku razvoja</h3>
-            <div class="mt-2 text-base text-amber-700">
-                <p>
-                    Zaradi nepredvidenih tehničnih izzivov pri vzpostavitvi varne baze podatkov je prva izdaja aplikacije <strong>DigitNotes začasno zamaknjena</strong>.
-                    <br><br>
-                    Naša ekipa intenzivno dela na odpravi težav. Pričakujemo, da bo aplikacija v celoti nared in na voljo za uporabo <strong>do konca leta 2026</strong>.
-                    Zahvaljujemo se vam za razumevanje in potrpežljivost. Predprijave so trenutno zaprte.
-                </p>
+<div class="marq"><div class="track" id="marq"></div></div>
+
+<!-- ================= NOVOSTI / SHOWCASE ================= -->
+<section class="sec" id="novosti">
+  <div class="wrap">
+    <span class="eyebrow rv">Kaj prinaša 2.0</span>
+    <h2 class="title rv d1">Poglej, kako bo <span class="serif" style="color:var(--g600)">izgledalo</span>.</h2>
+    <p class="lead rv d2">Klikni na funkcijo in na telefonu se prikaže primer zaslona iz nove aplikacije. Pri vpisu ure lahko na telefonu tudi sam klikaš.</p>
+
+    <div class="show">
+      <div class="tabs rv" id="tabs">
+        <button class="tab on" data-s="home"><span class="ti" style="background:#ecfdf5">🏠</span><h3>Domov, ki te motivira</h3><p>Napredek dneva, niz zaporednih dni in naslednja ura – takoj, ko odpreš aplikacijo.</p><span class="prog"></span></button>
+        <button class="tab" data-s="vpis"><span class="ti" style="background:#eff6ff">📸</span><h3>Vpis ure v dveh dotikih</h3><p>Ura z zapiski, brez zapiskov, ocena ali odpadla ura. Kamera se odpre takoj. Poskusi kar na telefonu desno!</p><span class="prog"></span></button>
+        <button class="tab" data-s="zvezki"><span class="ti" style="background:#fef3c7">📚</span><h3>Digitalni zvezki</h3><p>Vse fotografije zapiskov urejene po predmetih in datumih. Izvoz v PDF in deljenje s sošolci.</p><span class="prog"></span></button>
+        <button class="tab" data-s="ai"><span class="ti" style="background:#f5f3ff">✨</span><h3>Uči se z AI</h3><p>Pogovarjaj se s svojimi zapiski. AI pripravi povzetek, kartice in teste – samo iz snovi, ki si jo imel pri pouku.</p><span class="prog"></span></button>
+        <button class="tab" data-s="ocene"><span class="ti" style="background:#fff7ed">⭐</span><h3>Ocene in povprečja</h3><p>Vsaka ocena se shrani k predmetu. Povprečja se izračunajo sama.</p><span class="prog"></span></button>
+        <button class="tab" data-s="obv"><span class="ti" style="background:#fff1f2">🔔</span><h3>Obvestila na zaklenjenem zaslonu</h3><p>Opomnik ob koncu ure in obvestila tudi, ko je aplikacija zaprta.</p><span class="prog"></span></button>
+        <div class="hint"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>Prikazani zasloni so primeri z izmišljenimi podatki.</div>
+      </div>
+
+      <div class="phonewrap rv d1">
+        <div class="phone">
+          <div class="screen" id="showScreen">
+            <div class="sbar" style="position:relative;z-index:4"><span>9:41</span><i>▂▄▆ ᯤ ▮</i></div>
+
+            <!-- HOME -->
+            <div class="scr on" data-scr="home">
+              <div class="ahead"><span class="bl"><img src="Logo.png" alt="">DigitNotes</span><span class="bell"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 0 1-3.4 0"/></svg><span>2</span></span></div>
+              <div class="abody">
+                <div class="m-h">Tedenski pregled</div>
+                <div class="m-t" style="margin-bottom:9px">Odličen teden! 💪</div>
+                <div class="m-card" style="margin-bottom:8px">
+                  <div style="display:flex;justify-content:space-between;align-items:flex-end;height:78px;gap:6px" id="weekBars"></div>
+                  <div style="display:flex;justify-content:space-between;font-size:9px;color:var(--mut);font-weight:700;margin-top:5px"><span>PON</span><span>TOR</span><span>SRE</span><span>ČET</span><span>PET</span></div>
+                </div>
+                <div class="chips"><div class="chip c-fire">🔥 12<small>dni zapored</small></div><div class="chip c-next">📸 38<small>fotografij ta teden</small></div></div>
+                <div class="secttl">Dosežki <span>3 / 12</span></div>
+                <div style="display:flex;gap:6px">
+                  <div class="m-card" style="flex:1;text-align:center;padding:9px 4px"><div style="font-size:20px">🏅</div><b style="font-size:9.5px">Popoln teden</b></div>
+                  <div class="m-card" style="flex:1;text-align:center;padding:9px 4px"><div style="font-size:20px">📚</div><b style="font-size:9.5px">100 strani</b></div>
+                  <div class="m-card" style="flex:1;text-align:center;padding:9px 4px;opacity:.45"><div style="font-size:20px">🔒</div><b style="font-size:9.5px">30 dni</b></div>
+                </div>
+              </div>
             </div>
+
+            <!-- VPIS -->
+            <div class="scr" data-scr="vpis">
+              <div class="ahead"><span class="bl" style="color:var(--ink)"><span style="font-size:18px">🌍</span>Geografija · 4. ura</span><span class="bell">✕</span></div>
+              <div class="abody" id="vpisBody"></div>
+            </div>
+
+            <!-- ZVEZKI -->
+            <div class="scr" data-scr="zvezki">
+              <div class="ahead"><span class="bl" style="color:var(--ink)">Zvezki</span><span class="bell">＋</span></div>
+              <div class="abody">
+                <div class="nbgrid">
+                  <div class="nb"><div class="e" style="background:#ecfdf5">📐</div>Matematika<small>64 fotografij</small></div>
+                  <div class="nb"><div class="e" style="background:#eff6ff">📖</div>Slovenščina<small>41 fotografij</small></div>
+                  <div class="nb"><div class="e" style="background:#fef3c7">🧪</div>Kemija<small>29 fotografij</small></div>
+                  <div class="nb"><div class="e" style="background:#fff1f2">🌍</div>Geografija<small>33 fotografij</small></div>
+                </div>
+                <div class="secttl" style="margin-top:12px">📐 Matematika – zadnje <span>PDF · Deli</span></div>
+                <div class="thumbs" id="thumbs"></div>
+              </div>
+            </div>
+
+            <!-- AI -->
+            <div class="scr" data-scr="ai">
+              <div class="ahead"><span class="bl" style="color:var(--ink)"><span style="width:24px;height:24px;border-radius:7px;background:linear-gradient(135deg,#10b981,#0d9488);display:grid;place-items:center;color:#fff;font-size:12px">✦</span>Uči se · Kemija</span><span class="bell">⋯</span></div>
+              <div class="abody">
+                <div class="aimodes"><span class="on">💬 Pogovor</span><span>📝 Povzetek</span><span>🃏 Kartice</span><span>✍️ Test</span></div>
+                <div class="chat" id="chat"></div>
+                <div class="inbar">Vprašaj karkoli o snovi…<b>➤</b></div>
+              </div>
+            </div>
+
+            <!-- OCENE -->
+            <div class="scr" data-scr="ocene">
+              <div class="ahead"><span class="bl" style="color:var(--ink)">Ocene</span><span class="bell">⋯</span></div>
+              <div class="abody">
+                <div class="m-card" style="margin-bottom:10px">
+                  <div class="m-h">Skupno povprečje</div>
+                  <div class="bigavg"><b>4,38</b><span style="color:var(--g600);font-weight:800;font-size:11px;padding-bottom:5px">▲ 0,2 ta mesec</span></div>
+                </div>
+                <div class="m-card" id="avgs"></div>
+                <div class="secttl">Zadnje ocene</div>
+                <div class="gtags"><span>📐 5 · test</span><span>🇬🇧 5 · ustno</span><span>🧪 4 · pisno</span><span>🌍 4 · referat</span></div>
+              </div>
+            </div>
+
+            <!-- OBVESTILA -->
+            <div class="scr" data-scr="obv" style="inset:0">
+              <div class="lock">
+                <div class="time">10:26</div>
+                <div class="date">sreda, 19. november</div>
+                <div class="ntf"><img src="Logo.png" alt=""><div><b>Opomnik: konec ure</b><p>Geografija se je zaključila. Sledi Kemija. Ne pozabi fotografirati zapiskov! 📸</p></div><span class="tm">zdaj</span></div>
+                <div class="ntf"><img src="Logo.png" alt=""><div><b>Jutri: test iz matematike</b><p>Ponovi kartice »Kvadratna funkcija« – 12 vprašanj.</p></div><span class="tm">8 min</span></div>
+                <div class="ntf"><img src="Logo.png" alt=""><div><b>🔥 Niz 12 dni!</b><p>Še 3 ure do popolnega tedna.</p></div><span class="tm">1 h</span></div>
+              </div>
+            </div>
+
+          </div>
         </div>
       </div>
-      <!-- Dekorativna črta obvestila -->
-      <div class="absolute bottom-0 left-0 w-full h-0.5 bg-gradient-to-r from-amber-200 to-transparent"></div>
     </div>
-  </main>
+  </div>
+</section>
 
-  <!-- Noga z avtorjem in logotipom na desni -->
-  <footer class="w-full bg-white border-t border-slate-200 py-6 px-6 md:px-12 flex justify-between items-center mt-auto z-20 relative">
-    <div class="text-sm text-slate-500 hover:text-slate-700 transition-colors cursor-default">
-      &copy; 2026 DigitNotes. Vse pravice pridržane.
-    </div>
-    <div class="flex items-center space-x-3 text-right group cursor-pointer">
-      <div class="text-xs text-slate-400 group-hover:text-slate-500 transition-colors duration-300">
-        Ustvaril<br>
-        <span class="font-bold text-slate-600 text-sm group-hover:text-emerald-600 transition-colors duration-300">Jaša Petrinjak</span>
+<!-- ================= FUNKCIJE (BENTO) ================= -->
+<section class="sec" id="funkcije" style="padding-top:20px">
+  <div class="wrap">
+    <span class="eyebrow rv">Preizkusi sam</span>
+    <h2 class="title rv d1">Majhne stvari, ki <span class="serif" style="color:var(--g600)">naredijo razliko</span>.</h2>
+
+    <div class="bento">
+      <div class="bx s3 rv">
+        <span class="bi" style="background:#eff6ff">👆</span>
+        <h3>Kako je bila tvoja ura?</h3>
+        <p>Izberi možnost. Ko izbereš uro z zapiski, lahko dodaš samo še oceno.</p>
+        <div class="optsdemo" id="od">
+          <button class="od" data-k="z"><span class="x">📸</span>Ura z zapiski</button>
+          <button class="od" data-k="b"><span class="x">✅</span>Brez zapiskov</button>
+          <button class="od" data-k="o"><span class="x">⭐</span>Ocena</button>
+          <button class="od" data-k="x"><span class="x">❌</span>Odpadla ura</button>
+        </div>
+        <div class="odmsg" id="odmsg"></div>
       </div>
-      <!-- Logotip brez omejitev kroga, da se ne reže -->
-      <img src="Logo.png" alt="Jaša Petrinjak Logo" class="h-12 w-auto object-contain transition-transform duration-500 group-hover:rotate-[360deg]">
+
+      <div class="bx s3 dark rv d1">
+        <span class="bi" style="background:rgba(16,185,129,.18)">🃏</span>
+        <h3>AI kartice za učenje</h3>
+        <p>Klikni kartico, da jo obrneš. Tako bo izgledalo ponavljanje pred testom.</p>
+        <div class="deck" id="deck"></div>
+        <div class="fcbtns"><button class="no" onclick="fcNext(false)">Še ne znam</button><button class="yes" onclick="fcNext(true)">Znam ✓</button></div>
+        <div class="fcscore" id="fcscore"></div>
+      </div>
+
+      <div class="bx s2 rv">
+        <span class="bi" style="background:#fff7ed">🔔</span>
+        <h3>Push obvestila</h3>
+        <p>Delujejo tudi, ko je aplikacija zaprta – na Androidu in iPhonu.</p>
+      </div>
+      <div class="bx s2 rv d1">
+        <span class="bi" style="background:#ecfdf5">🔐</span>
+        <h3>Varna prijava</h3>
+        <p>Pozabljeno geslo? Na e-mail dobiš enkratno kodo, ki velja 10 minut.</p>
+      </div>
+      <div class="bx s2 rv d2">
+        <span class="bi" style="background:#f5f3ff">📲</span>
+        <h3>Kot prava aplikacija</h3>
+        <p>Namesti jo na domači zaslon – brez trgovine z aplikacijami.</p>
+      </div>
     </div>
-  </footer>
+  </div>
+</section>
 
-  <script>
-    // --- 1. NASTAVITVE ZA FIREBASE ---
-    firebase.initializeApp({
-      databaseURL: "https://digitnotes-bdeb7-default-rtdb.europe-west1.firebasedatabase.app/"
-    });
-    const db = firebase.database();
+<!-- ================= RAZVOJ ================= -->
+<section class="sec" id="razvoj" style="padding-top:20px">
+  <div class="wrap" style="text-align:center">
+    <span class="eyebrow rv">Stanje razvoja</span>
+    <h2 class="title rv d1">Smo v zadnjem <span class="serif" style="color:var(--orange)">krogu</span>.</h2>
+    <p class="lead rv d2" style="margin:0 auto">Prva različica je delovala, a želimo več. Zato DigitNotes gradimo na novo.</p>
+    <div class="road rv" id="road">
+      <div class="fill"></div>
+      <div class="step"><div class="c">✓</div><div><b>Osnovna zasnova</b><small>končano</small></div></div>
+      <div class="step"><div class="c">✓</div><div><b>Zaprta demo različica</b><small>končano</small></div></div>
+      <div class="step"><div class="c">✓</div><div><b>Strežnik in baza podatkov</b><small>končano</small></div></div>
+      <div class="step"><div class="c">✓</div><div><b>Objava za predprijavljene</b><small>končano</small></div></div>
+      <div class="step now"><div class="c">⚡</div><div><b>Prenova – DigitNotes 2.0</b><small>trenutno delamo na tem</small></div></div>
+      <div class="step next"><div class="c">🚀</div><div><b>Javna objava 2.0</b><small>kmalu</small></div></div>
+    </div>
+  </div>
+</section>
 
-    // --- 2. NASTAVITVE ZA EMAILJS ---
-    emailjs.init("-KUwqqCXvyRVqjVAt"); 
-    const EMAILJS_SERVICE_ID = "digitnotesinfomail";
-    const TEMPLATE_ID_SPREJET = "template_95yatpe";
-    const TEMPLATE_ID_CAKANJE = "template_cnths3o";
-  </script>
+<!-- ================= ZAKLENJENO ================= -->
+<section class="sec" style="padding-top:10px">
+  <div class="wrap">
+    <div class="locked rv">
+      <div>
+        <span class="tape">🚧 V prenovi</span>
+        <h2>Dostop do aplikacije je začasno zaklenjen.</h2>
+        <p>Med prenovo prijava in ustvarjanje računov nista mogoča. Ko bo DigitNotes 2.0 pripravljen, bo aplikacija spet odklenjena – z vsemi novimi funkcijami.</p>
+        <div class="btns">
+          <button class="btn btn-w" onclick="openLock()">
+            <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><rect x="4" y="11" width="16" height="10" rx="2.5"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
+            Odpri aplikacijo</button>
+          <a href="#novosti" class="btn btn-o">Kaj prihaja?</a>
+        </div>
+      </div>
+      <div class="padlock" id="padlock" onclick="shakeLock()" title="Zaklenjeno"><div class="sh"></div><div class="bd"><div class="kh"></div></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= FAQ ================= -->
+<section class="sec" id="vprasanja" style="padding-top:20px">
+  <div class="wrap">
+    <div style="text-align:center"><span class="eyebrow rv">Vprašanja</span><h2 class="title rv d1">Pogosta vprašanja</h2></div>
+    <div class="faq">
+      <div class="qa rv"><button>Zakaj se aplikacija ne odpre?<span class="pl">+</span></button><div class="ans"><div>Aplikacija je v prenovi. Med prenovo je dostop zaklenjen, da lahko varno pripravimo novo različico DigitNotes 2.0.</div></div></div>
+      <div class="qa rv"><button>Kdaj bo DigitNotes 2.0 na voljo?<span class="pl">+</span></button><div class="ans"><div>Takoj, ko bo prenova končana in preizkušena. Datum objave bomo objavili na tej strani.</div></div></div>
+      <div class="qa rv"><button>Kaj se zgodi z mojimi zapiski in fotografijami?<span class="pl">+</span></button><div class="ans"><div>Ostanejo shranjeni. Ob prehodu na 2.0 se prenesejo v novo aplikacijo.</div></div></div>
+      <div class="qa rv"><button>Ali bo delovalo na iPhonu?<span class="pl">+</span></button><div class="ans"><div>Da. V Safariju odpreš aplikacijo, tapneš »Deli« in izbereš »Dodaj na domači zaslon«. Tako delujejo tudi obvestila.</div></div></div>
+      <div class="qa rv"><button>Kaj zna AI pomočnik?<span class="pl">+</span></button><div class="ans"><div>Iz tvojih zapiskov pripravi povzetek, kartice za učenje in teste, z njim pa se lahko tudi pogovarjaš o snovi. Odgovarja na podlagi snovi iz tvojih zvezkov.</div></div></div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap footin">
+    <div class="cp">&copy; 2026 DigitNotes. Vse pravice pridržane.</div>
+    <div class="author"><div><small>Ustvaril</small><b>Jaša Petrinjak</b></div><img src="jasa_logo.png" alt="Jaša Petrinjak logo"></div>
+  </div>
+</footer>
+
+<!-- ================= MODAL ================= -->
+<div class="mod" id="mod" onclick="if(event.target===this)closeLock()">
+  <div class="modbox">
+    <button class="x" onclick="closeLock()" aria-label="Zapri">✕</button>
+    <div class="li"><svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><rect x="4" y="11" width="16" height="10" rx="2.5"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></div>
+    <h3>Aplikacija je v prenovi</h3>
+    <p>Pripravljamo <b>DigitNotes 2.0</b>. Do konca prenove sta prijava in uporaba aplikacije začasno onemogočeni.</p>
+    <div class="bar2"><i></i></div>
+    <p style="font-size:13px">Prenova v teku …</p>
+    <button class="btn btn-p" style="margin-top:20px;width:100%;justify-content:center" onclick="closeLock();location.hash='novosti'">Poglej, kaj prihaja</button>
+  </div>
+</div>
+
+<script>
+const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
+
+// nav ozadje ob drsenju
+addEventListener('scroll',()=>$('#nav').classList.toggle('scrolled',scrollY>10),{passive:true});
+
+// marquee
+const MQ=['📸 Fotografiraj zapiske','🗓️ Pametni urnik','✨ AI pomočnik','🃏 Kartice za učenje','✍️ Testi iz tvoje snovi','⭐ Ocene in povprečja','🔔 Push obvestila','📄 Izvoz v PDF','🤝 Deljenje s sošolci','🔐 Koda za pozabljeno geslo'];
+$('#marq').innerHTML=[...MQ,...MQ].map(t=>`<span>${t}<span style="color:#cbd5e1">•</span></span>`).join('');
+
+// zaklenjeno
+function openLock(){$('#mod').classList.add('on');document.body.style.overflow='hidden'}
+function closeLock(){$('#mod').classList.remove('on');document.body.style.overflow=''}
+addEventListener('keydown',e=>{if(e.key==='Escape')closeLock()});
+function shakeLock(){const p=$('#padlock');p.classList.remove('shake');void p.offsetWidth;p.classList.add('shake')}
+
+// reveal + števci + obroč + roadmap
+const io=new IntersectionObserver(es=>es.forEach(e=>{
+  if(!e.isIntersecting)return;const t=e.target;t.classList.add('in');io.unobserve(t);
+  t.querySelectorAll('[data-count]').forEach(c=>{const n=+c.dataset.count;let i=0;const s=setInterval(()=>{c.textContent=++i;if(i>=n)clearInterval(s)},180)});
+  if(t.id==='road'){const f=t.querySelector('.fill');if(innerWidth<=820)f.style.height='72%';else f.style.width='70%'}
+}),{threshold:.15});
+$$('.rv').forEach(el=>io.observe(el));
+setTimeout(()=>{$('.heroRing').style.strokeDashoffset=157*(1-4/6)},500);
+
+// nagib telefona v heroju
+const hp=$('#heroPhone'),hw=$('#heroPhoneWrap');
+if(matchMedia('(hover:hover)').matches){
+  hw.addEventListener('mousemove',e=>{const r=hw.getBoundingClientRect(),x=(e.clientX-r.left)/r.width-.5,y=(e.clientY-r.top)/r.height-.5;hp.style.transform=`rotateY(${x*14}deg) rotateX(${-y*10}deg)`});
+  hw.addEventListener('mouseleave',()=>hp.style.transform='');
+}
+
+// ====== primeri zaslonov ======
+// tedenski stolpci
+const WK=[6,6,5,6,3];$('#weekBars').innerHTML=WK.map((v,i)=>`<div style="flex:1;display:flex;flex-direction:column;justify-content:flex-end;height:100%"><div class="wb" style="height:0;transition:height 1s ${i*.08}s cubic-bezier(.2,.8,.2,1);border-radius:7px;background:${v===6?'linear-gradient(#34d399,#059669)':'#a7f3d0'}" data-h="${v/6*100}"></div></div>`).join('');
+// sličice zapiskov
+const sq=s=>{let r=s;return()=>(r=(r*9301+49297)%233280)/233280};
+$('#thumbs').innerHTML=Array.from({length:6},(_,k)=>{const R=sq(k+3);let p='';for(let i=0;i<7;i++){const y=8+i*13,w=40+R()*55;p+=`<path d="M4 ${y} q ${w/4} ${-4-R()*3} ${w/2} 0 t ${w/2} 0" />`;if(R()>.7)p+=`<path d="M${10+R()*50} ${y+5}h${10+R()*20}"/>`}return`<div class="thumb"><svg viewBox="0 0 100 100" fill="none" stroke="#1e3a8a" stroke-width="2" stroke-linecap="round" opacity=".75">${p}</svg><i>${String(64-k).padStart(2,'0')}_MAT</i></div>`}).join('');
+// povprečja
+const AV=[['📐','Matematika',4.6,'#10b981'],['📖','Slovenščina',4.2,'#0ea5e9'],['🇬🇧','Angleščina',5,'#8b5cf6'],['🧪','Kemija',3.8,'#f97316'],['🌍','Geografija',4.3,'#f43f5e']];
+$('#avgs').innerHTML=AV.map(([e,n,v,c])=>`<div class="avg"><span class="lab">${e} ${n}</span><span class="bar"><i style="background:${c}" data-w="${v/5*100}"></i></span><span class="v">${String(v).replace('.',',')}</span></div>`).join('');
+
+// AI pogovor (animiran)
+const CHAT=[['u','Razloži mi razliko med ionsko in kovalentno vezjo.'],['a','Po tvojih zapiskih z dne <b>12. 11.</b>:<br>• <b>Ionska vez</b> – elektron preide z enega atoma na drugega (npr. NaCl).<br>• <b>Kovalentna vez</b> – atoma si elektrone delita (npr. H₂O).'],['u','Naredi mi 5 vprašanj za test 😅'],['a','Pripravljeno! ✍️ Test ima 5 vprašanj izbirnega tipa. Začneva?']];
+let chatT=[];
+function playChat(){chatT.forEach(clearTimeout);chatT=[];const c=$('#chat');c.innerHTML='';let t=300;
+  CHAT.forEach(([w,m])=>{if(w==='a'){chatT.push(setTimeout(()=>{c.insertAdjacentHTML('beforeend','<div class="bub a ty"><span class="typing"><i></i><i></i><i></i></span></div>')},t));t+=1100;chatT.push(setTimeout(()=>{c.querySelector('.ty')?.remove();c.insertAdjacentHTML('beforeend',`<div class="bub a">${m}</div>`)},t))}
+  else chatT.push(setTimeout(()=>c.insertAdjacentHTML('beforeend',`<div class="bub u">${m}</div>`),t));t+=900});
+}
+
+// vpis ure (klikljivo na telefonu)
+const V={
+  start:()=>`<div class="m-h" style="margin:2px 0 8px">Sreda, 19. 11. · 9:40–10:25</div><div class="m-t" style="font-size:15px;margin-bottom:10px">Kako je bila ura?</div>
+    <button class="opt" onclick="vp('z')"><span class="oi" style="background:#eff6ff">📸</span><span>Ura z zapiski<small>Fotografiraj ali vpiši snov</small></span></button>
+    <button class="opt" onclick="vp('b')"><span class="oi" style="background:#ecfdf5">✅</span><span>Ura brez zapiskov<small>Pri uri ni bilo snovi</small></span></button>
+    <button class="opt" onclick="vp('o')"><span class="oi" style="background:#fff7ed">⭐</span><span>Ocena<small>Test, ustno, pisno …</small></span></button>
+    <button class="opt" onclick="vp('x')"><span class="oi" style="background:#f1f5f9">❌</span><span>Odpadla ura<small>Ura ni bila izvedena</small></span></button>`,
+  z:()=>`<div class="m-t" style="font-size:14px;margin:2px 0 4px">📸 Fotografiraj zapiske</div><div class="cam"><div class="page"></div><span class="corner tl"></span><span class="corner tr"></span><span class="corner bl2"></span><span class="corner br"></span></div><button class="shutter" onclick="vp('z2')" aria-label="Fotografiraj"></button><button class="mbtn s" onclick="vp('start')">← Nazaj</button>`,
+  z2:()=>`<div class="m-t" style="font-size:14px;margin:2px 0 8px">Zapiski dodani ✓</div><div class="thumbs" style="margin-bottom:8px">${$('#thumbs').children[0].outerHTML}${$('#thumbs').children[1].outerHTML}<div class="thumb" style="display:grid;place-items:center;background:#f8fafc;font-size:20px;color:#94a3b8">＋</div></div>
+    <div class="m-card" style="padding:9px;font-size:10.5px;color:var(--mut)">Podnebni pasovi Evrope, sredozemsko podnebje …</div>
+    <button class="mbtn s" onclick="vp('zo')">⭐ Dodaj oceno (neobvezno)</button><button class="mbtn p" onclick="vp('done')">Shrani uro</button>`,
+  zo:()=>`<div class="m-t" style="font-size:14px;margin:2px 0 4px">⭐ Dodaj oceno</div><div class="m-h">Vrsta ocenjevanja</div><div class="gradepick" style="font-size:10px"><span class="on" style="font-size:10px">Ustno</span><span style="font-size:10px">Pisno</span><span style="font-size:10px">Test</span></div><div class="m-h">Ocena</div><div class="gradepick">${[1,2,3,4,5].map(g=>`<span class="${g===5?'on':''}" onclick="this.parentNode.querySelectorAll('span').forEach(s=>s.classList.remove('on'));this.classList.add('on')">${g}</span>`).join('')}</div><button class="mbtn p" onclick="vp('done')">Shrani uro</button><button class="mbtn s" onclick="vp('z2')">← Nazaj</button>`,
+  b:()=>V.done('Ura brez zapiskov je shranjena.'),
+  o:()=>`<div class="m-t" style="font-size:14px;margin:2px 0 4px">⭐ Ocena</div><div class="m-h">Vrsta ocenjevanja</div><div class="gradepick"><span style="font-size:10px">Ustno</span><span class="on" style="font-size:10px">Test</span><span style="font-size:10px">Referat</span></div><div class="m-h">Ocena</div><div class="gradepick">${[1,2,3,4,5].map(g=>`<span class="${g===4?'on':''}" onclick="this.parentNode.querySelectorAll('span').forEach(s=>s.classList.remove('on'));this.classList.add('on')">${g}</span>`).join('')}</div><button class="mbtn p" onclick="vp('done')">Shrani</button><button class="mbtn s" onclick="vp('start')">← Nazaj</button>`,
+  x:()=>V.done('Ura je označena kot odpadla in ne šteje v statistiko.','❌','#94a3b8'),
+  done:(m='Ura je shranjena. Niz se nadaljuje – 🔥 13 dni!',ic='✓',bg='')=>`<div class="done"><div class="big" style="${bg?'background:'+bg:''}">${ic}</div><div class="m-t" style="font-size:16px">Odlično!</div><div class="m-h" style="padding:6px 14px 16px">${m}</div><button class="mbtn s" onclick="vp('start')">↺ Poskusi znova</button></div>`
+};
+function vp(k){$('#vpisBody').innerHTML=V[k]();pauseTabs()}
+$('#vpisBody').innerHTML=V.start();
+
+// zavihki
+const tabs=$$('.tab'),scrs=$$('.scr');let ti=0,timer=null,paused=false;
+function show(i){
+  ti=i;tabs.forEach((t,k)=>t.classList.toggle('on',k===i));
+  const s=tabs[i].dataset.s;scrs.forEach(x=>x.classList.toggle('on',x.dataset.scr===s));
+  if(s==='home')setTimeout(()=>$$('.wb').forEach(b=>b.style.height=b.dataset.h+'%'),150);else $$('.wb').forEach(b=>b.style.height=0);
+  if(s==='ocene')setTimeout(()=>$$('#avgs i').forEach(b=>b.style.width=b.dataset.w+'%'),150);else $$('#avgs i').forEach(b=>b.style.width=0);
+  $('#showScreen .sbar').style.color=s==='obv'?'#fff':'';
+  if(s==='ai')playChat();
+  if(s==='obv'){$$('.ntf').forEach(n=>n.classList.remove('in'));$$('.ntf').forEach((n,k)=>setTimeout(()=>n.classList.add('in'),400+k*700))}
+  if(s==='vpis'&&!paused)$('#vpisBody').innerHTML=V.start();
+  clearTimeout(timer);if(!paused)timer=setTimeout(()=>show((ti+1)%tabs.length),7000);
+}
+function pauseTabs(){paused=true;clearTimeout(timer);$('#tabs').classList.add('paused')}
+tabs.forEach((t,i)=>t.addEventListener('click',()=>{paused=false;$('#tabs').classList.remove('paused');show(i)}));
+$('#showScreen').addEventListener('click',pauseTabs);
+// zaženi, ko je sekcija vidna
+new IntersectionObserver((es,o)=>{if(es[0].isIntersecting){show(0);o.disconnect()}},{threshold:.3}).observe($('#novosti'));
+
+// bento: možnosti ure
+const odMsg={z:'📸 Odlično! Zdaj lahko dodaš samo še oceno.',b:'✅ Ura je zaključena v enem dotiku.',o:'⭐ Ocena je shranjena k predmetu in v povprečje.',x:'❌ Odpadla ura ne šteje v statistiko.'};
+$$('.od').forEach(b=>b.addEventListener('click',()=>{
+  const k=b.dataset.k,cur=$('.od.sel')?.dataset.k;
+  if(b.classList.contains('dis'))return;
+  if(cur==='z'&&k==='o'){b.classList.add('sel');$('#odmsg').textContent='📸 + ⭐ Ura z zapiski in oceno – popolno!';return}
+  $$('.od').forEach(x=>x.classList.remove('sel','dis'));
+  if(cur===k){$('#odmsg').textContent='';return}
+  b.classList.add('sel');$('#odmsg').textContent=odMsg[k];
+  if(k==='z')$$('.od').forEach(x=>{if(x.dataset.k==='b'||x.dataset.k==='x')x.classList.add('dis')});
+}));
+
+// bento: kartice
+const FC=[['Matematika','Kaj je diskriminanta kvadratne enačbe?','D = b² − 4ac. Pove, koliko realnih rešitev ima enačba.'],['Kemija','Kaj je ionska vez?','Vez, pri kateri elektron preide z enega atoma na drugega, npr. NaCl.'],['Geografija','Katero podnebje prevladuje ob Jadranu?','Sredozemsko podnebje – vroča suha poletja in mile mokre zime.'],['Slovenščina','Kdo je napisal Krst pri Savici?','France Prešeren (1836).']];
+let fi=0,known=0;
+function drawFc(){const [s,q,a]=FC[fi%FC.length];$('#deck').innerHTML=`<div class="fc" onclick="this.classList.toggle('flip')"><div class="f"><small>${s} · ${fi%FC.length+1}/${FC.length}</small><div class="q">${q}</div><span class="tap">tapni za odgovor ↻</span></div><div class="b"><small style="color:var(--g700)">Odgovor</small><div class="q" style="font-size:17px">${a}</div></div></div>`;$('#fcscore').textContent=fi?`Znaš ${known} od ${fi} kartic`:'Kartice so primer – v aplikaciji nastanejo iz tvojih zapiskov.'}
+function fcNext(k){const c=$('.fc');c.style.opacity=0;c.style.transform+=` translateX(${k?60:-60}px)`;if(k)known++;fi++;setTimeout(drawFc,300)}
+drawFc();
+
+// FAQ
+$$('.qa button').forEach(b=>b.addEventListener('click',()=>{const q=b.parentNode,a=q.querySelector('.ans'),on=q.classList.toggle('on');a.style.maxHeight=on?a.scrollHeight+'px':0}));
+</script>
 </body>
 </html>
