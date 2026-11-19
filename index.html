@@ -11,9 +11,6 @@
 <meta property="og:title" content="DigitNotes 2.0 prihaja">
 <meta property="og:description" content="Pametnejši način do odličnih ocen. Aplikacija je trenutno v prenovi.">
 <meta property="og:image" content="Logo.png">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Instrument+Serif:ital@1&display=swap" rel="stylesheet">
 <style>
 :root{
   --ink:#0b1f1a;--ink2:#334155;--mut:#64748b;--line:#e2e8f0;
@@ -24,11 +21,11 @@
 }
 *{box-sizing:border-box;margin:0;padding:0}
 html{scroll-behavior:smooth;scroll-padding-top:80px}
-body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:var(--bg);color:var(--ink);-webkit-font-smoothing:antialiased;overflow-x:hidden;line-height:1.55}
+body{font-family:system-ui,-apple-system,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;background:var(--bg);color:var(--ink);-webkit-font-smoothing:antialiased;overflow-x:hidden;line-height:1.55}
 img{max-width:100%;display:block}
 button{font:inherit;cursor:pointer;border:0;background:none;color:inherit}
 a{color:inherit;text-decoration:none}
-.serif{font-family:'Instrument Serif',serif;font-style:italic;font-weight:400;letter-spacing:-.01em}
+.serif{font-family:Georgia,'Times New Roman',serif;font-style:italic;font-weight:400;letter-spacing:-.01em}
 .wrap{max-width:1180px;margin:0 auto;padding:0 22px}
 .sec{padding:110px 0}
 .eyebrow{display:inline-flex;align-items:center;gap:8px;font-size:13px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--g700)}
@@ -314,12 +311,6 @@ nav.top.scrolled{background:rgba(245,250,247,.82);backdrop-filter:blur(14px);-we
 footer{border-top:1px solid var(--line);background:#fff;padding:34px 0;margin-top:40px}
 .footin{display:flex;justify-content:space-between;align-items:center;gap:20px;flex-wrap:wrap}
 .footin .cp{font-size:14px;color:var(--mut)}
-.author{display:flex;align-items:center;gap:12px;text-align:right}
-.author small{display:block;font-size:12px;color:#94a3b8}
-.author b{font-size:14px;color:var(--ink2);transition:.3s}
-.author:hover b{color:var(--g600)}
-.author img{height:46px;width:auto;transition:transform .8s}
-.author:hover img{transform:rotate(360deg)}
 
 /* ===== MODAL ===== */
 .mod{position:fixed;inset:0;z-index:100;background:rgba(11,31,26,.55);backdrop-filter:blur(6px);display:none;align-items:center;justify-content:center;padding:20px}
@@ -619,17 +610,18 @@ footer{border-top:1px solid var(--line);background:#fff;padding:34px 0;margin-to
     <div class="faq">
       <div class="qa rv"><button>Zakaj se aplikacija ne odpre?<span class="pl">+</span></button><div class="ans"><div>Aplikacija je v prenovi. Med prenovo je dostop zaklenjen, da lahko varno pripravimo novo različico DigitNotes 2.0.</div></div></div>
       <div class="qa rv"><button>Kdaj bo DigitNotes 2.0 na voljo?<span class="pl">+</span></button><div class="ans"><div>Takoj, ko bo prenova končana in preizkušena. Datum objave bomo objavili na tej strani.</div></div></div>
-      <div class="qa rv"><button>Kaj se zgodi z mojimi zapiski in fotografijami?<span class="pl">+</span></button><div class="ans"><div>Ostanejo shranjeni. Ob prehodu na 2.0 se prenesejo v novo aplikacijo.</div></div></div>
+      <div class="qa rv"><button>Kaj se zgodi z mojimi zapiski in fotografijami?<span class="pl">+</span></button><div class="ans"><div>Ostanejo shranjeni. Ob prehodu na 2.0 se prenesejo v novo aplikacijo. Vse podatke lahko kadarkoli preneseš ali trajno izbrišeš. Več v <a href="zasebnost.html" style="color:var(--g700);text-decoration:underline">politiki zasebnosti</a>.</div></div></div>
       <div class="qa rv"><button>Ali bo delovalo na iPhonu?<span class="pl">+</span></button><div class="ans"><div>Da. V Safariju odpreš aplikacijo, tapneš »Deli« in izbereš »Dodaj na domači zaslon«. Tako delujejo tudi obvestila.</div></div></div>
-      <div class="qa rv"><button>Kaj zna AI pomočnik?<span class="pl">+</span></button><div class="ans"><div>Iz tvojih zapiskov pripravi povzetek, kartice za učenje in teste, z njim pa se lahko tudi pogovarjaš o snovi. Odgovarja na podlagi snovi iz tvojih zvezkov.</div></div></div>
+      <div class="qa rv"><button>Ali so moji podatki varni?<span class="pl">+</span></button><div class="ans"><div>Podatkovna baza je v Evropski uniji, gesla so šifrirana, administrator pa ne vidi tvojih zapiskov in ocen. Ne uporabljamo piškotkov za sledenje in podatkov ne prodajamo. Uporabniki, mlajši od 15 let, potrebujejo privolitev starša.</div></div></div>
+      <div class="qa rv"><button>Kaj zna AI pomočnik?<span class="pl">+</span></button><div class="ans"><div>Iz tvojih zapiskov pripravi povzetek, kartice za učenje in teste, z njim pa se lahko tudi pogovarjaš o snovi. Odgovarja na podlagi snovi iz tvojih zvezkov. Je neobvezen, vklopi se samo s tvojo privolitvijo, podatki pa se ne uporabljajo za učenje AI modelov.</div></div></div>
     </div>
   </div>
 </section>
 
 <footer>
   <div class="wrap footin">
-    <div class="cp">&copy; 2026 DigitNotes. Vse pravice pridržane.</div>
-    <div class="author"><div><small>Ustvaril</small><b>Jaša Petrinjak</b></div><img src="jasa_logo.png" alt="Jaša Petrinjak logo"></div>
+    <div class="cp">&copy; 2026 DigitNotes. Vse pravice pridržane.<br><a href="zasebnost.html" style="text-decoration:underline">Politika zasebnosti</a> · <a href="pogoji.html" style="text-decoration:underline">Pogoji uporabe</a></div>
+    <a href="#" class="brand" style="font-size:16px"><img src="Logo.png" alt="DigitNotes logo" style="width:32px;height:32px">DigitNotes</a>
   </div>
 </footer>
 
@@ -647,6 +639,8 @@ footer{border-top:1px solid var(--line);background:#fff;padding:34px 0;margin-to
 </div>
 
 <script>
+// ⚙️ Ko je DigitNotes 2.0 pripravljen za vse, spremeni na true – gumbi bodo vodili v aplikacijo.
+const APP_OPEN = false;
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
 
 // nav ozadje ob drsenju
@@ -657,7 +651,7 @@ const MQ=['📸 Fotografiraj zapiske','🗓️ Pametni urnik','✨ AI pomočnik'
 $('#marq').innerHTML=[...MQ,...MQ].map(t=>`<span>${t}<span style="color:#cbd5e1">•</span></span>`).join('');
 
 // zaklenjeno
-function openLock(){$('#mod').classList.add('on');document.body.style.overflow='hidden'}
+function openLock(){if(APP_OPEN){location.href='app/';return}$('#mod').classList.add('on');document.body.style.overflow='hidden'}
 function closeLock(){$('#mod').classList.remove('on');document.body.style.overflow=''}
 addEventListener('keydown',e=>{if(e.key==='Escape')closeLock()});
 function shakeLock(){const p=$('#padlock');p.classList.remove('shake');void p.offsetWidth;p.classList.add('shake')}
