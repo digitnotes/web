@@ -821,7 +821,9 @@ async function importOld() {
     log('Berem uporabnike …'); const all = await (await fetch(base + '/u.json')).json() || {};
     const ids = Object.keys(all).filter(k => all[k]?.profile); log(`Najdenih ${ids.length} uporabnikov.`);
     for (const id of ids) {
-      const x = all[id]; await api('/admin/import/user', { user: { id, ...x } }); log(`✓ ${x.profile.name}`);
+      const x = all[id];
+      try { await api('/admin/import/user', { user: { id, ...x } }); } catch (e) { log('⚠ ' + x.profile.name + ': ' + e.message); continue; }
+      log(`✓ ${x.profile.name}`);
       const pm = x.pm || {}; let n = 0, tot = Object.values(pm).reduce((a, o) => a + Object.keys(o || {}).length, 0);
       for (const [nid, o] of Object.entries(pm)) for (const [pid, meta] of Object.entries(o || {})) {
         const data = await (await fetch(`${base}/pd/${id}/${pid}.json`)).json();
