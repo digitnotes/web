@@ -3,13 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>DigitNotes 2.0 – prihaja kmalu | Vsi šolski zapiski na enem mestu</title>
-<meta name="description" content="DigitNotes 2.0 prihaja: urnik, digitalni zvezki, AI pomočnik za učenje, ocene in obvestila – vse na enem mestu.">
+<title>DigitNotes 2.0 | Vsi šolski zapiski na enem mestu</title>
+<meta name="description" content="DigitNotes 2.0: urnik, digitalni zvezki, AI pomočnik za učenje, ocene in obvestila – vse na enem mestu.">
 <meta name="theme-color" content="#059669">
 <link rel="icon" type="image/png" href="favicon.png">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
-<meta property="og:title" content="DigitNotes 2.0 prihaja">
-<meta property="og:description" content="Pametnejši način do odličnih ocen. Aplikacija je trenutno v prenovi.">
+<meta property="og:title" content="DigitNotes 2.0">
+<meta property="og:description" content="Pametnejši način do odličnih ocen. Urnik, digitalni zvezki, ocene in AI pomočnik.">
 <meta property="og:image" content="Logo.png">
 <style>
 :root{
@@ -264,7 +264,7 @@ nav.top.scrolled{background:rgba(245,250,247,.82);backdrop-filter:blur(14px);-we
 /* ===== ROADMAP ===== */
 .road{position:relative;display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin-top:60px}
 .road::before{content:"";position:absolute;top:27px;left:8%;right:8%;height:4px;background:#e2e8f0;border-radius:4px}
-.road .fill{position:absolute;top:27px;left:8%;height:4px;width:0;background:linear-gradient(90deg,var(--g500),var(--g400),var(--orange));border-radius:4px;transition:width 2s cubic-bezier(.2,.8,.2,1)}
+.road .fill{position:absolute;top:27px;left:8%;height:4px;width:0;background:linear-gradient(90deg,var(--g500),var(--g400),var(--g600));border-radius:4px;transition:width 2s cubic-bezier(.2,.8,.2,1)}
 .step{position:relative;text-align:center;z-index:1}
 .step .c{width:58px;height:58px;border-radius:50%;margin:0 auto 14px;display:grid;place-items:center;background:var(--g500);color:#fff;box-shadow:0 0 0 6px var(--bg);font-weight:800}
 .step.now .c{background:var(--orange);width:66px;height:66px;margin-top:-4px;animation:pulse 2s infinite}
@@ -344,10 +344,10 @@ footer{border-top:1px solid var(--line);background:#fff;padding:34px 0;margin-to
       <a href="#razvoj">Razvoj</a>
       <a href="#vprasanja">Vprašanja</a>
     </div>
-    <button class="navlock" onclick="openLock()" title="Aplikacija je v prenovi">
-      <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><rect x="4" y="11" width="16" height="10" rx="2.5"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
+    <a class="navlock" href="app/" title="Prijava v aplikacijo" style="color:var(--g700)">
+      <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
       Prijava
-    </button>
+    </a>
   </div>
 </nav>
 
@@ -356,15 +356,13 @@ footer{border-top:1px solid var(--line);background:#fff;padding:34px 0;margin-to
   <div class="blob b1"></div><div class="blob b2"></div><div class="blob b3"></div><div class="grid-bg"></div>
   <div class="wrap herogrid">
     <div class="herotext">
-      <span class="pill rv"><b>NOVO</b><span class="dot"></span>Aplikacija je v prenovi – prihaja DigitNotes 2.0</span>
+      <span class="pill rv"><b>NOVO</b><span class="dot" style="background:var(--g500);animation:none"></span>DigitNotes 2.0 je na voljo</span>
       <h1 class="rv d1">Tvoj zvezek.<br><span class="serif">Samo</span> <span class="two">pametnejši.</span></h1>
       <p class="lead rv d2">Urnik, digitalni zvezki, ocene in AI pomočnik, ki se uči iz <em>tvojih</em> zapiskov. DigitNotes 2.0 je popolnoma prenovljen – hitrejši, preprostejši in narejen za telefon.</p>
       <div class="herocta rv d3">
-        <a href="#novosti" class="btn btn-p">Poglej novosti
+        <a href="app/" class="btn btn-p">Odpri aplikacijo
           <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
-        <button class="btn btn-lock" onclick="openLock()">
-          <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><rect x="4" y="11" width="16" height="10" rx="2.5"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
-          Aplikacija zaklenjena</button>
+        <a href="#novosti" class="btn btn-g">Poglej novosti</a>
       </div>
       <div class="herometa rv d3">
         <div><b data-count="4">0</b>načini vpisa ure</div>
@@ -415,8 +413,8 @@ footer{border-top:1px solid var(--line);background:#fff;padding:34px 0;margin-to
 <section class="sec" id="novosti">
   <div class="wrap">
     <span class="eyebrow rv">Kaj prinaša 2.0</span>
-    <h2 class="title rv d1">Poglej, kako bo <span class="serif" style="color:var(--g600)">izgledalo</span>.</h2>
-    <p class="lead rv d2">Klikni na funkcijo in na telefonu se prikaže primer zaslona iz nove aplikacije. Pri vpisu ure lahko na telefonu tudi sam klikaš.</p>
+    <h2 class="title rv d1">Poglej, kako <span class="serif" style="color:var(--g600)">izgleda</span>.</h2>
+    <p class="lead rv d2">Klikni na funkcijo in na telefonu se prikaže primer zaslona iz aplikacije. Pri vpisu ure lahko na telefonu tudi sam klikaš.</p>
 
     <div class="show">
       <div class="tabs rv" id="tabs">
@@ -540,7 +538,7 @@ footer{border-top:1px solid var(--line);background:#fff;padding:34px 0;margin-to
       <div class="bx s3 dark rv d1">
         <span class="bi" style="background:rgba(16,185,129,.18)">🃏</span>
         <h3>AI kartice za učenje</h3>
-        <p>Klikni kartico, da jo obrneš. Tako bo izgledalo ponavljanje pred testom.</p>
+        <p>Klikni kartico, da jo obrneš. Tako izgleda ponavljanje pred testom.</p>
         <div class="deck" id="deck"></div>
         <div class="fcbtns"><button class="no" onclick="fcNext(false)">Še ne znam</button><button class="yes" onclick="fcNext(true)">Znam ✓</button></div>
         <div class="fcscore" id="fcscore"></div>
@@ -569,16 +567,16 @@ footer{border-top:1px solid var(--line);background:#fff;padding:34px 0;margin-to
 <section class="sec" id="razvoj" style="padding-top:20px">
   <div class="wrap" style="text-align:center">
     <span class="eyebrow rv">Stanje razvoja</span>
-    <h2 class="title rv d1">Smo v zadnjem <span class="serif" style="color:var(--orange)">krogu</span>.</h2>
-    <p class="lead rv d2" style="margin:0 auto">Prva različica je delovala, a želimo več. Zato DigitNotes gradimo na novo.</p>
+    <h2 class="title rv d1">DigitNotes 2.0 je <span class="serif" style="color:var(--g600)">tukaj</span>.</h2>
+    <p class="lead rv d2" style="margin:0 auto">Prva različica je delovala, a želeli smo več. Zato smo DigitNotes zgradili na novo.</p>
     <div class="road rv" id="road">
       <div class="fill"></div>
       <div class="step"><div class="c">✓</div><div><b>Osnovna zasnova</b><small>končano</small></div></div>
       <div class="step"><div class="c">✓</div><div><b>Zaprta demo različica</b><small>končano</small></div></div>
       <div class="step"><div class="c">✓</div><div><b>Strežnik in baza podatkov</b><small>končano</small></div></div>
       <div class="step"><div class="c">✓</div><div><b>Objava za predprijavljene</b><small>končano</small></div></div>
-      <div class="step now"><div class="c">⚡</div><div><b>Prenova – DigitNotes 2.0</b><small>trenutno delamo na tem</small></div></div>
-      <div class="step next"><div class="c">🚀</div><div><b>Javna objava 2.0</b><small>kmalu</small></div></div>
+      <div class="step"><div class="c">✓</div><div><b>Prenova – DigitNotes 2.0</b><small>končano</small></div></div>
+      <div class="step"><div class="c" style="background:var(--g600);box-shadow:0 0 0 6px var(--bg),0 0 0 10px var(--g200)">🚀</div><div><b style="color:var(--g700)">Javna objava 2.0</b><small>na voljo zdaj</small></div></div>
     </div>
   </div>
 </section>
@@ -588,17 +586,16 @@ footer{border-top:1px solid var(--line);background:#fff;padding:34px 0;margin-to
   <div class="wrap">
     <div class="locked rv">
       <div>
-        <span class="tape">🚧 V prenovi</span>
-        <h2>Dostop do aplikacije je začasno zaklenjen.</h2>
-        <p>Med prenovo prijava in ustvarjanje računov nista mogoča. Ko bo DigitNotes 2.0 pripravljen, bo aplikacija spet odklenjena – z vsemi novimi funkcijami.</p>
+        <span class="tape" style="background:var(--g200);color:var(--g800)">✨ Na voljo zdaj</span>
+        <h2>Tvoj digitalni zvezek te čaka.</h2>
+        <p>Prijavi se, namesti aplikacijo na domači zaslon in vklopi obvestila. Deluje na Androidu, iPhonu in računalniku – brez trgovine z aplikacijami.</p>
         <div class="btns">
-          <button class="btn btn-w" onclick="openLock()">
-            <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><rect x="4" y="11" width="16" height="10" rx="2.5"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
-            Odpri aplikacijo</button>
-          <a href="#novosti" class="btn btn-o">Kaj prihaja?</a>
+          <a class="btn btn-w" href="app/">Odpri aplikacijo
+            <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+          <a href="#novosti" class="btn btn-o">Kaj zna?</a>
         </div>
       </div>
-      <div class="padlock" id="padlock" onclick="shakeLock()" title="Zaklenjeno"><div class="sh"></div><div class="bd"><div class="kh"></div></div></div>
+      <a class="padlock" id="padlock" href="app/" title="Odpri aplikacijo" style="display:block"><div class="sh" style="transform:translateY(-26px) rotate(-14deg);transform-origin:right bottom;border-color:var(--g200)"></div><div class="bd"><div class="kh"></div></div></a>
     </div>
   </div>
 </section>
@@ -608,9 +605,9 @@ footer{border-top:1px solid var(--line);background:#fff;padding:34px 0;margin-to
   <div class="wrap">
     <div style="text-align:center"><span class="eyebrow rv">Vprašanja</span><h2 class="title rv d1">Pogosta vprašanja</h2></div>
     <div class="faq">
-      <div class="qa rv"><button>Zakaj se aplikacija ne odpre?<span class="pl">+</span></button><div class="ans"><div>Aplikacija je v prenovi. Med prenovo je dostop zaklenjen, da lahko varno pripravimo novo različico DigitNotes 2.0.</div></div></div>
-      <div class="qa rv"><button>Kdaj bo DigitNotes 2.0 na voljo?<span class="pl">+</span></button><div class="ans"><div>Takoj, ko bo prenova končana in preizkušena. Datum objave bomo objavili na tej strani.</div></div></div>
-      <div class="qa rv"><button>Kaj se zgodi z mojimi zapiski in fotografijami?<span class="pl">+</span></button><div class="ans"><div>Ostanejo shranjeni. Ob prehodu na 2.0 se prenesejo v novo aplikacijo. Vse podatke lahko kadarkoli preneseš ali trajno izbrišeš. Več v <a href="zasebnost.html" style="color:var(--g700);text-decoration:underline">politiki zasebnosti</a>.</div></div></div>
+      <div class="qa rv"><button>Kako začnem?<span class="pl">+</span></button><div class="ans"><div>Klikni »Odpri aplikacijo« in se prijavi. Na telefonu jo nato dodaj na domači zaslon in vklopi obvestila. Če računa še nimaš ali si pozabil geslo, uporabi »Pozabljeno geslo« ali piši na <a href="mailto:informacije@digitnotes.si" style="color:var(--g700);text-decoration:underline">informacije@digitnotes.si</a>.</div></div></div>
+      <div class="qa rv"><button>Ali je DigitNotes brezplačen?<span class="pl">+</span></button><div class="ans"><div>Da. Nekatere funkcije, kot je AI pomočnik, imajo mesečno omejitev uporabe.</div></div></div>
+      <div class="qa rv"><button>Kaj se zgodi z mojimi zapiski in fotografijami?<span class="pl">+</span></button><div class="ans"><div>Zapiski iz prejšnje različice so preneseni v DigitNotes 2.0. Vse podatke lahko kadarkoli preneseš ali trajno izbrišeš. Več v <a href="zasebnost.html" style="color:var(--g700);text-decoration:underline">politiki zasebnosti</a>.</div></div></div>
       <div class="qa rv"><button>Ali bo delovalo na iPhonu?<span class="pl">+</span></button><div class="ans"><div>Da. V Safariju odpreš aplikacijo, tapneš »Deli« in izbereš »Dodaj na domači zaslon«. Tako delujejo tudi obvestila.</div></div></div>
       <div class="qa rv"><button>Ali so moji podatki varni?<span class="pl">+</span></button><div class="ans"><div>Podatkovna baza je v Evropski uniji, gesla so šifrirana, administrator pa ne vidi tvojih zapiskov in ocen. Ne uporabljamo piškotkov za sledenje in podatkov ne prodajamo. Uporabniki, mlajši od 15 let, potrebujejo privolitev starša.</div></div></div>
       <div class="qa rv"><button>Kaj zna AI pomočnik?<span class="pl">+</span></button><div class="ans"><div>Iz tvojih zapiskov pripravi povzetek, kartice za učenje in teste, z njim pa se lahko tudi pogovarjaš o snovi. Odgovarja na podlagi snovi iz tvojih zvezkov. Je neobvezen, vklopi se samo s tvojo privolitvijo, podatki pa se ne uporabljajo za učenje AI modelov.</div></div></div>
@@ -640,7 +637,7 @@ footer{border-top:1px solid var(--line);background:#fff;padding:34px 0;margin-to
 
 <script>
 // ⚙️ Ko je DigitNotes 2.0 pripravljen za vse, spremeni na true – gumbi bodo vodili v aplikacijo.
-const APP_OPEN = false;
+const APP_OPEN = true;
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
 
 // nav ozadje ob drsenju
@@ -660,7 +657,7 @@ function shakeLock(){const p=$('#padlock');p.classList.remove('shake');void p.of
 const io=new IntersectionObserver(es=>es.forEach(e=>{
   if(!e.isIntersecting)return;const t=e.target;t.classList.add('in');io.unobserve(t);
   t.querySelectorAll('[data-count]').forEach(c=>{const n=+c.dataset.count;let i=0;const s=setInterval(()=>{c.textContent=++i;if(i>=n)clearInterval(s)},180)});
-  if(t.id==='road'){const f=t.querySelector('.fill');if(innerWidth<=820)f.style.height='72%';else f.style.width='70%'}
+  if(t.id==='road'){const f=t.querySelector('.fill');if(innerWidth<=820)f.style.height='88%';else f.style.width='84%'}
 }),{threshold:.15});
 $$('.rv').forEach(el=>io.observe(el));
 setTimeout(()=>{$('.heroRing').style.strokeDashoffset=157*(1-4/6)},500);
