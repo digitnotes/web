@@ -2,7 +2,7 @@
 'use strict';
 const API = (window.DN_API || '').replace(/\/$/, '');
 const SITE = '../';
-const VER = '2.1.0';
+const VER = '2.1.1';
 
 // ============================================================ ikone
 const P = {
@@ -41,6 +41,7 @@ const P = {
   s_coins: '<circle cx="9" cy="9" r="6"/><path d="M15.4 4.6A6 6 0 1 1 9.6 15.4M9 6.5v5M7 9h4"/>', s_chart: '<path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 6-6"/>', s_planet: '<circle cx="12" cy="12" r="5"/><path d="M5.6 15.5C3 17.6 2.3 19.4 3.2 20s3.4-.3 6.8-2.6M18.4 8.5C21 6.4 21.7 4.6 20.8 4s-3.4.3-6.8 2.6"/>',
   s_cam: '<path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/>', s_brain: '<path d="M9.5 2A2.5 2.5 0 0 0 7 4.5v.5A3 3 0 0 0 4 8a3 3 0 0 0 .5 5A3 3 0 0 0 7 18a3 3 0 0 0 5 1V4.5A2.5 2.5 0 0 0 9.5 2zM14.5 2A2.5 2.5 0 0 1 17 4.5v.5a3 3 0 0 1 3 3 3 3 0 0 1-.5 5A3 3 0 0 1 17 18a3 3 0 0 1-5 1"/>',
   s_star: '<path d="m12 2 3.1 6.3 6.9 1-5 4.9 1.2 6.8L12 17.8 5.8 21l1.2-6.8-5-4.9 6.9-1z"/>',
+  tool: '<path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.8-3.8a6 6 0 0 1-7.9 7.9l-6.9 6.9a2.1 2.1 0 0 1-3-3l6.9-6.9a6 6 0 0 1 7.9-7.9z"/>', eye: '<path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',
   search: '<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>', timer: '<circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2M9 2h6M12 2v3"/>', mic: '<rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v4"/>', globe: '<circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15 15 0 0 1 0 20M12 2a15 15 0 0 0 0 20"/>', vol: '<path d="M11 5 6 9H2v6h4l5 4zM15.5 8.5a5 5 0 0 1 0 7M19 5a10 10 0 0 1 0 14"/>', copy: '<rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>', rot: '<path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/>', crop: '<path d="M6 2v14a2 2 0 0 0 2 2h14M18 22V8a2 2 0 0 0-2-2H2"/>', play: '<path d="m6 4 14 8-14 8z"/>', pause: '<path d="M6 4h4v16H6zM14 4h4v16h-4z"/>', stop: '<rect x="5" y="5" width="14" height="14" rx="2"/>', sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',
   db: '<ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.7-4 3-9 3s-9-1.3-9-3M3 5v14c0 1.7 4 3 9 3s9-1.3 9-3V5"/>', more: '<circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/>'
 };
@@ -87,6 +88,7 @@ async function api(path, body, raw) {
   const j = await r.json().catch(() => ({}));
   if (r.status === 401 && TOK && !path.startsWith('/auth/')) { hardLogout(); throw new Error(j.error || 'Prijava je potekla.'); }
   if (r.status === 428) { await refreshMe(); throw new Error('__gate'); }
+  if (r.status === 503 && j.maint) { Object.assign(CFG, j.maint); if (!path.startsWith('/auth/')) { renderMaint(); throw new Error('__gate'); } throw new Error('Med vzdrževanjem se lahko prijavi samo administrator.'); }
   if (!r.ok) throw new Error(j.error || 'Napaka (' + r.status + ')');
   return j;
 }
@@ -151,13 +153,13 @@ async function afterLogin() {
   if (SHARE && U.role !== 'admin') openShared();
 }
 async function loadData() { const r = await api('/data'); U = r.user; D = r; D.lsMap = {}; (D.ls || []).forEach(l => D.lsMap[l.k] = l); }
-function hardLogout() { TOK = ''; localStorage.removeItem(TOKEN_KEY); U = null; D = {}; PHC.forEach(u => URL.revokeObjectURL(u)); PHC.clear(); stopPolling(); renderLogin(); }
-async function logout() { const sid = localStorage.getItem('dn2_push'); try { if (sid) await api('/push/unsub', { id: sid }); await api('/auth/logout', {}); } catch { } localStorage.removeItem('dn2_push'); try { const reg = await navigator.serviceWorker?.getRegistration(); const s = await reg?.pushManager?.getSubscription(); await s?.unsubscribe(); } catch { } hardLogout(); }
+function hardLogout() { if (localStorage.getItem(ADM_KEY)) { demoRestore(); return; } TOK = ''; localStorage.removeItem(TOKEN_KEY); U = null; D = {}; PHC.forEach(u => URL.revokeObjectURL(u)); PHC.clear(); stopPolling(); renderLogin(); }
+async function logout() { if (U?.role === 'demo') return demoExit(); const sid = localStorage.getItem('dn2_push'); try { if (sid) await api('/push/unsub', { id: sid }); await api('/auth/logout', {}); } catch { } localStorage.removeItem('dn2_push'); try { const reg = await navigator.serviceWorker?.getRegistration(); const s = await reg?.pushManager?.getSubscription(); await s?.unsubscribe(); } catch { } hardLogout(); }
 
 // ============================================================ PRIJAVA, POZABLJENO GESLO, REGISTRACIJA
 let AUTH = { mode: 'login', email: '' };
 function authShell(inner) {
-  return `<div class="auth"><div class="authbox"><div class="authlogo"><img src="../Logo.png" alt="DigitNotes"><div><div class="h1" style="font-size:24px">DigitNotes</div><div class="mut sm">Vsi šolski zapiski na enem mestu</div></div></div>${CFG.maintenance ? `<div class="notice o" style="margin-bottom:14px">${ic('alert')}<div><b>Aplikacija je v prenovi.</b><br><span class="sm">Prijava je trenutno mogoča samo administratorju.</span></div></div>` : ''}${inner}</div>
+  return `<div class="auth"><div class="authbox"><div class="authlogo"><img src="../Logo.png" alt="DigitNotes"><div><div class="h1" style="font-size:24px">DigitNotes</div><div class="mut sm">Vsi šolski zapiski na enem mestu</div></div></div>${CFG.maintenance ? `<div class="notice o" style="margin-bottom:14px">${ic('alert')}<div><b>Aplikacija je v vzdrževanju.</b><br><span class="sm">Prijava je trenutno mogoča samo administratorju.${CFG.maintNote ? '<br>' + esc(CFG.maintNote) : ''}${CFG.maintUntil ? '<br>Predviden konec: ' + untilTxt(CFG.maintUntil) : ''}</span></div></div>` : ''}${inner}</div>
   <div class="authfoot"><a href="${SITE}index.html">Domov</a> · <a href="${SITE}zasebnost.html">Zasebnost</a> · <a href="${SITE}pogoji.html">Pogoji uporabe</a></div></div>`;
 }
 function renderLogin(err) {
@@ -271,8 +273,9 @@ const NAV_A = [['admin', 'Uporabniki', 'users'], ['amsg', 'Sporočila', 'send'],
 function shell(inner) {
   const items = U.role === 'admin' ? NAV_A : NAV, act = { nb: 'nbs', shared: 'nbs', set: 'set', focus: 'ai', grade: 'grades' }[S.view] || S.view;
   const un = (D.inbox || []).filter(m => !m.read).length;
-  return `<div class="app"><header class="top" id="top"><div class="topin">
-    <a class="brand" href="#" data-a="go" data-v="${U.role === 'admin' ? 'admin' : 'home'}"><img src="../Logo.png" alt="">DigitNotes</a><span style="flex:1"></span>
+  const demo = U.role === 'demo' ? `<div class="demobar"><span class="dot"></span><span class="grow"><b>DEMO račun</b> · tako aplikacijo vidijo uporabniki${CFG.maintenance ? ' · <b>vzdrževanje je vklopljeno</b>' : ''}</span><button data-a="demoExit">${ic('l', 'ic-s')} Nazaj na admin</button></div>` : '';
+  return `<div class="app">${demo}<header class="top" id="top"><div class="topin">
+    <a class="brand" href="#" data-a="go" data-v="${U.role === 'admin' ? 'admin' : 'home'}"><img src="../Logo.png" alt="">DigitNotes${U.role === 'demo' ? '<span class="dpill">DEMO</span>' : ''}</a><span style="flex:1"></span>
     ${U.role !== 'admin' ? `<button class="topbtn" data-a="go" data-v="search" aria-label="Iskanje">${ic('search')}</button>` : ''}
     ${U.role !== 'admin' ? `<button class="topbtn" data-a="openInbox" aria-label="Obvestila">${ic('bell')}${un ? `<span class="badge">${un}</span>` : ''}</button>` : ''}
     <button class="topbtn" data-a="go" data-v="set" aria-label="Nastavitve">${ic('gear')}</button></div></header>
@@ -688,6 +691,53 @@ async function aiOcr() {
   closeModal(); render(); if (i) toast(`Prebrano: ${nphoto(i)}.`);
 }
 
+
+// ============================================================ VZDRŽEVANJE IN DEMO (2.1.1)
+const ADM_KEY = 'dn2_adm';
+function untilTxt(v) {
+  const d = new Date(v); if (isNaN(d)) return '';
+  const t = d.toLocaleTimeString('sl-SI', { hour: '2-digit', minute: '2-digit' }), ds = v.slice(0, 10);
+  return ds === today() ? 'danes ob ' + t : ds === addD(today(), 1) ? 'jutri ob ' + t : d.toLocaleDateString('sl-SI', { weekday: 'long', day: 'numeric', month: 'long' }) + ' ob ' + t;
+}
+let MPOLL = null;
+function renderMaint() {
+  stopPolling(); closeModal?.();
+  $('app').innerHTML = `<div class="auth"><div class="authbox" style="text-align:center"><div class="authlogo"><img src="../Logo.png" alt="DigitNotes"></div>
+    <div class="maintic">${ic('tool')}</div>
+    <div class="h1" style="font-size:26px;margin-top:16px">Aplikacija je v vzdrževanju</div>
+    <p class="mut" style="margin-top:8px">Trenutno izboljšujemo DigitNotes. Tvoji podatki so varni – ko bo vzdrževanje končano, se aplikacija sama znova odpre.</p>
+    ${CFG.maintNote ? `<div class="notice b sm" style="margin-top:16px;text-align:left">${ic('info')}<div>${esc(CFG.maintNote)}</div></div>` : ''}
+    ${CFG.maintUntil ? `<div class="pill o" style="margin-top:16px;padding:7px 14px;font-size:13px">${ic('timer', 'ic-s')} Predviden konec: ${untilTxt(CFG.maintUntil)}</div>` : ''}
+    <button class="btn btn-s btn-w" style="margin-top:22px" data-a="maintCheck">${ic('rot', 'ic-s')} Preveri znova</button>
+    <p class="hint" style="text-align:center;margin-top:10px">Samodejno preverjam vsako minuto.</p></div>
+    <div class="authfoot"><a href="${SITE}index.html">Domov</a> · <a href="${SITE}zasebnost.html">Zasebnost</a></div></div>`;
+  clearInterval(MPOLL); MPOLL = setInterval(maintCheck, 60000);
+}
+async function maintCheck(manual) {
+  try { CFG = await fetch(API + '/config').then(r => r.json()); } catch { if (manual) toast('Ni povezave s strežnikom.', true); return; }
+  if (!CFG.maintenance) { clearInterval(MPOLL); MPOLL = null; boot(); if (manual) toast('Aplikacija spet deluje.'); }
+  else if (manual) { renderMaint(); toast('Vzdrževanje še poteka.'); }
+}
+async function demoOpen() {
+  try {
+    const r = await api('/admin/demo', {});
+    localStorage.setItem(ADM_KEY, TOK); TOK = r.token; localStorage.setItem(TOKEN_KEY, TOK);
+    U = null; D = {}; S.view = 'home'; S.ai = { nid: null, mode: 'chat', chat: null, msgs: [], busy: false };
+    const m = await api('/me'); U = m.user; await afterLogin(); toast('DEMO račun – tako aplikacijo vidijo uporabniki.');
+  } catch (e) { if (e.message !== '__gate') toast(e.message, true); }
+}
+async function demoExit() { try { await api('/auth/logout', {}); } catch { } demoRestore(); }
+async function demoRestore() {
+  const a = localStorage.getItem(ADM_KEY); localStorage.removeItem(ADM_KEY);
+  stopPolling(); PHC.forEach(u => URL.revokeObjectURL(u)); PHC.clear(); D = {}; U = null;
+  TOK = a || ''; if (TOK) localStorage.setItem(TOKEN_KEY, TOK); else localStorage.removeItem(TOKEN_KEY);
+  S.view = 'asys'; boot().then(() => { if (U?.role === 'admin') { S.view = 'asys'; render(); } });
+}
+function localDT(d) { const z = n => String(n).padStart(2, '0'); return `${d.getFullYear()}-${z(d.getMonth() + 1)}-${z(d.getDate())}T${z(d.getHours())}:${z(d.getMinutes())}`; }
+async function maintSet(on) {
+  try { A.maint = await api('/admin/maint/set', { on, note: $('mt_note')?.value || '', until: $('mt_until')?.value || '' }); CFG.maintenance = !!A.maint.on; render(); toast(on ? 'Vzdrževanje je vklopljeno.' : 'Aplikacija je spet omogočena za vse.'); } catch (e) { toast(e.message, true); }
+}
+
 // ============================================================ ISKANJE
 let SQ = { q: '', res: null, busy: false, tm: null };
 function hl(t, q) { const e = esc(t); if (!q) return e; const i = e.toLowerCase().indexOf(esc(q).toLowerCase()); return i < 0 ? e : e.slice(0, i) + '<mark>' + e.slice(i, i + esc(q).length) + '</mark>' + e.slice(i + esc(q).length); }
@@ -887,7 +937,7 @@ const b64u2buf = x => { const p = '='.repeat((4 - x.length % 4) % 4), b = atob((
 const pushSupported = () => 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window && (!isIOS() || isApp());
 let PUSHERR = '';
 async function pushSync(ask) {
-  if (!pushSupported() || !CFG.vapid) return;
+  if (!pushSupported() || !CFG.vapid || U?.role === 'demo') return;
   if (Notification.permission !== 'granted') { if (!ask) return; const r = await Notification.requestPermission(); if (r !== 'granted') { toast('Obvestila niso dovoljena. Vklopiš jih v nastavitvah naprave.', true); render(); return; } }
   try {
     const reg = await navigator.serviceWorker.ready; let sub = await reg.pushManager.getSubscription();
@@ -898,7 +948,7 @@ async function pushSync(ask) {
   } catch (e) { PUSHERR = (e.name || '') + ' ' + (e.message || ''); if (ask) toast('Vklop obvestil ni uspel: ' + e.message, true); }
 }
 function notifCard() {
-  if (!pushSupported() || !CFG.vapid || Notification.permission !== 'default' || localStorage.getItem('dn2_nonotif')) return '';
+  if (!pushSupported() || !CFG.vapid || U?.role === 'demo' || Notification.permission !== 'default' || localStorage.getItem('dn2_nonotif')) return '';
   return `<div class="notice g" style="margin-bottom:14px">${ic('bell')}<div class="grow sm"><b>Vklopi obvestila</b><br>Opomnik ob koncu ure, roki in sporočila – tudi ko je aplikacija zaprta.</div><div class="row" style="flex-direction:column;gap:6px"><button class="btn btn-p btn-sm" data-a="pushOn">Vklopi</button><button class="linkbtn xs" data-a="noNotif">Ne zdaj</button></div></div>`;
 }
 
@@ -906,7 +956,8 @@ function notifCard() {
 function vSet() {
   const tabs = U.role === 'admin' ? [['ac', 'Račun', 'user']] : [['nb', 'Zvezki', 'book'], ['tt', 'Urnik', 'cal'], ['ac', 'Račun', 'user'], ['pr', 'Zasebnost', 'shield']];
   if (!tabs.find(t => t[0] === S.tab)) S.tab = tabs[0][0];
-  return `<div class="h1" style="margin:6px 0 12px">Nastavitve</div><div class="row" style="gap:8px;overflow-x:auto;margin-bottom:16px">${tabs.map(([k, l, i]) => `<button class="btn btn-sm ${S.tab === k ? 'btn-k' : 'btn-s'}" data-a="setTab" data-t="${k}">${ic(i, 'ic-s')} ${l}</button>`).join('')}</div>` + ({ nb: setNb, tt: setTt, ac: setAc, pr: setPr }[S.tab])();
+  const demoN = U.role === 'demo' ? `<div class="notice b sm" style="margin:6px 0 12px">${ic('eye')}<div><b>DEMO račun.</b> Brisanja računa, izvoza, gesla in e-pošte tu ni mogoče spreminjati. Za izhod tapni »Odjava« ali »Nazaj na admin«.</div></div>` : '';
+  return `<div class="h1" style="margin:6px 0 12px">Nastavitve</div>${demoN}<div class="row" style="gap:8px;overflow-x:auto;margin-bottom:16px">${tabs.map(([k, l, i]) => `<button class="btn btn-sm ${S.tab === k ? 'btn-k' : 'btn-s'}" data-a="setTab" data-t="${k}">${ic(i, 'ic-s')} ${l}</button>`).join('')}</div>` + ({ nb: setNb, tt: setTt, ac: setAc, pr: setPr }[S.tab])();
 }
 function setNb() {
   const l = D.nb || [];
@@ -1015,12 +1066,12 @@ function itemForm(id) {
 }
 
 // ============================================================ ADMINISTRATOR
-async function loadAdmin() { const [u, s, st] = await Promise.all([api('/admin/users'), api('/admin/sent'), api('/admin/stats')]); A.users = u.users; A.sent = s.sent; A.stats = st; }
+async function loadAdmin() { const [u, s, st, m] = await Promise.all([api('/admin/users'), api('/admin/sent'), api('/admin/stats'), api('/admin/maint')]); A.users = u.users; A.sent = s.sent; A.stats = st; A.maint = m; }
 const mb = b => (b / 1048576).toFixed(1).replace('.', ',') + ' MB';
 const since = t => { if (!t) return 'nikoli'; const d = Math.floor((Date.now() - t) / 864e5); return d < 1 ? 'danes' : d === 1 ? 'včeraj' : `pred ${d} dnevi`; };
 function vAdmin() {
   const us = A.users.filter(u => u.role === 'user');
-  return `<div class="row" style="margin:6px 0 6px"><div class="h1 grow">Uporabniki</div><button class="btn btn-p btn-sm" data-a="userForm">${ic('plus', 'ic-s')} Dodaj</button></div>
+  return `${A.maint?.on ? `<button class="notice o" style="width:100%;text-align:left;margin:6px 0 10px" data-a="go" data-v="asys">${ic('alert')}<div class="grow"><b>Vzdrževanje je vklopljeno.</b> Uporabniki se ne morejo prijaviti. Tapni za upravljanje.</div></button>` : ''}<div class="row" style="margin:6px 0 6px"><div class="h1 grow">Uporabniki</div><button class="btn btn-p btn-sm" data-a="userForm">${ic('plus', 'ic-s')} Dodaj</button></div>
   <div class="notice b sm" style="margin:10px 0 14px">${ic('shield')}<div>Zaradi varstva podatkov administrator <b>ne vidi</b> zapiskov, fotografij, ocen in pogovorov uporabnikov – samo podatke o računu.</div></div>
   ${us.length ? `<div class="card list">${us.map(u => `<div class="it" style="flex-wrap:wrap"><div class="grow" style="min-width:200px"><b>${esc(u.name)}</b> <span class="mut sm">@${esc(u.username)}</span><div class="mut xs">${esc(u.email)}</div>
     <div class="row-w" style="gap:5px;margin-top:5px">${statusPill(u)}${u.minor ? '<span class="pill">&lt;15</span>' : ''}<span class="pill">${pl(u.nbs, 'zvezek', 'zvezka', 'zvezki', 'zvezkov')} · ${nphoto(u.phs)} · ${mb(u.bytes)}</span>${u.ai_on ? `<span class="pill g">AI ${u.ai_used || 0}/${u.ai_limit}${u.ai_consent ? '' : ' (ni privolitve)'}</span>` : ''}${u.devices ? `<span class="pill">${ic('bell', 'ic-s')} ${u.devices}</span>` : ''}<span class="pill">aktiven ${since(u.last_active)}</span></div></div>
@@ -1054,9 +1105,24 @@ function msgForm(pre) {
   <p class="hint" style="margin-bottom:14px">Sporočilo se prikaže v aplikaciji in kot push obvestilo. Po e-pošti dobijo le uporabniki, ki tega niso izklopili. Pošiljaj samo obvestila o storitvi – za oglasna sporočila bi potreboval posebno privolitev (ZEKom-2).</p>
   <div class="row" style="justify-content:flex-end"><button class="btn btn-s" data-a="closeModal">Prekliči</button><button class="btn btn-p" data-a="sendMsg">${ic('send', 'ic-s')} Pošlji</button></div>`);
 }
+function maintCard() {
+  const m = A.maint || {};
+  return `<h2 class="h2">${ic('tool')} Vzdrževanje</h2><div class="card pad ${m.on ? 'mton' : ''}">
+    <div class="row"><div class="grow"><b>${m.on ? 'Aplikacija je v vzdrževanju' : 'Aplikacija deluje normalno'}</b><div class="mut xs">${m.on ? 'Vklopljeno ' + (m.since ? fmtT(m.since) : '') + ' · prijavi se lahko samo administrator' : 'Ko vklopiš vzdrževanje, uporabniki vidijo obvestilo in se ne morejo prijaviti.'}</div></div><span class="pill ${m.on ? 'o' : 'g'}">${m.on ? 'VZDRŽEVANJE' : 'DELUJE'}</span></div>
+    ${m.forced ? `<div class="notice o sm" style="margin-top:12px">${ic('info')}<div>Vzdrževanje je vklopljeno s spremenljivko <b>MAINTENANCE=1</b> v Cloudflare. Tukaj ga ni mogoče izklopiti – v Cloudflare jo nastavi na 0.</div></div>` : ''}
+    <div class="field" style="margin-top:14px"><label class="lbl" for="mt_note">Opomba za uporabnike (neobvezno)</label><textarea id="mt_note" class="inp" maxlength="300" placeholder="npr. Nameščamo novo različico z novimi funkcijami.">${esc(m.note || '')}</textarea></div>
+    <div class="field"><label class="lbl" for="mt_until">Predviden konec (neobvezno)</label><div class="row-w" style="margin-bottom:8px">${[[30, '30 min'], [60, '1 ura'], [120, '2 uri'], ['jutri', 'Jutri 7:00'], ['', 'Ni določeno']].map(([v, l]) => `<button type="button" class="btn btn-s btn-sm" data-a="mtQuick" data-m="${v}">${l}</button>`).join('')}</div><input id="mt_until" class="inp" type="datetime-local" value="${esc(m.until || '')}"></div>
+    <div class="row-w" style="justify-content:flex-end">${m.on ? `<button class="btn btn-s" data-a="maintSave" data-on="1">Posodobi opombo</button><button class="btn btn-p" data-a="maintOff">${ic('check', 'ic-s')} Omogoči aplikacijo</button>` : `<button class="btn btn-d" data-a="maintOn">${ic('tool', 'ic-s')} Vklopi vzdrževanje</button>`}</div>
+  </div>`;
+}
+function demoCard() {
+  return `<h2 class="h2">${ic('eye')} DEMO račun</h2><div class="card pad"><p class="sm">Preizkusi aplikacijo tako, kot jo vidijo uporabniki – s testnimi podatki. Deluje tudi med vzdrževanjem, zato lahko spremembe preveriš, preden aplikacijo spet omogočiš.</p>
+    <p class="mut xs" style="margin-top:6px">DEMO račun nima gesla, ne prejema obvestil ali e-pošte in ga uporabniki ne vidijo. Seja velja največ 12 ur.</p>
+    <div class="row" style="gap:8px;margin-top:12px"><button class="btn btn-p" data-a="demoOpen">${ic('eye', 'ic-s')} Odpri DEMO</button><button class="btn btn-s" data-a="demoReset">${ic('rot', 'ic-s')} Ponastavi podatke</button></div></div>`;
+}
 function vAdminSys() {
   const s = A.stats || {};
-  return `<div class="h1" style="margin:6px 0 14px">Sistem</div>
+  return `<div class="h1" style="margin:6px 0 14px">Sistem</div>${maintCard()}${demoCard()}<h2 class="h2">${ic('chart')} Pregled</h2>
   <div class="stats" style="grid-template-columns:repeat(auto-fill,minmax(150px,1fr))"><div class="card pad"><div class="mut xs">Uporabniki</div><div class="h1">${s.users ?? '–'}</div></div><div class="card pad"><div class="mut xs">Fotografije</div><div class="h1">${s.photos ?? '–'}</div><div class="mut xs">${mb(s.bytes || 0)}</div></div><div class="card pad"><div class="mut xs">Naprave (push)</div><div class="h1">${s.devices ?? '–'}</div></div><div class="card pad"><div class="mut xs">Push v čakanju</div><div class="h1">${s.queue ?? '–'}</div></div></div>
   <h2 class="h2">Prostor za fotografije</h2><div class="card pad">${(s.shards || []).map(x => `<div class="row" style="margin-bottom:8px"><b style="width:40px">${esc(x.shard)}</b><div class="bar"><i style="width:${Math.min(100, x.b / 4.8e8 * 100)}%;${x.b > 4e8 ? 'background:#f97316' : ''}"></i></div><span class="sm" style="width:120px;text-align:right">${mb(x.b)} / 480 MB</span></div>`).join('') || '<span class="mut sm">Ni fotografij.</span>'}
   <p class="hint">Aktivna baza: <b>${esc(s.active || '')}</b>. Ko se približa 480 MB, ustvari novo bazo D1 (P1, P2 …) in jo nastavi kot PHOTO_ACTIVE – navodila v NAVODILA.md.</p></div>
@@ -1108,6 +1174,12 @@ const ACT = {
   openGrades: d => { S.gnid = d.id; go('grade'); },
   copyMsg: d => { let o; try { o = JSON.parse(S.ai.msgs[+d.i].content); } catch { return; } navigator.clipboard?.writeText(o.text).then(() => toast('Kopirano.')); },
   async editExisting(d) { try { const u = await photoUrl(d.id), b = await (await fetch(u)).blob(), data = await editPhoto(b); if (!data) return; await api('/photo/replace', { id: d.id, data }); URL.revokeObjectURL(PHC.get(d.id)); PHC.delete(d.id); const p = D.ph.find(x => x.id === d.id); if (p) p.hasOcr = 0; render(); toast('Fotografija posodobljena.'); } catch (e) { toast(e.message, true); } },
+  maintCheck: () => maintCheck(true), demoOpen, demoExit,
+  demoReset: () => confirmBox('Ponastavim DEMO račun? Vse spremembe v njem se izbrišejo in naložijo se začetni testni podatki.', async () => { try { await api('/admin/demo/reset', {}); toast('DEMO račun je ponastavljen.'); } catch (e) { toast(e.message, true); } }, 'Ponastavi'),
+  mtQuick: d => { const el = $('mt_until'); if (!el) return; if (d.m === '') el.value = ''; else if (d.m === 'jutri') { const t = new Date(); t.setDate(t.getDate() + 1); t.setHours(7, 0, 0, 0); el.value = localDT(t); } else el.value = localDT(new Date(Date.now() + +d.m * 60000)); },
+  maintOn: () => confirmBox('Vklopim vzdrževanje? Vsi prijavljeni uporabniki bodo videli zaslon za vzdrževanje, prijaviti se bo mogel samo administrator.', () => maintSet(true), 'Vklopi'),
+  maintSave: () => maintSet(true),
+  maintOff: () => maintSet(false),
   closeModal, cfOk: () => { const f = _cf; closeModal(); f && f(); }, logout,
   authMode: d => { AUTH.mode = d.m; renderLogin(); },
   async parentCheck() { await refreshMe(); if (U.status === 'active') afterLogin(); else toast('Privolitev še ni potrjena.'); },
