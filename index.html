@@ -160,13 +160,15 @@ footer{border-top:1px solid var(--line);padding:44px 0 50px;margin-top:30px}
 .copy{font-size:13px;color:var(--mut2);margin-top:18px}
 
 /* pojavljanje ob drsenju */
-.rv{opacity:0;transform:translateY(22px);transition:opacity .8s cubic-bezier(.2,.8,.2,1),transform .8s cubic-bezier(.2,.8,.2,1)}
-.rv.in{opacity:1;transform:none}
+.js .rv{opacity:0;transform:translateY(22px);transition:opacity .8s cubic-bezier(.2,.8,.2,1),transform .8s cubic-bezier(.2,.8,.2,1)}
+.js .rv.in{opacity:1;transform:none}
 .d1{transition-delay:.08s}.d2{transition-delay:.16s}.d3{transition-delay:.24s}
-@media(prefers-reduced-motion:reduce){.rv{opacity:1;transform:none;transition:none}.float{animation:none}html{scroll-behavior:auto}}
+@media(max-width:700px){header.sc{backdrop-filter:none;-webkit-backdrop-filter:none;background:var(--bg)}.float{animation:none}.hero::before{height:600px}}
+@media(prefers-reduced-motion:reduce){.js .rv{opacity:1;transform:none;transition:none}.float{animation:none}html{scroll-behavior:auto}}
 </style>
 </head>
 <body>
+<script>if('IntersectionObserver' in window)document.documentElement.className='js';</script>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
   <symbol id="i-lock" viewBox="0 0 24 24"><rect x="4" y="11" width="16" height="10" rx="2.5"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></symbol>
   <symbol id="i-users" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8"/></symbol>
@@ -208,7 +210,7 @@ footer{border-top:1px solid var(--line);padding:44px 0 50px;margin-top:30px}
     <div class="facts rv d3"><span><svg class="ic"><use href="#i-eu"/></svg>Podatki v EU</span><span><svg class="ic"><use href="#i-noad"/></svg>Brez oglasov in sledenja</span><span><svg class="ic"><use href="#i-moon"/></svg>Svetli in temni način</span></div>
   </div>
   <div class="hphone rv d2">
-    <div class="phone"><video src="media/ocene.mp4" poster="media/ocene.jpg" autoplay muted loop playsinline preload="metadata" aria-label="Posnetek aplikacije: ocene, fokus časovnik in temni način"></video></div>
+    <div class="phone"><video src="demo-ocene.mp4" poster="demo-ocene.jpg" autoplay muted loop playsinline preload="metadata" aria-label="Posnetek aplikacije: ocene, fokus časovnik in temni način"></video></div>
     <div class="float f1"><span class="t" style="--h:355"><svg class="ic"><use href="#i-star"/></svg></span><div>Pisna ocena: 5<small>Matematika · danes</small></div></div>
     <div class="float f2"><span class="t" style="--h:268"><svg class="ic"><use href="#i-spark"/></svg></span><div>12 kartic pripravljenih<small>iz tvojih zapiskov</small></div></div>
     <div class="float f3"><span class="t" style="--h:22;--s:88%"><svg class="ic"><use href="#i-timer"/></svg></span><div>25 min fokusa<small>Biologija</small></div></div>
@@ -230,7 +232,7 @@ footer{border-top:1px solid var(--line);padding:44px 0 50px;margin-top:30px}
       <button class="tab rv d2" role="tab" aria-selected="false" data-v="ai"><span class="t" style="--h:268;--s:70%"><svg class="ic"><use href="#i-spark"/></svg></span><div><b>Uči se z AI</b><span>AI prebere tvoje zapiske in pripravi odgovore, kartice za ponavljanje in test.</span></div><i class="pr"></i></button>
       <button class="tab rv d3" role="tab" aria-selected="false" data-v="ocene"><span class="t" style="--h:355;--s:78%"><svg class="ic"><use href="#i-star"/></svg></span><div><b>Ocene, fokus in temni način</b><span>Ocene po predmetih in barvah, časovnik za učenje in temni način.</span></div><i class="pr"></i></button>
     </div>
-    <div class="stage rv d1"><div class="phone"><video id="demo" src="media/vpis.mp4" poster="media/vpis.jpg" muted playsinline preload="metadata" aria-label="Posnetek aplikacije"></video></div><p class="vcap">Posnetki prikazujejo izmišljene testne podatke.</p></div>
+    <div class="stage rv d1"><div class="phone"><video id="demo" src="demo-vpis.mp4" poster="demo-vpis.jpg" muted playsinline preload="none" aria-label="Posnetek aplikacije"></video></div><p class="vcap">Posnetki prikazujejo izmišljene testne podatke.</p></div>
   </div>
 </div></section>
 
@@ -296,11 +298,12 @@ footer{border-top:1px solid var(--line);padding:44px 0 50px;margin-top:30px}
   // pojavljanje
   var io = new IntersectionObserver(function (es) { es.forEach(function (e) { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } }); }, { threshold: .12 });
   document.querySelectorAll('.rv').forEach(function (el) { io.observe(el); });
+  setTimeout(function () { document.querySelectorAll('.rv').forEach(function (el) { el.classList.add('in'); }); }, 2500);
   // primeri – videi se predvajajo po vrsti, samo ko so vidni
   var tabs = [].slice.call(document.querySelectorAll('.tab')), v = document.getElementById('demo'), cur = 0, visible = false;
   function show(i, play) {
     cur = i; tabs.forEach(function (t, j) { t.classList.toggle('on', j === i); t.setAttribute('aria-selected', j === i); t.querySelector('.pr').style.width = '0'; });
-    var n = tabs[i].dataset.v; v.poster = 'media/' + n + '.jpg'; v.src = 'media/' + n + '.mp4';
+    var n = tabs[i].dataset.v; v.poster = 'demo-' + n + '.jpg'; v.src = 'demo-' + n + '.mp4';
     if (play) { var p = v.play(); if (p && p.catch) p.catch(function () { }); }
   }
   tabs.forEach(function (t, i) { t.addEventListener('click', function () { show(i, true); }); });
