@@ -152,6 +152,19 @@ details[open] summary .ic{transform:rotate(45deg)}
 details p{padding:0 22px 20px;color:var(--mut)}
 details a{color:var(--g);font-weight:600}
 
+
+/* navodila */
+.guide{display:grid;grid-template-columns:auto 1fr;gap:48px;align-items:center;margin-top:50px;max-width:920px;margin-left:auto;margin-right:auto}
+@media(max-width:820px){.guide{grid-template-columns:1fr;gap:28px}}
+.gvid{width:min(360px,86vw);margin:0 auto;aspect-ratio:9/16;border-radius:32px;overflow:hidden;background:#06140f;box-shadow:var(--sh2);border:1px solid var(--line)}
+.gvid video{width:100%;height:100%;object-fit:cover;display:block}
+.chaps{display:flex;flex-direction:column;gap:6px}
+.chaps>b{font-size:13px;letter-spacing:.12em;text-transform:uppercase;color:var(--g);margin:0 0 8px 4px}
+.chap{display:flex;align-items:center;gap:14px;padding:13px 16px;border-radius:16px;background:var(--card);border:1px solid var(--line2);box-shadow:var(--sh1);text-align:left;font-weight:650;font-size:15.5px;transition:transform .15s,border-color .2s}
+.chap:hover{border-color:var(--g3)}.chap:active{transform:scale(.98)}
+.chap span{font-variant-numeric:tabular-nums;font-size:13px;font-weight:700;color:var(--g);background:var(--gs);padding:4px 9px;border-radius:9px;min-width:52px;text-align:center}
+.chap.on{border-color:var(--g2);box-shadow:0 0 0 2px var(--gs),var(--sh1)}
+.gnote{color:var(--mut);font-size:13.5px;margin:10px 4px 0}.gnote a{color:var(--g);font-weight:600}
 /* noga */
 footer{border-top:1px solid var(--line);padding:44px 0 50px;margin-top:30px}
 .fin{display:flex;gap:20px;align-items:center;justify-content:space-between;flex-wrap:wrap}
@@ -195,7 +208,7 @@ footer{border-top:1px solid var(--line);padding:44px 0 50px;margin-top:30px}
 
 <header id="hdr"><div class="wrap hin">
   <a href="#" class="brand"><img src="Logo.png" alt="">DigitNotes</a>
-  <nav class="links" aria-label="Glavna navigacija"><a href="#primeri">Primeri</a><a href="#funkcije">Funkcije</a><a href="#zasebnost">Zasebnost</a><a href="#dostop">Dostop</a><a href="#vprasanja">Vprašanja</a></nav>
+  <nav class="links" aria-label="Glavna navigacija"><a href="#primeri">Primeri</a><a href="#navodila">Navodila</a><a href="#funkcije">Funkcije</a><a href="#zasebnost">Zasebnost</a><a href="#dostop">Dostop</a><a href="#vprasanja">Vprašanja</a></nav>
   <span class="sp"></span>
   <a class="btn btn-p btn-sm" href="app/"><svg class="ic" style="width:17px;height:17px"><use href="#i-lock"/></svg>Prijava za člane</a>
 </div></header>
@@ -233,6 +246,15 @@ footer{border-top:1px solid var(--line);padding:44px 0 50px;margin-top:30px}
       <button class="tab rv d3" role="tab" aria-selected="false" data-v="ocene"><span class="t" style="--h:355;--s:78%"><svg class="ic"><use href="#i-star"/></svg></span><div><b>Ocene, fokus in temni način</b><span>Ocene po predmetih in barvah, časovnik za učenje in temni način.</span></div><i class="pr"></i></button>
     </div>
     <div class="stage rv d1"><div class="phone"><video id="demo" src="demo-vpis.mp4" poster="demo-vpis.jpg" muted playsinline preload="none" aria-label="Posnetek aplikacije"></video></div><p class="vcap">Posnetki prikazujejo izmišljene testne podatke.</p></div>
+  </div>
+</div></section>
+
+
+<section class="sec" id="navodila" style="padding-top:20px"><div class="wrap">
+  <div class="center"><span class="eyebrow rv">Navodila za uporabo</span><h2 class="title rv d1">Vse, kar moraš vedeti, v treh minutah.</h2><p class="sub rv d2">Video vodnik od prve prijave do učenja z AI. Tapni poglavje in skoči naravnost tja.</p></div>
+  <div class="guide">
+    <div class="gvid rv"><video id="guide" src="navodila.mp4" poster="navodila.jpg" controls playsinline preload="none" aria-label="Video navodila za uporabo DigitNotes"></video></div>
+    <div class="chaps rv d1"><b>Poglavja</b><button class="chap" data-t="10.7"><span>0:10</span>Prva prijava</button><button class="chap" data-t="28.9"><span>0:28</span>Namestitev in obvestila</button><button class="chap" data-t="47.6"><span>0:47</span>Zvezki in urnik</button><button class="chap" data-t="65.4"><span>1:05</span>Vpis ure</button><button class="chap" data-t="97.1"><span>1:37</span>Zvezki in deljenje</button><button class="chap" data-t="121.0"><span>2:01</span>Uči se z AI</button><button class="chap" data-t="150.0"><span>2:30</span>Ocene</button><button class="chap" data-t="161.8"><span>2:41</span>Roki in fokus</button><button class="chap" data-t="176.4"><span>2:56</span>Iskanje in nastavitve</button><p class="gnote">Video je posnet na izmišljenih testnih podatkih. Če se ti kaj zatakne, piši na <a href="mailto:digitnotes.info@gmail.com">digitnotes.info@gmail.com</a>.</p></div>
   </div>
 </div></section>
 
@@ -287,7 +309,7 @@ footer{border-top:1px solid var(--line);padding:44px 0 50px;margin-top:30px}
 
 <footer><div class="wrap">
   <div class="fin"><a href="#" class="brand" style="font-size:16px"><img src="Logo.png" alt="" style="width:30px;height:30px">DigitNotes</a>
-  <nav class="flinks" aria-label="Noga"><a href="app/">Prijava</a><a href="zasebnost.html">Zasebnost</a><a href="pogoji.html">Pogoji uporabe</a><a href="mailto:digitnotes.info@gmail.com">Kontakt</a></nav></div>
+  <nav class="flinks" aria-label="Noga"><a href="app/">Prijava</a><a href="#navodila">Navodila</a><a href="zasebnost.html">Zasebnost</a><a href="pogoji.html">Pogoji uporabe</a><a href="mailto:digitnotes.info@gmail.com">Kontakt</a></nav></div>
   <p class="copy">© 2026 DigitNotes · Zaprta skupina uporabnikov · Brez oglasov in sledenja</p>
 </div></footer>
 
@@ -310,6 +332,13 @@ footer{border-top:1px solid var(--line);padding:44px 0 50px;margin-top:30px}
   v.addEventListener('timeupdate', function () { if (v.duration) tabs[cur].querySelector('.pr').style.width = (v.currentTime / v.duration * 100) + '%'; });
   v.addEventListener('ended', function () { show((cur + 1) % tabs.length, visible); });
   new IntersectionObserver(function (es) { visible = es[0].isIntersecting; if (visible) { var p = v.play(); if (p && p.catch) p.catch(function () { }); } else v.pause(); }, { threshold: .35 }).observe(v);
+
+  // navodila – skok na poglavje in označevanje trenutnega poglavja
+  var gv = document.getElementById('guide'), ch = [].slice.call(document.querySelectorAll('.chap'));
+  ch.forEach(function (b) { b.addEventListener('click', function () { gv.preload = 'auto'; if (innerWidth < 821) gv.scrollIntoView({ behavior: 'smooth', block: 'center' }); var go = function () { gv.currentTime = +b.dataset.t; var p = gv.play(); if (p && p.catch) p.catch(function () { }); }; if (gv.readyState >= 1) go(); else { gv.addEventListener('loadedmetadata', go, { once: true }); gv.load(); } }); });
+  gv.addEventListener('timeupdate', function () { var cur = -1; ch.forEach(function (b, i) { if (gv.currentTime >= +b.dataset.t - 0.2) cur = i; }); ch.forEach(function (b, i) { b.classList.toggle('on', i === cur); }); });
+  // samodejno predvajanje demo videa ne sme motiti navodil
+  gv.addEventListener('play', function () { v.pause(); });
   // glavni video se ustavi, ko ni viden (varčuje z baterijo)
   var hv = document.querySelector('.hphone video');
   new IntersectionObserver(function (es) { if (es[0].isIntersecting) { var p = hv.play(); if (p && p.catch) p.catch(function () { }); } else hv.pause(); }).observe(hv);
