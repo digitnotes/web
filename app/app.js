@@ -2,7 +2,7 @@
 'use strict';
 const API = (window.DN_API || '').replace(/\/$/, '');
 const SITE = '../';
-const VER = '2.0.0';
+const VER = '2.1.0';
 
 // ============================================================ ikone
 const P = {
@@ -27,6 +27,21 @@ const P = {
   send: '<path d="M22 2 11 13M22 2l-7 20-4-9-9-4z"/>', swap: '<path d="M17 1l4 4-4 4M3 11V9a4 4 0 0 1 4-4h14M7 23l-4-4 4-4M21 13v2a4 4 0 0 1-4 4H3"/>',
   clock: '<circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>', alert: '<path d="m10.3 3.9-8.5 14.7A2 2 0 0 0 3.5 21h17a2 2 0 0 0 1.7-2.4L13.7 3.9a2 2 0 0 0-3.4 0zM12 9v4M12 17h.01"/>',
   info: '<circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/>', chart: '<path d="M3 3v18h18"/><path d="M7 16v-5M12 16V8M17 16v-3"/>',
+  u_cup: '<path d="M17 8h1a4 4 0 0 1 0 8h-1M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4zM6 2v2M10 2v2M14 2v2"/>', u_flame: '<path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.4-.5-2-1-3-1.1-2.1-.2-4 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.2.4-2.3 1-3.4.5 1.4 2 2.4 2.5 2.9z"/>',
+  u_note: '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M8 13h8M8 17h5"/>', u_okc: '<circle cx="12" cy="12" r="10"/><path d="m8 12 3 3 5-6"/>', u_ban: '<circle cx="12" cy="12" r="10"/><path d="m5 5 14 14"/>',
+  u_chat: '<path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/>', u_cards: '<rect x="3" y="6" width="14" height="15" rx="2"/><path d="M7 3h12a2 2 0 0 1 2 2v12"/>', u_quiz: '<path d="M9 11l2 2 4-4"/><rect x="3" y="3" width="18" height="18" rx="3"/>', u_sum: '<path d="M4 6h16M4 12h16M4 18h10"/>',
+  u_pin: '<path d="M12 17v5M9 3h6l-1 6 4 4H6l4-4z"/>', u_hw: '<path d="M2 4h7a3 3 0 0 1 3 3v14a2 2 0 0 0-2-2H2zM22 4h-7a3 3 0 0 0-3 3v14a2 2 0 0 1 2-2h8z"/>', u_mailo: '<rect x="2" y="4" width="20" height="16" rx="3"/><path d="m3 6 9 7 9-7"/>', u_palm: '<path d="M12 22V11M12 11c-2-4-6-5-9-4 3 0 6 2 7 5M12 11c2-4 6-5 9-4-3 0-6 2-7 5M12 11c0-4-2-7-5-8 2 2 3 5 3 8M12 11c0-4 2-7 5-8-2 2-3 5-3 8"/>',
+  s_ruler: '<path d="M3 17 17 3l4 4L7 21z"/><path d="m7 13 2 2M10 10l2 2M13 7l2 2"/>', s_calc: '<rect x="5" y="2" width="14" height="20" rx="2.5"/><path d="M8.5 6h7M8.5 11h.01M12 11h.01M15.5 11h.01M8.5 15h.01M12 15h.01M15.5 15h.01M8.5 18.5h.01M12 18.5h.01M15.5 18.5h.01"/>', s_sigma: '<path d="M18 4H6l6 8-6 8h12"/>',
+  s_book: '<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V2H6.5A2.5 2.5 0 0 0 4 4.5z"/><path d="M4 19.5A2.5 2.5 0 0 0 6.5 22H20v-5"/>', s_pen: '<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/>', s_lang: '<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><path d="M8 9h8M8 13h5"/>',
+  s_flask: '<path d="M9 2h6M10 2v6.5L4.3 18.6A2.3 2.3 0 0 0 6.3 22h11.4a2.3 2.3 0 0 0 2-3.4L14 8.5V2"/><path d="M7 15h10"/>', s_atom: '<circle cx="12" cy="12" r="1.5"/><ellipse cx="12" cy="12" rx="10" ry="4"/><ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(60 12 12)"/><ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(120 12 12)"/>',
+  s_dna: '<path d="M7 2c0 6 10 8 10 14v6M17 2c0 6-10 8-10 14v6M8.5 6h7M8.5 18h7M10 10h4M10 14h4"/>', s_leaf: '<path d="M11 20A7 7 0 0 1 4 13c0-6 6-10 16-10 0 10-4 16-9 17z"/><path d="M4 21c4-6 8-9 12-11"/>', s_globe: '<circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15 15 0 0 1 0 20M12 2a15 15 0 0 0 0 20"/>',
+  s_map: '<path d="m3 6 6-3 6 3 6-3v15l-6 3-6-3-6 3z"/><path d="M9 3v15M15 6v15"/>', s_hist: '<path d="M3 21h18M5 21V10M9.5 21V10M14.5 21V10M19 21V10M2 10l10-7 10 7z"/>', s_brush: '<path d="M18.4 2.6a2 2 0 0 1 3 3L12 15l-3-3z"/><path d="M9 12c-3 0-4 2-4 4s-1 3-3 4c3 1 8 1 9-3 .4-1.4 0-3-2-5z"/>',
+  s_music: '<path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>', s_sport: '<path d="M6.5 6.5v11M17.5 6.5v11M3 9v6M21 9v6M6.5 12h11"/>', s_laptop: '<rect x="3" y="4" width="18" height="12" rx="2"/><path d="M2 20h20"/>', s_code: '<path d="m8 6-6 6 6 6M16 6l6 6-6 6"/>',
+  s_gear: '<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.9 4.9 7 7M17 17l2.1 2.1M2 12h3M19 12h3M4.9 19.1 7 17M17 7l2.1-2.1"/>', s_heart: '<path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 0 0-7.8 7.8L12 21l8.8-8.6a5.5 5.5 0 0 0 0-7.8z"/>', s_mask: '<path d="M2 4h20v6a10 10 0 0 1-20 0z"/><path d="M8 9h.01M16 9h.01M8 14s1.5 2 4 2 4-2 4-2"/>',
+  s_coins: '<circle cx="9" cy="9" r="6"/><path d="M15.4 4.6A6 6 0 1 1 9.6 15.4M9 6.5v5M7 9h4"/>', s_chart: '<path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 6-6"/>', s_planet: '<circle cx="12" cy="12" r="5"/><path d="M5.6 15.5C3 17.6 2.3 19.4 3.2 20s3.4-.3 6.8-2.6M18.4 8.5C21 6.4 21.7 4.6 20.8 4s-3.4.3-6.8 2.6"/>',
+  s_cam: '<path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/>', s_brain: '<path d="M9.5 2A2.5 2.5 0 0 0 7 4.5v.5A3 3 0 0 0 4 8a3 3 0 0 0 .5 5A3 3 0 0 0 7 18a3 3 0 0 0 5 1V4.5A2.5 2.5 0 0 0 9.5 2zM14.5 2A2.5 2.5 0 0 1 17 4.5v.5a3 3 0 0 1 3 3 3 3 0 0 1-.5 5A3 3 0 0 1 17 18a3 3 0 0 1-5 1"/>',
+  s_star: '<path d="m12 2 3.1 6.3 6.9 1-5 4.9 1.2 6.8L12 17.8 5.8 21l1.2-6.8-5-4.9 6.9-1z"/>',
+  search: '<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>', timer: '<circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2M9 2h6M12 2v3"/>', mic: '<rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v4"/>', globe: '<circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15 15 0 0 1 0 20M12 2a15 15 0 0 0 0 20"/>', vol: '<path d="M11 5 6 9H2v6h4l5 4zM15.5 8.5a5 5 0 0 1 0 7M19 5a10 10 0 0 1 0 14"/>', copy: '<rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>', rot: '<path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/>', crop: '<path d="M6 2v14a2 2 0 0 0 2 2h14M18 22V8a2 2 0 0 0-2-2H2"/>', play: '<path d="m6 4 14 8-14 8z"/>', pause: '<path d="M6 4h4v16H6zM14 4h4v16h-4z"/>', stop: '<rect x="5" y="5" width="14" height="14" rx="2"/>', sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',
   db: '<ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.7-4 3-9 3s-9-1.3-9-3M3 5v14c0 1.7 4 3 9 3s9-1.3 9-3V5"/>', more: '<circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/>'
 };
 const ic = (n, c = 'ic') => `<svg class="${c}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${P[n] || ''}</svg>`;
@@ -212,7 +227,7 @@ function renderOnboard() {
   CHANGE.obAge();
 }
 function renderParentWait() {
-  $('app').innerHTML = authShell(`<div style="text-align:center"><div style="font-size:46px">📨</div><h2 class="h2" style="justify-content:center">Čakamo na privolitev starša</h2>
+  $('app').innerHTML = authShell(`<div style="text-align:center">${tile('u_mailo', 214, 85, 'xl')}<h2 class="h2" style="justify-content:center">Čakamo na privolitev starša</h2>
     <p class="mut sm">Na <b>${esc(U.parentEmail || '')}</b> smo poslali prošnjo za privolitev. Ko jo starš potrdi, lahko začneš uporabljati DigitNotes.</p>
     <p class="mut xs" style="margin:10px 0 18px">Če privolitev ne bo dana v 14 dneh, se račun samodejno izbriše.</p>
     <button class="btn btn-p btn-w" data-a="parentCheck">Preveri znova</button>
@@ -226,24 +241,53 @@ function pwForce() {
     <button class="btn btn-p btn-w" type="submit">Shrani geslo</button></form>`);
 }
 
+
+// ---- predmetne ikone (sodobne ikone v barvnih ploščicah; stari emojiji se samodejno preslikajo)
+const SUBJ = ['ruler', 'calc', 'sigma', 'book', 'pen', 'lang', 'flask', 'atom', 'dna', 'leaf', 'globe', 'map', 'hist', 'brush', 'music', 'sport', 'laptop', 'code', 'gear', 'heart', 'mask', 'coins', 'chart', 'planet', 'cam', 'brain', 'star'];
+const SUBJ_C = { ruler: 2, calc: 3, sigma: 3, book: 6, pen: 8, lang: 4, flask: 1, atom: 3, dna: 5, leaf: 0, globe: 1, map: 7, hist: 8, brush: 5, music: 4, sport: 7, laptop: 9, code: 9, gear: 9, heart: 6, mask: 5, coins: 8, chart: 2, planet: 3, cam: 9, brain: 4, star: 8 };
+const HUES = [[152, 62], [174, 70], [214, 85], [238, 72], [268, 70], [330, 75], [355, 78], [22, 88], [40, 90], [215, 20]];
+const EMO2IC = { '📐': 'ruler', '📏': 'ruler', '🧮': 'calc', '🔢': 'calc', '➗': 'sigma', '📖': 'book', '📚': 'book', '📓': 'book', '📒': 'book', '📕': 'book', '📗': 'book', '📘': 'book', '📙': 'book', '✏️': 'pen', '📝': 'pen', '🇬🇧': 'lang', '🇩🇪': 'lang', '🇫🇷': 'lang', '🇮🇹': 'lang', '🇪🇸': 'lang', '🇸🇮': 'lang', '🗣️': 'lang', '🧪': 'flask', '⚗️': 'flask', '🔬': 'atom', '🧬': 'dna', '🌱': 'leaf', '🌿': 'leaf', '🐾': 'leaf', '🌍': 'globe', '🌎': 'globe', '🌏': 'globe', '🌋': 'globe', '🗺️': 'map', '🧭': 'map', '🏛️': 'hist', '📜': 'hist', '⚔️': 'hist', '🏺': 'hist', '🎨': 'brush', '🖌️': 'brush', '🎵': 'music', '🎹': 'music', '🎸': 'music', '🎻': 'music', '⚽': 'sport', '🏃': 'sport', '🏀': 'sport', '🏐': 'sport', '🤸': 'sport', '💻': 'laptop', '🖥️': 'laptop', '🤖': 'code', '⚙️': 'gear', '🔧': 'gear', '🔨': 'gear', '🔌': 'gear', '❤️': 'heart', '🩺': 'heart', '🎭': 'mask', '🎬': 'mask', '💰': 'coins', '📊': 'chart', '🔭': 'planet', '🪐': 'planet', '📷': 'cam', '🧠': 'brain', '⭐': 'star' };
+const hashC = t => { let h = 0; for (const c of String(t || '')) h = (h * 31 + c.charCodeAt(0)) >>> 0; return h % 9; };
+function subjOf(n) {
+  const e = String(n?.emoji || ''), m = /^i:([a-z]+):(\d)$/.exec(e);
+  if (m && SUBJ.includes(m[1])) return { i: m[1], c: +m[2] };
+  const k = EMO2IC[e] || EMO2IC[e.replace(/️/g, '')];
+  if (k) return { i: k, c: SUBJ_C[k] };
+  if (!e) return { i: 'book', c: hashC(n?.id || n?.name) };
+  return { e, c: hashC(n?.id || n?.name) };
+}
+function sIc(n, size = '') { const o = subjOf(n), [h, sa] = HUES[o.c] || HUES[0]; return `<span class="si ${size}" style="--h:${h};--s:${sa}%" aria-hidden="true">${o.i ? ic('s_' + o.i) : esc(o.e)}</span>`; }
+const optN = n => { const o = subjOf(n); return (o.e ? esc(o.e) + ' ' : '') + esc(n.name); };
+const tile = (icon, h, sa = 75, size = '') => `<span class="si ${size}" style="--h:${h};--s:${sa}%" aria-hidden="true">${ic(icon)}</span>`;
+// ---- vrste ocen in barve: pisna = rdeča, ustna = črna, drugo = modra
+const GT = [['Ustna', 'Ustna ocena', 'u'], ['Pisna', 'Pisna ocena', 'p'], ['Drugo', 'Drugo', 'd']];
+const gcat = t => { t = String(t || '').toLowerCase(); return /pisn|test|kontroln|izpit/.test(t) ? 'p' : /ustn|spra/.test(t) ? 'u' : t ? 'd' : 'u'; };
+const gLabel = t => ({ p: 'Pisna ocena', u: 'Ustna ocena', d: 'Drugo' })[gcat(t)];
+const gChip = (g, big) => `<span class="gc ${gcat(g.gtype)}${big ? ' big' : ''}" title="${gLabel(g.gtype)}">${esc(g.grade)}</span>`;
+
 // ============================================================ OKVIR
 const NAV = [['home', 'Domov', 'home'], ['sched', 'Urnik', 'cal'], ['nbs', 'Zvezki', 'book'], ['ai', 'Uči se', 'spark'], ['grades', 'Ocene', 'star']];
 const NAV_A = [['admin', 'Uporabniki', 'users'], ['amsg', 'Sporočila', 'send'], ['asys', 'Sistem', 'db']];
 function shell(inner) {
-  const items = U.role === 'admin' ? NAV_A : NAV, act = { nb: 'nbs', shared: 'nbs', set: 'set' }[S.view] || S.view;
+  const items = U.role === 'admin' ? NAV_A : NAV, act = { nb: 'nbs', shared: 'nbs', set: 'set', focus: 'ai', grade: 'grades' }[S.view] || S.view;
   const un = (D.inbox || []).filter(m => !m.read).length;
   return `<div class="app"><header class="top" id="top"><div class="topin">
     <a class="brand" href="#" data-a="go" data-v="${U.role === 'admin' ? 'admin' : 'home'}"><img src="../Logo.png" alt="">DigitNotes</a><span style="flex:1"></span>
+    ${U.role !== 'admin' ? `<button class="topbtn" data-a="go" data-v="search" aria-label="Iskanje">${ic('search')}</button>` : ''}
     ${U.role !== 'admin' ? `<button class="topbtn" data-a="openInbox" aria-label="Obvestila">${ic('bell')}${un ? `<span class="badge">${un}</span>` : ''}</button>` : ''}
     <button class="topbtn" data-a="go" data-v="set" aria-label="Nastavitve">${ic('gear')}</button></div></header>
-    <main class="wrap" id="main">${inner}</main>
+    <main class="wrap" id="main"><div class="${S.view !== LASTVIEW ? 'view' : ''}">${inner}</div></main>
     <nav class="nav">${items.map(([v, l, i]) => `<button class="${act === v ? 'on' : ''}" data-a="go" data-v="${v}">${ic(i)}<span>${l}</span></button>`).join('')}</nav></div>`;
 }
+let LASTVIEW = null;
 function render() {
   if (!U || gate()) return;
-  const V = U.role === 'admin' ? { admin: vAdmin, amsg: vAdminMsg, asys: vAdminSys, set: vSet } : { home: vHome, sched: vSched, nbs: vNbs, nb: vNb, shared: vShared, ai: vAi, grades: vGrades, set: vSet };
+  const V = U.role === 'admin' ? { admin: vAdmin, amsg: vAdminMsg, asys: vAdminSys, set: vSet } : { home: vHome, sched: vSched, nbs: vNbs, nb: vNb, shared: vShared, ai: vAi, grades: vGrades, grade: vGrade, set: vSet, search: vSearch, focus: vFocus };
   const f = V[S.view] || V[U.role === 'admin' ? 'admin' : 'home'];
-  $('app').innerHTML = shell(f()); hydrate(); tick();
+  const ae = document.activeElement, keep = ae && ae.id && ae.tagName === 'INPUT' ? { id: ae.id, v: ae.value, s: ae.selectionStart } : null;
+  $('app').innerHTML = shell(f()); LASTVIEW = S.view; hydrate(); tick(); focusTick();
+  if (keep) { const el = $(keep.id); if (el) { el.value = keep.v; el.focus(); try { el.setSelectionRange(keep.s, keep.s); } catch { } } }
+  const t = $('top'); if (t) t.classList.toggle('sc', scrollY > 4);
   if (S.view === 'ai') { const c = $('chatEnd'); if (c) c.scrollIntoView({ block: 'end' }); }
 }
 function go(v) { S.view = v; render(); scrollTo(0, 0); }
@@ -286,14 +330,14 @@ function nextLesson() {
 function lessonRow(date, h, compact) {
   const s = slot(date, h), st = status(date, h);
   if (!s) return compact ? '' : `<div class="free"><b style="width:22px;text-align:center">${h}.</b>prosto<span style="margin-left:auto">${trng(h)}</span></div>`;
-  if (s.malica) return `<div class="malica"><b style="width:22px;text-align:center">${h}.</b>☕ Malica<span style="margin-left:auto;font-weight:500;font-size:12px">${trng(h)}</span></div>`;
+  if (s.malica) return `<div class="malica"><b style="width:22px;text-align:center">${h}.</b>${ic('u_cup', 'ic-s')} Malica<span style="margin-left:auto;font-weight:500;font-size:12px">${trng(h)}</span></div>`;
   const n = nbOf(s.nid), l = D.lsMap[date + '_' + h], pc = (D.ph || []).filter(p => p.lk === date + '_' + h).length;
   const nowCls = date === today() && nowMin() >= toMin(tm(h)[0]) && nowMin() < toMin(tm(h)[1]) ? ' now' : '';
-  const icons = (l?.kind === 'notes' ? `<span title="Zapiski">📝${pc ? `<small class="xs">${pc}</small>` : ''}</span>` : '') + (l?.kind === 'nonotes' ? '<span title="Brez zapiskov">✅</span>' : '') + (l?.grade ? `<span class="pill o">${esc(l.grade)}</span>` : '') + (l?.kind === 'cancel' ? '<span class="xs">odpadla</span>' : '') + (st === 'red' ? `<span style="color:var(--red600)">${ic('alert', 'ic-s')}</span>` : '') + (st === 'ok' && !l?.grade && l?.kind !== 'nonotes' && l?.kind !== 'notes' ? ic('check', 'ic-s') : '');
-  return `<button class="lesson ${st}${nowCls}" data-a="openLesson" data-d="${date}" data-h="${h}"><span class="n">${h}.</span><span class="e">${esc(n?.emoji || '📖')}</span><span class="grow"><span class="t">${esc(n?.name || '(izbrisan zvezek)')}</span><span class="s">${trng(h)}${s.teacher ? ' · ' + esc(s.teacher) : ''}${st === 'red' ? ' · <b style="color:var(--red600)">vpiši uro</b>' : ''}</span></span><span class="st">${icons}</span></button>`;
+  const icons = (l?.kind === 'notes' ? `<span title="Zapiski" class="row" style="gap:3px">${ic('u_note', 'ic-s')}${pc ? `<small class="xs">${pc}</small>` : ''}</span>` : '') + (l?.kind === 'nonotes' ? `<span title="Brez zapiskov" style="color:var(--g600)">${ic('u_okc', 'ic-s')}</span>` : '') + (l?.grade ? gChip(l) : '') + (l?.kind === 'cancel' ? '<span class="xs">odpadla</span>' : '') + (st === 'red' ? `<span style="color:var(--red600)">${ic('alert', 'ic-s')}</span>` : '') + (st === 'ok' && !l?.grade && l?.kind !== 'nonotes' && l?.kind !== 'notes' ? ic('check', 'ic-s') : '');
+  return `<button class="lesson ${st}${nowCls}" data-a="openLesson" data-d="${date}" data-h="${h}"><span class="n">${h}.</span>${sIc(n)}<span class="grow"><span class="t">${esc(n?.name || '(izbrisan zvezek)')}</span><span class="s">${trng(h)}${s.teacher ? ' · ' + esc(s.teacher) : ''}${st === 'red' ? ' · <b style="color:var(--red600)">vpiši uro</b>' : ''}</span></span><span class="st">${icons}</span></button>`;
 }
 function dayList(date, compact) {
-  if (wdOf(date) > 4) return `<div class="card empty">🌴 Vikend – ni pouka.</div>`;
+  if (wdOf(date) > 4) return `<div class="card empty">${tile('u_palm', 174, 70, 'lg')}<div style="margin-top:10px">Vikend – ni pouka.</div></div>`;
   if (isOff(date)) return `<div class="card empty">Urnik je za ta dan izklopljen.</div>`;
   if (!(D.tt || []).length) return `<div class="card empty">Urnik še ni nastavljen.<br><button class="btn btn-p btn-sm" style="margin-top:12px" data-a="setTab" data-t="tt">Nastavi urnik</button></div>`;
   let o = ''; for (let h = 1; h <= 9; h++) o += lessonRow(date, h, compact);
@@ -307,13 +351,14 @@ function vHome() {
   const hr = new Date().getHours(), greet = hr < 10 ? 'Dobro jutro' : hr < 18 ? 'Dober dan' : 'Dober večer';
   const red = []; for (let i = 0; i <= 7; i++) { const d = addD(t, -i); for (const h of daySlots(d)) if (status(d, h) === 'red') red.push([d, h]); }
   return `${installCard()}${notifCard()}
-  <div class="hello"><div><div class="mut sm">${greet} 👋</div><div class="h1">Živjo, <span style="color:var(--g700)">${esc((U.name || '').split(' ')[0])}</span>!</div></div><div style="text-align:right"><div class="mut xs" style="text-transform:capitalize">${fmtD(t)}</div><div class="clock" id="clock"></div></div></div>
+  <div class="hello"><div><div class="mut sm">${greet}</div><div class="h1">Živjo, <span style="color:var(--g700)">${esc((U.name || '').split(' ')[0])}</span>!</div></div><div style="text-align:right"><div class="mut xs" style="text-transform:capitalize">${fmtD(t)}</div><div class="clock" id="clock"></div></div></div>
   <div class="stats">
-    <div class="card ringc"><div class="ring"><svg width="70" height="70"><circle cx="35" cy="35" r="29" stroke="#e2e8f0" stroke-width="8" fill="none"/><circle cx="35" cy="35" r="29" stroke="#10b981" stroke-width="8" fill="none" stroke-linecap="round" stroke-dasharray="182.2" stroke-dashoffset="${182.2 * (1 - pct)}"/></svg><b>${dd.total ? dd.done + '/' + dd.total : '–'}</b></div>
-      <div><b>${!dd.total ? 'Danes ni pouka' : dd.done === dd.total ? 'Dan je popoln! 🎉' : `Danes ${dd.done} od ${dd.total} ur`}</b><div class="mut sm">${dd.total && dd.done < dd.total ? `Še ${pl(dd.total - dd.done, 'ura', 'uri', 'ure', 'ur')} do popolnega dne` : 'Odlično delo.'}</div></div></div>
-    <div class="chip fire">🔥 ${st}<small>${st % 100 === 1 ? 'dan' : st % 100 === 2 ? 'dneva' : 'dni'} zapored</small></div>
-    <div class="chip next">${nx ? `${esc(nx.n?.emoji || '📖')} ${nx.i === 0 ? tm(nx.h)[0].replace(/^0/, '') : nx.i === 1 ? 'jutri' : fmtS(nx.d)}<small>naslednja: ${esc(nx.n?.name || '')}</small>` : '😎<small>ni prihajajočih ur</small>'}</div>
+    <div class="card ringc"><div class="ring"><svg width="70" height="70"><circle cx="35" cy="35" r="29" class="tr" stroke-width="8" fill="none"/><circle cx="35" cy="35" r="29" stroke="#10b981" stroke-width="8" fill="none" stroke-linecap="round" stroke-dasharray="182.2" stroke-dashoffset="${182.2 * (1 - pct)}"/></svg><b>${dd.total ? dd.done + '/' + dd.total : '–'}</b></div>
+      <div><b>${!dd.total ? 'Danes ni pouka' : dd.done === dd.total ? 'Dan je popoln!' : `Danes ${dd.done} od ${dd.total} ur`}</b><div class="mut sm">${dd.total && dd.done < dd.total ? `Še ${pl(dd.total - dd.done, 'ura', 'uri', 'ure', 'ur')} do popolnega dne` : 'Odlično delo.'}</div></div></div>
+    <div class="chip fire"><span class="row" style="gap:6px">${ic('u_flame')}${st}</span><small>${st % 100 === 1 ? 'dan' : st % 100 === 2 ? 'dneva' : 'dni'} zapored</small></div>
+    <div class="chip next">${nx ? `<span class="row" style="gap:8px">${sIc(nx.n, 'xs')}${nx.i === 0 ? tm(nx.h)[0].replace(/^0/, '') : nx.i === 1 ? 'jutri' : fmtS(nx.d)}</span><small>naslednja: ${esc(nx.n?.name || '')}</small>` : `${ic('cal')}<small>ni prihajajočih ur</small>`}</div>
   </div>
+  <div class="quick"><button data-a="go" data-v="search">${tile('search', 214, 85)}Iskanje</button><button data-a="go" data-v="focus">${tile('timer', 22, 88)}${FT.phase ? fmtClock(focusLeft()) : 'Fokus'}</button><button data-a="go" data-v="ai">${tile('spark', 268, 70)}Vprašaj AI</button><button data-a="itemForm">${tile('u_pin', 152, 62)}Nov rok</button></div>
   ${red.length ? `<div class="notice r" style="margin-top:14px">${ic('alert')}<div class="grow"><b>${pl(red.length, 'ura čaka', 'uri čakata', 'ure čakajo', 'ur čaka')} na vpis</b><div class="sm">${red.length === 1 ? "Vpiši jo" : "Vpiši jih"}, da ohraniš niz.</div></div><button class="btn btn-sm btn-d" data-a="openLesson" data-d="${red[0][0]}" data-h="${red[0][1]}">Vpiši</button></div>` : ''}
   <h2 class="h2">${ic('cal')} Današnji urnik</h2>${dayList(t)}
   <h2 class="h2">${ic('clock')} Roki <button class="btn btn-s btn-sm r" data-a="itemForm">${ic('plus', 'ic-s')} Dodaj</button></h2>
@@ -322,7 +367,7 @@ function vHome() {
 function itemRow(i) {
   const n = nbOf(i.nid), days = Math.round((pd(i.due) - pd(today())) / 864e5);
   const when = days === 0 ? 'danes' : days === 1 ? 'jutri' : days < 7 ? DAYS[wdOf(i.due)]?.toLowerCase() || fmtS(i.due) : fmtS(i.due);
-  return `<div class="it"><label class="chk" style="align-items:center"><input type="checkbox" data-c="itemDone" data-id="${i.id}" ${i.done ? 'checked' : ''}></label><span style="font-size:20px">${i.kind === 'test' ? '📝' : i.kind === 'hw' ? '📚' : '📌'}</span><div class="grow"><b style="${i.done ? 'text-decoration:line-through;color:var(--mut)' : ''}">${esc(i.title)}</b><div class="mut xs">${esc(n?.name || '')}${n ? ' · ' : ''}${{ test: 'Test', hw: 'Domača naloga', other: 'Drugo' }[i.kind]}</div></div><span class="pill ${days <= 1 ? 'o' : ''}">${when}</span><button class="btn btn-s btn-i" data-a="itemForm" data-id="${i.id}" aria-label="Uredi">${ic('edit', 'ic-s')}</button></div>`;
+  return `<div class="it"><label class="chk" style="align-items:center"><input type="checkbox" data-c="itemDone" data-id="${i.id}" ${i.done ? 'checked' : ''}></label>${i.kind === 'test' ? tile('u_quiz', 355, 78, 'xs') : i.kind === 'hw' ? tile('u_hw', 214, 85, 'xs') : tile('u_pin', 152, 62, 'xs')}<div class="grow"><b style="${i.done ? 'text-decoration:line-through;color:var(--mut)' : ''}">${esc(i.title)}</b><div class="mut xs">${esc(n?.name || '')}${n ? ' · ' : ''}${{ test: 'Test', hw: 'Domača naloga', other: 'Drugo' }[i.kind]}</div></div><span class="pill ${days <= 1 ? 'o' : ''}">${when}</span><button class="btn btn-s btn-i" data-a="itemForm" data-id="${i.id}" aria-label="Uredi">${ic('edit', 'ic-s')}</button></div>`;
 }
 function installCard() {
   if (isApp() || localStorage.getItem('dn2_noinst')) return '';
@@ -338,23 +383,23 @@ function openLesson(date, h) {
   const s = slot(date, h); if (!s || s.malica) return;
   const n = nbOf(s.nid); if (!n) return toast('Zvezek za to uro ne obstaja več.', true);
   const k = date + '_' + h, l = D.lsMap[k];
-  LM = { date, h, k, nid: s.nid, n, s, rec: l ? { ...l } : null, kind: l?.kind || null, grade: l?.grade || '', gtype: l?.gtype || 'Ustno', addGrade: !!(l?.grade) };
+  LM = { date, h, k, nid: s.nid, n, s, rec: l ? { ...l } : null, kind: l?.kind || null, grade: l?.grade || '', gtype: l?.gtype ? GT.find(x => x[2] === gcat(l.gtype))[0] : 'Ustna', addGrade: !!(l?.grade) };
   if (date > today()) return lmChoose(true);
   l ? lmSummary() : lmChoose();
 }
-const lmHead = () => sheetHead(`${esc(LM.n.emoji || '📖')} ${esc(LM.n.name)}`, `${LM.h}. ura · ${trng(LM.h)} · ${fmtD(LM.date)}${LM.s.teacher ? ' · ' + esc(LM.s.teacher) : ''}`);
+const lmHead = () => sheetHead(esc(LM.n.name), `${LM.h}. ura · ${trng(LM.h)} · ${fmtD(LM.date)}${LM.s.teacher ? ' · ' + esc(LM.s.teacher) : ''}`, sIc(LM.n, 'sm'));
 function lmChoose(future) {
   modal(`${lmHead()}${future ? '<div class="notice b sm" style="margin-bottom:12px">' + ic('info') + '<div>Ta ura je šele pred tabo. Vpis je mogoč že zdaj (npr. odpadla ura).</div></div>' : ''}
   <p class="b" style="margin-bottom:10px">Kako je bila ura?</p>
-  <button class="opt" data-a="lmKind" data-k="notes"><span class="oi" style="background:var(--sky50)">📸</span><span><b>Ura z zapiski</b><small>Fotografiraj zapiske ali vpiši snov</small></span></button>
-  <button class="opt" data-a="lmKind" data-k="nonotes"><span class="oi" style="background:var(--g50)">✅</span><span><b>Ura brez zapiskov</b><small>Pri uri ni bilo snovi za zapisati</small></span></button>
-  <button class="opt" data-a="lmKind" data-k="grade"><span class="oi" style="background:var(--or50)">⭐</span><span><b>Ocena</b><small>Test, spraševanje, pisno ocenjevanje …</small></span></button>
-  <button class="opt" data-a="lmKind" data-k="cancel"><span class="oi" style="background:#f1f5f9">❌</span><span><b>Odpadla ura</b><small>Ura ni bila izvedena – ne šteje v statistiko</small></span></button>`);
+  <button class="opt" data-a="lmKind" data-k="notes">${tile('cam', 214, 85, 'md')}<span><b>Ura z zapiski</b><small>Fotografiraj zapiske ali vpiši snov</small></span></button>
+  <button class="opt" data-a="lmKind" data-k="nonotes">${tile('u_okc', 152, 62, 'md')}<span><b>Ura brez zapiskov</b><small>Pri uri ni bilo snovi za zapisati</small></span></button>
+  <button class="opt" data-a="lmKind" data-k="grade">${tile('s_star', 40, 90, 'md')}<span><b>Ocena</b><small>Test, spraševanje, pisno ocenjevanje …</small></span></button>
+  <button class="opt" data-a="lmKind" data-k="cancel">${tile('u_ban', 215, 20, 'md')}<span><b>Odpadla ura</b><small>Ura ni bila izvedena – ne šteje v statistiko</small></span></button>`);
 }
 function lmSummary() {
   const l = LM.rec, ph = (D.ph || []).filter(p => p.lk === LM.k);
-  const kindL = { notes: '📸 Ura z zapiski', nonotes: '✅ Ura brez zapiskov', grade: '⭐ Ocena', cancel: '❌ Odpadla ura' }[l.kind];
-  modal(`${lmHead()}<div class="card pad" style="margin-bottom:12px"><div class="row"><b class="grow">${kindL}</b>${l.grade ? `<span class="pill o">⭐ ${esc(l.grade)}${l.gtype ? ' · ' + esc(l.gtype) : ''}</span>` : ''}</div>
+  const kindL = { notes: 'Ura z zapiski', nonotes: 'Ura brez zapiskov', grade: 'Ocena', cancel: 'Odpadla ura' }[l.kind];
+  modal(`${lmHead()}<div class="card pad" style="margin-bottom:12px"><div class="row"><b class="grow">${kindL}</b>${l.grade ? `<span class="row" style="gap:8px"><span class="mut sm">${gLabel(l.gtype)}</span>${gChip(l, true)}</span>` : ''}</div>
     ${l.text ? `<p style="margin-top:10px;white-space:pre-wrap">${esc(l.text)}</p>` : ''}${l.note ? `<p class="mut sm" style="margin-top:8px;white-space:pre-wrap">${esc(l.note)}</p>` : ''}
     ${ph.length ? `<div class="phgrid" style="margin-top:12px">${ph.map(p => `<div class="ph" data-a="viewPhoto" data-id="${p.id}" data-nid="${LM.nid}"><img data-pid="${p.id}" alt="Zapiski"></div>`).join('')}</div>` : ''}</div>
     <div class="row" style="justify-content:space-between"><button class="btn btn-d" data-a="lmDelete">${ic('trash', 'ic-s')} Izbriši vnos</button><button class="btn btn-p" data-a="lmEdit">${ic('edit', 'ic-s')} Uredi</button></div>`);
@@ -367,21 +412,21 @@ async function lmKind(k) {
   lmNotesForm();
 }
 function gradePicker() {
-  return `<div class="field"><label class="lbl">Vrsta ocenjevanja</label><select class="inp" id="lm_gt">${['Ustno', 'Pisno', 'Test', 'Kontrolna naloga', 'Referat', 'Praktično', 'Drugo'].map(o => `<option ${LM.gtype === o ? 'selected' : ''}>${o}</option>`).join('')}</select></div>
+  return `<div class="field"><label class="lbl">Vrsta ocene</label><div class="gtpick">${GT.map(([v, l, c]) => `<button type="button" class="${c} ${LM.gtype === v ? 'on' : ''}" data-a="pickGt" data-v="${v}"><i></i>${v}</button>`).join('')}</div><input type="hidden" id="lm_gt" value="${LM.gtype}"></div>
   <div class="field"><label class="lbl">Ocena</label><div class="gradepick">${[1, 2, 3, 4, 5].map(g => `<button type="button" class="${String(LM.grade) === String(g) ? 'on' : ''}" data-a="pickGrade" data-g="${g}">${g}</button>`).join('')}</div><input id="lm_g" class="inp" style="margin-top:8px" placeholder="ali vpiši (npr. 4+, 85 %, odlično)" maxlength="6" value="${esc(LM.grade)}" data-c="gradeTyped"></div>`;
 }
 function lmGradeForm() {
-  modal(`${lmHead()}<h4 class="b" style="margin-bottom:12px">⭐ Ocena</h4>${gradePicker()}
+  modal(`${lmHead()}<h4 class="b" style="margin-bottom:12px">Ocena</h4>${gradePicker()}
   <div class="field"><label class="lbl" for="lm_note">Opomba (neobvezno)</label><textarea id="lm_note" class="inp" rows="2" maxlength="1000" placeholder="npr. snov: kvadratna funkcija">${esc(LM.rec?.note || '')}</textarea></div>
   <div class="row" style="justify-content:space-between"><button class="btn btn-s" data-a="lmBack">Nazaj</button><button class="btn btn-p" data-a="lmSave">${ic('check', 'ic-s')} Shrani</button></div>`);
 }
 function lmNotesForm() {
   const ph = (D.ph || []).filter(p => p.lk === LM.k);
-  modal(`${lmHead()}<h4 class="b">📸 Zapiski</h4>
+  modal(`${lmHead()}<h4 class="b">Zapiski</h4>
   <div class="camrow"><label>${ic('cam', 'ic-l')}Fotografiraj<input type="file" accept="image/*" capture="environment" class="hide" data-c="lmFiles"></label><label>${ic('img', 'ic-l')}Iz galerije<input type="file" accept="image/*" multiple class="hide" data-c="lmFiles"></label></div>
   <div class="phgrid" id="lm_ph">${ph.map(p => `<div class="ph"><img data-pid="${p.id}" alt="Zapiski"><button class="del" data-a="lmDelPhoto" data-id="${p.id}" aria-label="Odstrani">${ic('x', 'ic-s')}</button></div>`).join('')}</div>
   <div class="field" style="margin-top:12px"><label class="lbl" for="lm_text">Snov (neobvezno, če imaš fotografije)</label><textarea id="lm_text" class="inp" rows="3" maxlength="5000" placeholder="Povzetek snovi …">${esc(LM.rec?.text || '')}</textarea></div>
-  <label class="row" style="justify-content:space-between;padding:12px 0;border-top:1px solid var(--line2)"><span class="b">⭐ Dodaj oceno</span><span class="sw"><input type="checkbox" id="lm_ag" ${LM.addGrade ? 'checked' : ''} data-c="lmAddGrade"><span></span></span></label>
+  <label class="row" style="justify-content:space-between;padding:12px 0;border-top:1px solid var(--line2)"><span class="b">Dodaj oceno</span><span class="sw"><input type="checkbox" id="lm_ag" ${LM.addGrade ? 'checked' : ''} data-c="lmAddGrade"><span></span></span></label>
   <div id="lm_gbox" class="${LM.addGrade ? '' : 'hide'}">${gradePicker()}</div>
   <div class="row" style="justify-content:space-between;margin-top:6px"><button class="btn btn-s" data-a="lmBack">Nazaj</button><button class="btn btn-p" data-a="lmSave">${ic('check', 'ic-s')} Shrani uro</button></div>`);
   hydrate($('modal'));
@@ -390,7 +435,9 @@ async function uploadFiles(files, nid, lk, date, onDone) {
   let ok = 0;
   for (const f of files) {
     try {
-      const data = await resize(f), r = await api('/photo/upload', { nid, data, lk: lk || null, date: date || today() });
+      const data = files.length === 1 ? await editPhoto(f) : await resize(f);
+      if (!data) continue;
+      const r = await api('/photo/upload', { nid, data, lk: lk || null, date: date || today() });
       (D.ph = D.ph || []).push({ id: r.id, nid, lk: lk || null, date: date || today(), t: Date.now(), size: data.length * .75, hasOcr: 0 }); ok++;
       onDone && onDone();
     } catch (e) { toast(e.message, true); }
@@ -413,7 +460,7 @@ async function lmSave() {
     D.lsMap[LM.k] = rec; D.ls = (D.ls || []).filter(x => x.k !== LM.k).concat(rec);
     closeModal(); render();
     const dd = dayDone(today());
-    toast(k === 'cancel' ? 'Ura označena kot odpadla.' : dd.total && dd.done === dd.total && LM.date === today() ? `Dan je popoln! 🔥 Niz: ${streak()} dni` : 'Ura shranjena ✓');
+    toast(k === 'cancel' ? 'Ura označena kot odpadla.' : dd.total && dd.done === dd.total && LM.date === today() ? `Dan je popoln! Niz: ${streak()} dni` : 'Ura shranjena ✓');
   } catch (e) { if (e.message !== '__gate') toast(e.message, true); }
 }
 
@@ -430,7 +477,7 @@ function vSched() {
 function vNbs() {
   const ids = D.nb || [];
   return `<div class="row" style="margin:6px 0 14px"><div class="h1 grow">Zvezki</div><button class="btn btn-p btn-sm" data-a="nbForm">${ic('plus', 'ic-s')} Nov zvezek</button></div>
-  ${ids.length ? `<div class="nbs">${ids.map(n => { const c = (D.ph || []).filter(p => p.nid === n.id).length; return `<button class="nbc" data-a="openNb" data-id="${n.id}"><span class="e">${esc(n.emoji || '📖')}</span><b>${esc(n.name)}</b><span class="mut xs">${nphoto(c)}${n.share ? ' · deljen' : ''}</span></button>`; }).join('')}</div>`
+  ${ids.length ? `<div class="nbs">${ids.map(n => { const c = (D.ph || []).filter(p => p.nid === n.id).length; return `<button class="nbc" data-a="openNb" data-id="${n.id}">${sIc(n, 'lg')}<b>${esc(n.name)}</b><span class="mut xs">${nphoto(c)}${n.share ? ' · deljen' : ''}</span></button>`; }).join('')}</div>`
     : `<div class="card empty">Še nimaš zvezkov.<br><button class="btn btn-p btn-sm" style="margin-top:12px" data-a="nbForm">Ustvari prvi zvezek</button></div>`}`;
 }
 function sortedPhotos(nid, list) { return (list || (D.ph || []).filter(p => p.nid === nid)).slice().sort((a, b) => (a.date || '').localeCompare(b.date || '') || a.t - b.t); }
@@ -445,12 +492,12 @@ function vNb() {
   const ph = sortedPhotos(n.id), grades = (D.ls || []).filter(l => l.nid === n.id && l.grade).sort((a, b) => a.k.localeCompare(b.k));
   const items = (D.items || []).filter(i => i.nid === n.id && !i.done);
   return `<button class="btn btn-s btn-sm" style="margin:4px 0 12px" data-a="go" data-v="nbs">${ic('l', 'ic-s')} Zvezki</button>
-  <div class="row" style="margin-bottom:14px;align-items:flex-start"><span style="font-size:44px;line-height:1">${esc(n.emoji || '📖')}</span><div class="grow"><div class="h1">${esc(n.name)}</div><div class="mut sm">${nphoto(ph.length)} · ${esc(n.teachers.join(', '))}</div></div><button class="btn btn-s btn-i" data-a="nbForm" data-id="${n.id}" aria-label="Uredi zvezek">${ic('edit')}</button></div>
+  <div class="row" style="margin-bottom:14px;align-items:flex-start">${sIc(n, 'xl')}<div class="grow"><div class="h1">${esc(n.name)}</div><div class="mut sm">${nphoto(ph.length)} · ${esc(n.teachers.join(', '))}</div></div><button class="btn btn-s btn-i" data-a="nbForm" data-id="${n.id}" aria-label="Uredi zvezek">${ic('edit')}</button></div>
   <div class="row-w" style="margin-bottom:16px"><label class="btn btn-p btn-sm">${ic('cam', 'ic-s')} Dodaj<input type="file" accept="image/*" multiple class="hide" data-c="nbFiles"></label>
     <button class="btn btn-s btn-sm" data-a="makePdf">${ic('pdf', 'ic-s')} PDF</button>
     <button class="btn btn-s btn-sm" data-a="shareNb">${ic('share', 'ic-s')} ${n.share ? 'Deljeno' : 'Deli'}</button>
     ${U.ai.on ? `<button class="btn btn-s btn-sm" data-a="aiFor" data-id="${n.id}">${ic('spark', 'ic-s')} Uči se z AI</button>` : ''}</div>
-  ${grades.length ? `<div class="card pad" style="margin-bottom:14px"><div class="row" style="margin-bottom:8px"><b class="grow">⭐ Ocene</b><span class="pill o">povprečje ${avgOf(grades.map(g => g.grade)) || '–'}</span></div><div class="row-w">${grades.map(g => `<span class="tag" style="background:var(--or50);border-color:var(--or200)"><b>${esc(g.grade)}</b> <span class="mut">${esc(g.gtype || '')} · ${fmtS(g.k.split('_')[0])}</span></span>`).join('')}</div></div>` : ''}
+  ${grades.length ? `<div class="card pad" style="margin-bottom:14px"><div class="row" style="margin-bottom:8px"><b class="grow">Ocene</b><button class="pill g" data-a="openGrades" data-id="${n.id}">povprečje ${avgOf(grades.map(g => g.grade)) || '–'} ›</button></div><div class="row-w">${grades.map(g => `<span class="row" style="gap:6px">${gChip(g)}<span class="mut xs">${fmtS(g.k.split('_')[0])}</span></span>`).join('')}</div></div>` : ''}
   ${items.length ? `<div class="card list" style="margin-bottom:14px">${items.map(itemRow).join('')}</div>` : ''}
   ${photoGrid(ph, true)}
   ${ph.length ? '<p class="hint" style="margin-top:12px">Namig: dolg pritisk (ali desni klik) na fotografijo jo zamenja, prenese ali izbriše.</p>' : ''}`;
@@ -461,7 +508,7 @@ async function openShared() { try { const r = await api('/shared?t=' + encodeURI
 function vShared() {
   if (!SH) return '<div class="card empty">Nalagam …</div>';
   return `<button class="btn btn-s btn-sm" style="margin:4px 0 12px" data-a="closeShared">${ic('l', 'ic-s')} Domov</button>
-  <div class="row" style="margin-bottom:14px"><span style="font-size:44px">${esc(SH.nb.emoji || '📖')}</span><div class="grow"><div class="h1">${esc(SH.nb.name)}</div><div class="mut sm">Deljeni zvezek · avtor: ${esc(SH.author)} · ${nphoto(SH.photos.length)}</div></div></div>
+  <div class="row" style="margin-bottom:14px">${sIc(SH.nb, 'xl')}<div class="grow"><div class="h1">${esc(SH.nb.name)}</div><div class="mut sm">Deljeni zvezek · avtor: ${esc(SH.author)} · ${nphoto(SH.photos.length)}</div></div></div>
   <div class="row-w" style="margin-bottom:14px"><button class="btn btn-s btn-sm" data-a="makePdf">${ic('pdf', 'ic-s')} PDF</button></div>
   <div class="notice b sm" style="margin-bottom:14px">${ic('info')}<div>Zapiske je delil sošolec. Uporabljaj jih samo za učenje in jih ne posreduj naprej brez njegovega dovoljenja.</div></div>
   ${photoGrid(SH.photos, false, SH.token)}`;
@@ -475,12 +522,39 @@ function drawViewer() {
   v.innerHTML = `<button class="vb" style="top:calc(14px + env(safe-area-inset-top,0px));right:14px" data-a="closeViewer" aria-label="Zapri">${ic('x')}</button>
   <button class="vb" style="top:calc(14px + env(safe-area-inset-top,0px));left:14px" data-a="dlPhoto" data-id="${p.id}" aria-label="Prenesi">${ic('dl')}</button>
   ${VP.list.length > 1 ? `<button class="vb" style="left:10px;top:50%" data-a="vStep" data-n="-1" aria-label="Prejšnja">${ic('l')}</button><button class="vb" style="right:10px;top:50%" data-a="vStep" data-n="1" aria-label="Naslednja">${ic('r')}</button>` : ''}
-  <img id="vimg" alt="Zapiski"><div class="cap">${p.date ? fmtS(p.date) + ' · ' : ''}${VI + 1}/${VP.list.length}</div>`;
+  <img id="vimg" alt="Zapiski" draggable="false"><div class="cap">${p.date ? fmtS(p.date) + ' · ' : ''}${VI + 1}/${VP.list.length} · ${'ontouchstart' in window ? 'razširi s prsti' : 'dvoklik za povečavo'}</div>`;
+  ZM = { s: 1, x: 0, y: 0 };
   photoUrl(p.id, VP.share).then(u => { const im = $('vimg'); if (im) im.src = u; });
 }
+// povečava: dva prsta, dvojni dotik, kolesce miške; premik pri povečavi; poteg za naslednjo stran
+let ZM = { s: 1, x: 0, y: 0 }; const PTR = new Map(); let pinch0 = null, pan0 = null, lastTap = 0, swipe0 = null;
+function zApply(anim) { const im = $('vimg'); if (!im) return; im.classList.toggle('drag', !anim); im.style.transform = `translate(${ZM.x}px,${ZM.y}px) scale(${ZM.s})`; }
+function zClamp() { ZM.s = Math.min(5, Math.max(1, ZM.s)); if (ZM.s === 1) { ZM.x = 0; ZM.y = 0; } const lim = (ZM.s - 1) * Math.max(innerWidth, innerHeight) / 2; ZM.x = Math.max(-lim, Math.min(lim, ZM.x)); ZM.y = Math.max(-lim, Math.min(lim, ZM.y)); }
+const VW = $('viewer');
+VW.addEventListener('pointerdown', e => {
+  if (e.target.closest('.vb')) return;
+  PTR.set(e.pointerId, { x: e.clientX, y: e.clientY }); VW.setPointerCapture?.(e.pointerId);
+  if (PTR.size === 2) { const [a, b] = [...PTR.values()]; pinch0 = { d: Math.hypot(a.x - b.x, a.y - b.y), s: ZM.s }; pan0 = null; swipe0 = null; }
+  else if (PTR.size === 1) {
+    const now = Date.now();
+    if (now - lastTap < 300) { ZM.s = ZM.s > 1 ? 1 : 2.5; zClamp(); zApply(true); lastTap = 0; return; }
+    lastTap = now; pan0 = { x: e.clientX, y: e.clientY, ox: ZM.x, oy: ZM.y }; swipe0 = ZM.s === 1 ? { x: e.clientX, t: now } : null;
+  }
+});
+VW.addEventListener('pointermove', e => {
+  if (!PTR.has(e.pointerId)) return; PTR.set(e.pointerId, { x: e.clientX, y: e.clientY });
+  if (PTR.size === 2 && pinch0) { const [a, b] = [...PTR.values()]; ZM.s = pinch0.s * Math.hypot(a.x - b.x, a.y - b.y) / pinch0.d; zClamp(); zApply(false); }
+  else if (PTR.size === 1 && pan0 && ZM.s > 1) { ZM.x = pan0.ox + e.clientX - pan0.x; ZM.y = pan0.oy + e.clientY - pan0.y; zClamp(); zApply(false); }
+});
+const pEnd = e => {
+  PTR.delete(e.pointerId);
+  if (PTR.size < 2) pinch0 = null;
+  if (swipe0 && PTR.size === 0) { const d = e.clientX - swipe0.x; if (Math.abs(d) > 60 && Date.now() - swipe0.t < 600 && VP.list.length > 1) { VI = (VI + (d < 0 ? 1 : -1) + VP.list.length) % VP.list.length; drawViewer(); } swipe0 = null; }
+  if (PTR.size === 0) { pan0 = null; zApply(true); }
+};
+VW.addEventListener('pointerup', pEnd); VW.addEventListener('pointercancel', pEnd);
+VW.addEventListener('wheel', e => { if (VW.classList.contains('hide')) return; e.preventDefault(); ZM.s *= e.deltaY < 0 ? 1.15 : 1 / 1.15; zClamp(); zApply(true); }, { passive: false });
 function closeViewer() { $('viewer').classList.add('hide'); $('viewer').innerHTML = ''; }
-let tx = 0; $('viewer').addEventListener('touchstart', e => tx = e.touches[0].clientX, { passive: true });
-$('viewer').addEventListener('touchend', e => { const d = e.changedTouches[0].clientX - tx; if (Math.abs(d) > 60 && VP.list.length > 1) { VI = (VI + (d < 0 ? 1 : -1) + VP.list.length) % VP.list.length; drawViewer(); } });
 addEventListener('keydown', e => { if (e.key === 'Escape') { if (!$('viewer').classList.contains('hide')) closeViewer(); else if (!$('modal').classList.contains('hide')) closeModal(); } if (!$('viewer').classList.contains('hide') && (e.key === 'ArrowLeft' || e.key === 'ArrowRight')) { VI = (VI + (e.key === 'ArrowRight' ? 1 : -1) + VP.list.length) % VP.list.length; drawViewer(); } });
 async function dlPhoto(id) {
   const c = VP.list ? VP : curPhotos(), i = c.list.findIndex(p => p.id === id), p = c.list[i];
@@ -490,8 +564,8 @@ async function dlPhoto(id) {
 let lpT = null;
 function showCtx(x, y, id) {
   const m = $('ctx');
-  m.innerHTML = `<button data-a="replacePhoto" data-id="${id}">${ic('swap', 'ic-s')} Zamenjaj fotografijo</button><button data-a="dlPhotoCtx" data-id="${id}">${ic('dl', 'ic-s')} Prenesi</button><button class="d" data-a="delPhoto" data-id="${id}">${ic('trash', 'ic-s')} Izbriši</button>`;
-  m.style.left = Math.min(x, innerWidth - 215) + 'px'; m.style.top = Math.min(y, innerHeight - 160) + 'px'; m.classList.remove('hide');
+  m.innerHTML = `<button data-a="editExisting" data-id="${id}">${ic('crop', 'ic-s')} Obreži / zasukaj</button><button data-a="replacePhoto" data-id="${id}">${ic('swap', 'ic-s')} Zamenjaj fotografijo</button><button data-a="dlPhotoCtx" data-id="${id}">${ic('dl', 'ic-s')} Prenesi</button><button class="d" data-a="delPhoto" data-id="${id}">${ic('trash', 'ic-s')} Izbriši</button>`;
+  m.style.left = Math.min(x, innerWidth - 215) + 'px'; m.style.top = Math.min(y, innerHeight - 210) + 'px'; m.classList.remove('hide');
 }
 document.addEventListener('contextmenu', e => { const el = e.target.closest('[data-ctx]'); if (el) { e.preventDefault(); showCtx(e.clientX, e.clientY, el.dataset.ctx); } });
 document.addEventListener('touchstart', e => { const el = e.target.closest('[data-ctx]'); if (!el) return; const t = e.touches[0]; lpT = setTimeout(() => { lpT = 'fired'; showCtx(t.clientX, t.clientY, el.dataset.ctx); }, 550); }, { passive: true });
@@ -537,59 +611,71 @@ async function makePdf() {
 
 // ============================================================ UČI SE (AI)
 function aiGate() {
-  if (!U.ai.on) return `<div class="card empty"><div style="font-size:40px">✨</div><b>AI pomočnik za tvoj račun še ni omogočen.</b><p class="sm" style="margin-top:6px">Omogoči ga lahko administrator.</p></div>`;
+  if (!U.ai.on) return `<div class="card empty">${tile('spark', 268, 70, 'lg')}<br><b>AI pomočnik za tvoj račun še ni omogočen.</b><p class="sm" style="margin-top:6px">Omogoči ga lahko administrator.</p></div>`;
   if (!U.ai.consent) return `<div class="card pad"><div class="aihead" style="margin-bottom:12px"><span class="ailogo">${ic('spark')}</span><div><b>Vklopi AI pomočnika</b> <span class="beta">BETA</span></div></div>
-    <p class="sm">AI pomočnik iz tvojih zapiskov pripravi povzetke, kartice in teste ter odgovarja na vprašanja o snovi.</p>
-    <div class="notice b sm" style="margin:12px 0">${ic('shield')}<div><b>Kaj se zgodi s tvojimi podatki:</b><br>• Ko uporabiš AI, se izbrani zapiski (fotografije in besedilo) pošljejo v obdelavo storitvi <b>Cloudflare Workers AI</b> (model Mistral Small).<br>• Podatki se <b>ne uporabljajo za učenje</b> AI modelov.<br>• Pogovori se shranijo v tvoj račun; izbrišeš jih lahko kadarkoli.<br>• AI se lahko zmoti – vedno preveri odgovore v zapiskih ali pri učitelju.</div></div>
+    <p class="sm">AI pomočnik iz tvojih zapiskov pripravi povzetke, kartice in teste ter odgovarja na vprašanja o snovi. Lahko se z njim pogovarjaš tudi brez zapiskov.</p>
+    <div class="notice b sm" style="margin:12px 0">${ic('shield')}<div><b>Kaj se zgodi s tvojimi podatki:</b><br>• Izbrani zapiski in vprašanja se pošljejo v obdelavo storitvi <b>Cloudflare Workers AI</b> (model Mistral Small).<br>• Podatki se <b>ne uporabljajo za učenje</b> AI modelov.<br>• Spletno iskanje (Wikipedija) se uporabi <b>samo, ko ga sam vklopiš</b> – takrat se iskalna poizvedba pošlje Wikipediji.<br>• Pogovori se shranijo v tvoj račun; izbrišeš jih lahko kadarkoli.<br>• AI se lahko zmoti – vedno preveri odgovore.</div></div>
     <label class="chk" style="margin-bottom:14px"><input type="checkbox" id="ai_ok"><span>Razumem in želim uporabljati AI pomočnika. Privolitev lahko kadarkoli prekličem v nastavitvah.</span></label>
     <button class="btn btn-p btn-w" data-a="aiConsent">Vklopi AI pomočnika</button></div>`;
   return '';
 }
 function vAi() {
   const g = aiGate(), A = S.ai;
-  const head = `<div class="row" style="margin:6px 0 4px"><div class="aihead grow"><span class="ailogo">${ic('spark')}</span><div><div class="h1" style="font-size:22px">Uči se <span class="beta">BETA</span></div><div class="mut xs">Pogovarjaš se z umetno inteligenco. Odgovori so lahko napačni.</div></div></div></div>`;
+  const head = `<div class="row" style="margin:6px 0 4px"><div class="aihead grow"><span class="ailogo">${ic('spark')}</span><div><div class="h1" style="font-size:26px">Uči se <span class="beta">BETA</span></div><div class="mut xs">Pogovarjaš se z umetno inteligenco. Odgovori so lahko napačni.</div></div></div><button class="btn btn-s btn-sm" data-a="go" data-v="focus">${ic('timer', 'ic-s')} ${FT.phase ? fmtClock(focusLeft()) : 'Fokus'}</button></div>`;
   if (g) return head + g;
-  if (!(D.nb || []).length) return head + '<div class="card empty">Najprej ustvari zvezek in dodaj zapiske.</div>';
-  if (!A.nid || !nbOf(A.nid)) A.nid = D.nb[0].id;
-  const n = nbOf(A.nid), ph = (D.ph || []).filter(p => p.nid === n.id), noOcr = ph.filter(p => !p.hasOcr).length;
-  const chats = (D.chats || []).filter(c => c.nid === n.id).slice(0, 8);
+  if (!A.nid) A.nid = (D.nb || [])[0]?.id || 'general';
+  if (A.nid !== 'general' && !nbOf(A.nid)) A.nid = (D.nb || [])[0]?.id || 'general';
+  const gen = A.nid === 'general';
+  if (gen && A.mode === 'summary') A.mode = 'chat';
+  const n = gen ? { id: 'general', name: 'Splošni pogovor' } : nbOf(A.nid), ph = gen ? [] : (D.ph || []).filter(p => p.nid === n.id), noOcr = ph.filter(p => !p.hasOcr).length;
+  const chats = (D.chats || []).filter(c => gen ? !c.nid : c.nid === n.id).slice(0, 8);
   const lim = U.ai.limit || 0, used = D.aiUsed || 0;
+  const modes = gen ? [['chat', 'Pogovor', 'u_chat'], ['cards', 'Kartice', 'u_cards'], ['test', 'Test', 'u_quiz']] : [['chat', 'Pogovor', 'u_chat'], ['summary', 'Povzetek', 'u_sum'], ['cards', 'Kartice', 'u_cards'], ['test', 'Test', 'u_quiz']];
+  const needText = A.mode === 'chat' || gen;
+  const ph_ = A.mode === 'chat' ? (gen ? 'Vprašaj karkoli …' : 'Vprašaj o snovi …') : 'Tema (npr. celica, ulomki) …';
   return `${head}
-  <div class="row" style="margin-top:12px"><select class="inp grow" data-c="aiNb">${D.nb.map(x => `<option value="${x.id}" ${x.id === n.id ? 'selected' : ''}>${esc(x.emoji)} ${esc(x.name)}</option>`).join('')}</select><button class="btn btn-s btn-i" data-a="aiNew" title="Nov pogovor">${ic('plus')}</button></div>
-  <div class="row-w xs mut" style="margin-top:6px"><span>📸 ${nphoto(ph.length)} · prebranih ${ph.length - noOcr}</span><span>· porabljeno ${used}/${lim} ta mesec</span></div>
-  ${noOcr ? `<div class="notice o sm" style="margin-top:10px">${ic('info')}<div class="grow"><b>${noOcr} ${noOcr === 1 ? 'fotografija še ni prebrana' : noOcr === 2 ? 'fotografiji še nista prebrani' : noOcr < 5 ? 'fotografije še niso prebrane' : 'fotografij še ni prebranih'}.</b> AI mora zapiske najprej prebrati (enkrat na fotografijo).</div><button class="btn btn-sm btn-p" data-a="aiOcr">Preberi</button></div>` : ''}
-  <div class="modes">${[['chat', '💬 Pogovor'], ['summary', '📝 Povzetek'], ['cards', '🃏 Kartice'], ['test', '✍️ Test']].map(([m, l]) => `<button class="${A.mode === m ? 'on' : ''}" data-a="aiMode" data-m="${m}">${l}</button>`).join('')}</div>
-  <div class="chat">${A.msgs.length ? A.msgs.map(aiMsg).join('') : `<div class="card empty sm">${A.mode === 'chat' ? 'Vprašaj karkoli o snovi iz zvezka <b>' + esc(n.name) + '</b>.' : 'Klikni gumb spodaj in AI bo iz tvojih zapiskov pripravil ' + { summary: 'povzetek', cards: 'kartice za učenje', test: 'preizkus znanja' }[A.mode] + '.'}</div>`}
+  <div class="row" style="margin-top:12px"><select class="inp grow" data-c="aiNb" aria-label="Vir"><option value="general" ${gen ? 'selected' : ''}>Splošni pogovor (brez zapiskov)</option><optgroup label="Moji zvezki">${(D.nb || []).map(x => `<option value="${x.id}" ${x.id === n.id ? 'selected' : ''}>${optN(x)}</option>`).join('')}</optgroup></select><button class="btn btn-s btn-i" data-a="aiNew" title="Nov pogovor" aria-label="Nov pogovor">${ic('plus')}</button></div>
+  <div class="row-w xs mut" style="margin:8px 4px 0">${gen ? '<span>Odgovarja iz splošnega znanja' + (A.web ? ' in Wikipedije' : '') + '</span>' : `<span>${nphoto(ph.length)} · prebranih ${ph.length - noOcr}</span>`}<span>· porabljeno ${used}/${lim} ta mesec</span></div>
+  ${!gen && noOcr ? `<div class="notice o sm" style="margin-top:10px">${ic('info')}<div class="grow"><b>${noOcr} ${noOcr === 1 ? 'fotografija še ni prebrana' : noOcr === 2 ? 'fotografiji še nista prebrani' : noOcr < 5 ? 'fotografije še niso prebrane' : 'fotografij še ni prebranih'}.</b> AI mora zapiske najprej prebrati (enkrat na fotografijo).</div><button class="btn btn-sm btn-p" data-a="aiOcr">Preberi</button></div>` : ''}
+  <div class="modes">${modes.map(([m, l, i]) => `<button class="${A.mode === m ? 'on' : ''}" data-a="aiMode" data-m="${m}">${ic(i, 'ic-s')} ${l}</button>`).join('')}</div>
+  <div class="chat">${A.msgs.length ? A.msgs.map(aiMsg).join('') : `<div class="card empty sm">${A.mode === 'chat' ? (gen ? 'Vprašaj karkoli – razložim snov po korakih. Vklopi <b>Splet</b> za odgovore z viri iz Wikipedije.' : 'Vprašaj karkoli o snovi iz zvezka <b>' + esc(n.name) + '</b>.') : gen ? 'Vpiši temo in AI pripravi ' + { cards: 'kartice za učenje', test: 'preizkus znanja' }[A.mode] + '.' : 'Klikni gumb spodaj in AI bo iz tvojih zapiskov pripravil ' + { summary: 'povzetek', cards: 'kartice za učenje', test: 'preizkus znanja' }[A.mode] + '.'}</div>`}
   ${A.busy ? '<div class="bub a"><span class="typing"><i></i><i></i><i></i></span></div>' : ''}<div id="chatEnd"></div></div>
-  ${A.mode === 'chat' ? `<form class="ask" data-f="aiAsk"><input id="ai_q" class="inp grow" placeholder="Vprašaj o snovi …" maxlength="2000" autocomplete="off" ${A.busy ? 'disabled' : ''}><button class="btn btn-p" type="submit" ${A.busy ? 'disabled' : ''} aria-label="Pošlji">${ic('send')}</button></form>`
+  ${needText ? `<form class="ask" data-f="aiAsk"><input id="ai_q" class="inp grow" placeholder="${ph_}" maxlength="2000" autocomplete="off" ${A.busy ? 'disabled' : ''}>${A.mode === 'chat' ? `<button type="button" class="tog ${A.web ? 'on' : ''}" data-a="webToggle" title="Išči na spletu (Wikipedija)">${ic('globe', 'ic-s')}<span>Splet</span></button>` : ''}<button class="btn btn-p btn-i" type="submit" ${A.busy ? 'disabled' : ''} aria-label="Pošlji" style="border-radius:50%;width:44px;height:44px">${ic('send')}</button></form>`
       : `<button class="btn btn-p btn-w" data-a="aiRun" ${A.busy ? 'disabled' : ''}>${ic('spark', 'ic-s')} Pripravi ${{ summary: 'povzetek', cards: 'kartice', test: 'test' }[A.mode]}</button>`}
   ${chats.length ? `<h2 class="h2">Prejšnji pogovori</h2><div class="card list">${chats.map(c => `<div class="it"><button class="grow" style="text-align:left" data-a="aiOpen" data-id="${c.id}"><b class="sm">${esc(c.title)}</b><div class="mut xs">${fmtT(c.upd)}</div></button><button class="btn btn-s btn-i" data-a="aiDel" data-id="${c.id}" aria-label="Izbriši">${ic('trash', 'ic-s')}</button></div>`).join('')}</div>` : ''}`;
 }
 const AIL = `<div class="lab">${ic('spark', 'ic-s')} Ustvarila umetna inteligenca · lahko vsebuje napake</div>`;
 function parseJSON(t) { try { return JSON.parse(t.slice(t.indexOf('['), t.lastIndexOf(']') + 1)); } catch { return null; } }
 function mdLite(t) { return esc(t).split('\n').map(l => /^#+\s/.test(l) ? `<h4>${l.replace(/^#+\s/, '')}</h4>` : /^\s*[-*•]\s/.test(l) ? `<li>${l.replace(/^\s*[-*•]\s/, '')}</li>` : l.trim() ? `<p>${l}</p>` : '').join('').replace(/(<li>.*?<\/li>)+/g, m => `<ul>${m}</ul>`).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>'); }
+const srcHtml = w => w && w.length ? `<div class="srcs"><span class="xs mut">Viri (Wikipedija, CC BY-SA):</span>${w.map((x, i) => `<a href="${esc(x.url)}" target="_blank" rel="noopener noreferrer">${ic('globe', 'ic-s')} [${i + 1}] ${esc(x.title)}</a>`).join('')}</div>` : '';
 function aiMsg(m, idx) {
   if (m.role === 'user') return `<div class="bub u">${esc(m.content)}</div>`;
   let o; try { o = JSON.parse(m.content); } catch { o = { mode: 'chat', text: m.content }; }
   if (o.mode === 'cards') { const a = parseJSON(o.text); if (a?.length) return `<div class="bub a" style="max-width:100%;width:100%">${AIL}${cardsHtml(a, idx)}</div>`; }
   if (o.mode === 'test') { const a = parseJSON(o.text); if (a?.length) return `<div class="bub a" style="max-width:100%;width:100%;white-space:normal">${AIL}${testHtml(a, idx)}</div>`; }
-  return `<div class="bub a md" style="white-space:normal">${AIL}${mdLite(o.text)}</div>`;
+  return `<div class="bub a md" style="white-space:normal">${AIL}${mdLite(o.text)}${srcHtml(o.web)}<div class="acts"><button data-a="copyMsg" data-i="${idx}">${ic('copy', 'ic-s')} Kopiraj</button></div></div>`;
 }
 const FCS = {};
 function cardsHtml(a, idx) { const st = FCS[idx] || (FCS[idx] = { i: 0, ok: 0 }), c = a[st.i % a.length]; return `<div class="deck"><div class="fc" data-a="flip"><div class="f"><small>Kartica ${st.i % a.length + 1}/${a.length}</small><div class="q">${esc(c.q)}</div><span class="xs" style="position:absolute;bottom:14px;right:16px;opacity:.6">tapni za odgovor ↻</span></div><div class="bk"><small style="color:var(--g700)">Odgovor</small><div class="q" style="font-size:16px">${esc(c.a)}</div></div></div></div><div class="row"><button class="btn btn-s grow" data-a="fcNext" data-i="${idx}" data-k="0">Še ne znam</button><button class="btn btn-p grow" data-a="fcNext" data-i="${idx}" data-k="1">Znam ✓</button></div>${st.i ? `<p class="mut xs" style="margin-top:6px">Znaš ${st.ok} od ${st.i}</p>` : ''}`; }
 const QZ = {};
 function testHtml(a, idx) { const st = QZ[idx] || (QZ[idx] = {}); const n = Object.keys(st).length, ok = Object.entries(st).filter(([q, v]) => a[q] && v === a[q].c).length; return a.map((q, qi) => `<div class="qz"><b>${qi + 1}. ${esc(q.q)}</b>${(q.o || []).map((o, oi) => `<button data-a="qzPick" data-i="${idx}" data-q="${qi}" data-o="${oi}" class="${st[qi] != null ? (oi === q.c ? 'ok' : st[qi] === oi ? 'no' : '') : ''}" ${st[qi] != null ? 'disabled' : ''}>${'ABCD'[oi]}) ${esc(o)}</button>`).join('')}${st[qi] != null && q.e ? `<div class="ex">${esc(q.e)}</div>` : ''}</div>`).join('') + (n === a.length ? `<div class="notice g"><b>Rezultat: ${ok}/${a.length} (${Math.round(ok / a.length * 100)} %)</b></div>` : ''); }
-async function aiAsk(mode, message) {
-  const A = S.ai; if (A.busy) return;
-  A.busy = true; if (message) A.msgs.push({ role: 'user', content: message }); else A.msgs.push({ role: 'user', content: { summary: '📝 Pripravi povzetek', cards: '🃏 Pripravi kartice', test: '✍️ Pripravi test' }[mode] }); render();
+async function aiAsk(mode, message, opt = {}) {
+  const A = S.ai; if (A.busy) return null;
+  const web = mode === 'chat' && !!A.web;
+  A.busy = true; A.msgs.push({ role: 'user', content: (message && mode === 'chat' ? message : ({ summary: 'Pripravi povzetek', cards: 'Pripravi kartice', test: 'Pripravi test' }[mode] + (message ? ': ' + message : ''))) + (web ? ' 🌐' : '') }); if (!opt.quiet) render();
+  let reply = null;
   try {
-    const r = await api('/ai/ask', { nid: A.nid, mode, message, chatId: A.chat });
-    A.chat = r.chatId; A.msgs.push({ role: 'ai', content: JSON.stringify({ mode: r.mode, text: r.reply }) }); D.aiUsed = (D.aiUsed || 0) + 1;
-    if (!r.sources.photos && !r.sources.texts) toast('V zvezku ni prebranih zapiskov – odgovor je splošen.', true);
+    const r = await api('/ai/ask', { nid: A.nid, mode, message, chatId: A.chat, web });
+    A.chat = r.chatId; A.msgs.push({ role: 'ai', content: JSON.stringify({ mode: r.mode, text: r.reply, web: r.web }) }); D.aiUsed = (D.aiUsed || 0) + 1 + (web ? 0 : 0);
+    reply = r.reply;
+    if (!r.general && !r.sources.photos && !r.sources.texts) toast('V zvezku ni prebranih zapiskov – odgovor je splošen.', true);
+    if (web && !r.web.length) toast('Na Wikipediji ni bilo zadetkov – odgovor je brez spletnih virov.');
     const ch = await api('/ai/chats'); D.chats = ch.chats;
   } catch (e) { A.msgs.pop(); if (e.message !== '__gate') toast(e.message, true); }
-  A.busy = false; render();
+  A.busy = false; if (!opt.quiet) render();
+  return reply;
 }
+
 async function aiOcr() {
   const n = nbOf(S.ai.nid), list = (D.ph || []).filter(p => p.nid === n.id && !p.hasOcr);
   modal(`${sheetHead('Branje zapiskov', 'AI bere fotografije in shrani prepis. Vsaka fotografija se prebere samo enkrat.', `<span class="ailogo">${ic('spark')}</span>`)}<div class="prog"><i id="ocr_p" style="width:0"></i></div><p class="sm" id="ocr_t">0 / ${list.length}</p>`);
@@ -602,18 +688,179 @@ async function aiOcr() {
   closeModal(); render(); if (i) toast(`Prebrano: ${nphoto(i)}.`);
 }
 
+// ============================================================ ISKANJE
+let SQ = { q: '', res: null, busy: false, tm: null };
+function hl(t, q) { const e = esc(t); if (!q) return e; const i = e.toLowerCase().indexOf(esc(q).toLowerCase()); return i < 0 ? e : e.slice(0, i) + '<mark>' + e.slice(i, i + esc(q).length) + '</mark>' + e.slice(i + esc(q).length); }
+function vSearch() {
+  const q = SQ.q.trim(), ql = q.toLowerCase(), r = SQ.res && SQ.res.q === q ? SQ.res : null;
+  const nbs = q.length >= 2 ? (D.nb || []).filter(n => n.name.toLowerCase().includes(ql) || n.teachers.some(t => t.toLowerCase().includes(ql))) : [];
+  let body = '';
+  if (q.length < 2) body = `<div class="card empty sm">Išči po zvezkih, snovi pri urah, opombah, rokih in <b>prebranih fotografijah</b> zapiskov.<br><span class="xs">Fotografije postanejo iskalne, ko jih v »Uči se« prebere AI.</span></div>`;
+  else {
+    const sec = (title, list) => list ? `<h2 class="h2">${title}</h2><div class="card list">${list}</div>` : '';
+    body += sec('Zvezki', nbs.map(n => `<button class="it" style="width:100%;text-align:left" data-a="openNb" data-id="${n.id}">${sIc(n, 'sm')}<div class="grow"><b>${hl(n.name, q)}</b><div class="mut xs">${hl(n.teachers.join(', '), q)}</div></div></button>`).join(''));
+    if (r) {
+      body += sec('Ure in zapiski', r.ls.map(x => { const n = nbOf(x.nid), [d, h] = x.k.split('_'); return `<button class="it" style="width:100%;text-align:left" data-a="openLesson" data-d="${d}" data-h="${h}">${sIc(n, 'sm')}<div class="grow"><b class="sm">${esc(n?.name || '')} · ${fmtS(d)}, ${h}. ura</b><div class="mut xs">${hl(x.snip, q)}</div></div></button>`; }).join(''));
+      body += sec('Fotografije zapiskov', r.ph.map(x => { const n = nbOf(x.nid); return `<button class="it" style="width:100%;text-align:left" data-a="openFound" data-id="${x.id}" data-nid="${x.nid}"><div class="ph" style="width:46px;flex-shrink:0;border-radius:10px"><img data-pid="${x.id}" alt=""></div><div class="grow"><b class="sm">${esc(n?.name || '')}${x.date ? ' · ' + fmtS(x.date) : ''}</b><div class="mut xs">${hl(x.snip, q)}</div></div></button>`; }).join(''));
+      body += sec('Roki', r.items.map(itemRow).join(''));
+      if (!nbs.length && !r.ls.length && !r.ph.length && !r.items.length) body += `<div class="card empty">Ni zadetkov za »${esc(q)}«.</div>`;
+    } else body += `<div class="card empty sm">${SQ.busy ? 'Iščem …' : ''}</div>`;
+  }
+  return `<div class="h1" style="margin:6px 2px 4px">Iskanje</div><div class="sbox">${ic('search')}<input id="sq" class="inp" type="search" placeholder="npr. Pitagorov izrek, test, Novak …" value="${esc(SQ.q)}" data-c="sq" autocomplete="off" enterkeyhint="search" autofocus></div>${body}`;
+}
+function searchRun() {
+  clearTimeout(SQ.tm); const q = SQ.q.trim();
+  if (q.length < 2) { SQ.res = null; render(); return; }
+  SQ.busy = true; render();
+  SQ.tm = setTimeout(async () => { try { const r = await api('/search?q=' + encodeURIComponent(q)); if (SQ.q.trim() === q) { SQ.res = r; } } catch (e) { if (e.message !== '__gate') toast(e.message, true); } SQ.busy = false; if (S.view === 'search') render(); }, 350);
+}
+
+// ============================================================ FOKUS ČASOVNIK
+const FKEY = 'dn2_focus';
+let FT = (() => { try { return JSON.parse(localStorage.getItem(FKEY)) || {}; } catch { return {}; } })();
+FT.work = FT.work || 25; FT.brk = FT.brk || 5;
+const fSave = () => { try { localStorage.setItem(FKEY, JSON.stringify(FT)); } catch { } };
+const focusLeft = () => !FT.phase ? FT.work * 60 : FT.paused != null ? FT.paused : Math.max(0, Math.round((FT.end - Date.now()) / 1000));
+const fmtClock = s => `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;
+function focusStart() { FT.phase = 'work'; FT.end = Date.now() + FT.work * 60000; FT.paused = null; fSave(); render(); }
+function focusPause() { if (FT.paused != null) { FT.end = Date.now() + FT.paused * 1000; FT.paused = null; } else FT.paused = focusLeft(); fSave(); render(); }
+function focusReset() { FT.phase = null; FT.paused = null; FT.end = null; fSave(); render(); document.title = 'DigitNotes'; }
+async function focusDone() {
+  const was = FT.phase;
+  if (was === 'work') {
+    try { await api('/focus/save', { nid: FT.nid || null, min: FT.work }); (D.focus = D.focus || []).unshift({ nid: FT.nid || null, min: FT.work, t: Date.now() }); } catch (e) { if (e.message !== '__gate') toast(e.message, true); }
+    FT.phase = 'brk'; FT.end = Date.now() + FT.brk * 60000; notifyLocal('Odlično!', `${FT.work} minut učenja je za tabo. Zdaj ${FT.brk} minut odmora.`);
+  } else { FT.phase = null; FT.end = null; notifyLocal('Odmor je končan', 'Pripravljen na naslednji krog?'); }
+  FT.paused = null; fSave(); try { navigator.vibrate?.([200, 100, 200]); } catch { }
+  if (S.view === 'focus' || S.view === 'home' || S.view === 'ai') render();
+}
+async function notifyLocal(title, body) { toast(title + ' ' + body); try { if (Notification.permission === 'granted') { const r = await navigator.serviceWorker?.getRegistration(); r ? r.showNotification(title, { body, icon: '../icon-192.png', tag: 'focus' }) : new Notification(title, { body }); } } catch { } }
+function focusTick() {
+  if (!FT.phase) return;
+  const left = focusLeft();
+  if (FT.paused == null && left <= 0) { focusDone(); return; }
+  if (S.view === 'focus') { const t = $('f_t'), c = $('f_c'); const tot = (FT.phase === 'work' ? FT.work : FT.brk) * 60; if (t) t.textContent = fmtClock(left); if (c) c.style.strokeDashoffset = 722.6 * (left / tot); }
+  document.title = (FT.phase === 'work' ? '⏱️ ' : '☕ ') + fmtClock(left) + ' · DigitNotes';
+}
+setInterval(focusTick, 1000);
+function vFocus() {
+  const left = focusLeft(), tot = (FT.phase === 'brk' ? FT.brk : FT.work) * 60, run = FT.phase && FT.paused == null;
+  const f = D.focus || [], dayStart = pd(today()).getTime(), wk = pd(addD(today(), -wdOf(today()))).getTime();
+  const sumT = f.filter(x => x.t >= dayStart).reduce((a, x) => a + x.min, 0), sumW = f.filter(x => x.t >= wk).reduce((a, x) => a + x.min, 0);
+  const days = [...Array(7)].map((_, i) => { const d = addD(today(), i - 6), a = pd(d).getTime(), b = a + 864e5; return { d, m: f.filter(x => x.t >= a && x.t < b).reduce((s, x) => s + x.min, 0) }; });
+  const mx = Math.max(30, ...days.map(x => x.m));
+  const per = {}; f.filter(x => x.t >= Date.now() - 30 * 864e5).forEach(x => per[x.nid || ''] = (per[x.nid || ''] || 0) + x.min);
+  const perL = Object.entries(per).sort((a, b) => b[1] - a[1]);
+  const hm = m => m >= 60 ? `${Math.floor(m / 60)} h ${m % 60 ? (m % 60) + ' min' : ''}` : `${m} min`;
+  return `<div class="row" style="margin:6px 2px 4px"><div class="h1 grow">Fokus</div><button class="btn btn-s btn-sm" data-a="go" data-v="ai">${ic('spark', 'ic-s')} Uči se</button></div>
+  <p class="mut sm" style="margin:0 2px 8px">Uči se v kratkih, zbranih krogih (metoda Pomodoro). Telefon odloži in se posveti snovi.</p>
+  <div class="card pad focus">
+    <div class="fring ${FT.phase === 'brk' ? 'brk' : ''}"><svg width="250" height="250"><circle class="tr" cx="125" cy="125" r="115" stroke-width="14" fill="none"/><circle id="f_c" class="fg" cx="125" cy="125" r="115" stroke="url(#fg)" stroke-width="14" fill="none" stroke-linecap="round" stroke-dasharray="722.6" stroke-dashoffset="${722.6 * (left / tot)}"/><defs><linearGradient id="fg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#34d399"/><stop offset="1" stop-color="#0d9488"/></linearGradient></defs></svg>
+      <div class="tm"><b id="f_t">${fmtClock(left)}</b><span>${!FT.phase ? 'pripravljen' : FT.phase === 'work' ? (FT.paused != null ? 'premor' : 'učenje') : 'odmor'}</span></div></div>
+    <div class="row" style="margin-top:18px;gap:10px">${!FT.phase ? `<button class="btn btn-p" data-a="fStart" style="min-width:160px">${ic('play', 'ic-s')} Začni</button>` : `<button class="btn btn-s" data-a="fReset">${ic('stop', 'ic-s')} Ustavi</button><button class="btn btn-p" data-a="fPause" style="min-width:140px">${ic(run ? 'pause' : 'play', 'ic-s')} ${run ? 'Premor' : 'Nadaljuj'}</button>`}</div>
+    ${!FT.phase ? `<div style="width:100%;margin-top:18px"><label class="lbl">Predmet</label><select class="inp" data-c="fNb"><option value="">Splošno</option>${(D.nb || []).map(n => `<option value="${n.id}" ${FT.nid === n.id ? 'selected' : ''}>${optN(n)}</option>`).join('')}</select>
+    <label class="lbl" style="margin-top:12px">Dolžina</label><div class="seg">${[[25, 5], [45, 10], [15, 3]].map(([w, b]) => `<button class="${FT.work === w ? 'on' : ''}" data-a="fLen" data-w="${w}" data-b="${b}">${w} + ${b} min</button>`).join('')}</div></div>` : `<p class="mut sm" style="margin-top:12px">${FT.nid ? esc(nbOf(FT.nid)?.name || '') : 'Splošno'} · ${FT.work} + ${FT.brk} min</p>`}
+  </div>
+  <div class="stats" style="grid-template-columns:1fr 1fr;margin-top:12px"><div class="chip next">${hm(sumT)}<small>danes</small></div><div class="chip fire">${hm(sumW)}<small>ta teden</small></div></div>
+  <h2 class="h2">${ic('chart')} Zadnjih 7 dni</h2><div class="card pad"><div class="fbar">${days.map(x => `<div><i style="height:${Math.round(x.m / mx * 100)}%" title="${x.m} min"></i><small>${['N', 'P', 'T', 'S', 'Č', 'P', 'S'][pd(x.d).getDay()]}</small></div>`).join('')}</div></div>
+  ${perL.length ? `<h2 class="h2">Po predmetih (30 dni)</h2><div class="card">${perL.map(([nid, m]) => { const n = nbOf(nid); return `<div class="avg">${n ? sIc(n, 'sm') : tile('timer', 22, 88, 'sm')}<b class="sm" style="width:34%">${esc(n?.name || 'Splošno')}</b><div class="bar"><i style="width:${m / perL[0][1] * 100}%"></i></div><b class="sm" style="width:70px;text-align:right">${hm(m)}</b></div>`; }).join('')}</div>` : ''}
+  ${FT.phase ? '<p class="hint" style="text-align:center;margin-top:12px">Časovnik teče tudi, če zapustiš ta zaslon. Ob koncu dobiš obvestilo, če je aplikacija odprta.</p>' : ''}`;
+}
+
+// ============================================================ UREJEVALNIK FOTOGRAFIJ (obreži, zasukaj)
+function loadImg(src) { return new Promise((res, rej) => { const im = new Image(); im.onload = () => res(im); im.onerror = () => rej(new Error('Slike ni mogoče prebrati.')); im.src = src; }); }
+function editPhoto(file) {
+  return new Promise(async resolve => {
+    let srcUrl; try { srcUrl = URL.createObjectURL(file); } catch { return resolve(await resize(file)); }
+    let img; try { img = await loadImg(srcUrl); } catch (e) { URL.revokeObjectURL(srcUrl); toast(e.message, true); return resolve(null); }
+    let rot = 0; const ed = $('editor');
+    ed.innerHTML = `<div class="top2"><button class="btn btn-sm" style="background:rgba(255,255,255,.12);color:#fff" data-e="cancel">Prekliči</button><span>Uredi fotografijo</span><button class="btn btn-sm btn-p" data-e="ok">Uporabi</button></div>
+      <div class="stage" id="ed_st"><canvas id="ed_c"></canvas><div class="crop" id="ed_cr"><div class="g2"></div><span class="hd tl" data-h="tl"></span><span class="hd tr" data-h="tr"></span><span class="hd bl" data-h="bl"></span><span class="hd br" data-h="br"></span></div></div>
+      <div class="bar2"><button class="btn btn-s btn-sm" data-e="rot">${ic('rot', 'ic-s')} Zasukaj</button><button class="btn btn-s btn-sm" data-e="full">Celotna slika</button><button class="btn btn-s btn-sm" data-e="skip">Brez urejanja</button></div>`;
+    ed.classList.remove('hide');
+    const st = $('ed_st'), cv = $('ed_c'), cr = $('ed_cr');
+    let disp = { w: 0, h: 0, k: 1, ox: 0, oy: 0 }, box = { x: 0, y: 0, w: 0, h: 0 };
+    const srcW = () => rot % 180 ? img.height : img.width, srcH = () => rot % 180 ? img.width : img.height;
+    function draw() {
+      const W = st.clientWidth - 24, H = st.clientHeight - 24, k = Math.min(W / srcW(), H / srcH(), 1.5);
+      cv.width = Math.round(srcW() * k); cv.height = Math.round(srcH() * k);
+      const x = cv.getContext('2d'); x.save(); x.translate(cv.width / 2, cv.height / 2); x.rotate(rot * Math.PI / 180); const dw = img.width * k, dh = img.height * k; x.drawImage(img, -dw / 2, -dh / 2, dw, dh); x.restore();
+      disp = { w: cv.width, h: cv.height, k, ox: cv.offsetLeft, oy: cv.offsetTop };
+      box = { x: disp.w * .04, y: disp.h * .04, w: disp.w * .92, h: disp.h * .92 }; place();
+    }
+    function place() { cr.style.left = disp.ox + box.x + 'px'; cr.style.top = disp.oy + box.y + 'px'; cr.style.width = box.w + 'px'; cr.style.height = box.h + 'px'; }
+    let drag = null;
+    cr.onpointerdown = e => { e.preventDefault(); cr.setPointerCapture(e.pointerId); drag = { h: e.target.dataset.h || 'move', x: e.clientX, y: e.clientY, b: { ...box } }; };
+    cr.onpointermove = e => {
+      if (!drag) return; const dx = e.clientX - drag.x, dy = e.clientY - drag.y, b = { ...drag.b }, min = 40;
+      if (drag.h === 'move') { b.x = Math.max(0, Math.min(disp.w - b.w, b.x + dx)); b.y = Math.max(0, Math.min(disp.h - b.h, b.y + dy)); }
+      else {
+        if (drag.h.includes('l')) { const nx = Math.max(0, Math.min(b.x + b.w - min, b.x + dx)); b.w += b.x - nx; b.x = nx; }
+        if (drag.h.includes('r')) b.w = Math.max(min, Math.min(disp.w - b.x, b.w + dx));
+        if (drag.h.includes('t')) { const ny = Math.max(0, Math.min(b.y + b.h - min, b.y + dy)); b.h += b.y - ny; b.y = ny; }
+        if (drag.h.includes('b')) b.h = Math.max(min, Math.min(disp.h - b.y, b.h + dy));
+      }
+      box = b; place();
+    };
+    cr.onpointerup = cr.onpointercancel = () => drag = null;
+    const onRs = () => draw(); addEventListener('resize', onRs);
+    const finish = v => { removeEventListener('resize', onRs); ed.classList.add('hide'); ed.innerHTML = ''; URL.revokeObjectURL(srcUrl); resolve(v); };
+    ed.onclick = async e => {
+      const a = e.target.closest('[data-e]')?.dataset.e; if (!a) return;
+      if (a === 'cancel') return finish(null);
+      if (a === 'rot') { rot = (rot + 90) % 360; draw(); return; }
+      if (a === 'full') { box = { x: 0, y: 0, w: disp.w, h: disp.h }; place(); return; }
+      if (a === 'skip') return finish(await resize(file));
+      if (a === 'ok') {
+        const full = document.createElement('canvas'); full.width = srcW(); full.height = srcH();
+        const fx = full.getContext('2d'); fx.fillStyle = '#fff'; fx.fillRect(0, 0, full.width, full.height); fx.translate(full.width / 2, full.height / 2); fx.rotate(rot * Math.PI / 180); fx.drawImage(img, -img.width / 2, -img.height / 2);
+        const sx = box.x / disp.k, sy = box.y / disp.k, sw = box.w / disp.k, sh = box.h / disp.k, M = 1600, kk = Math.min(1, M / Math.max(sw, sh));
+        const out = document.createElement('canvas'); out.width = Math.round(sw * kk); out.height = Math.round(sh * kk);
+        const ox = out.getContext('2d'); ox.fillStyle = '#fff'; ox.fillRect(0, 0, out.width, out.height); ox.drawImage(full, sx, sy, sw, sh, 0, 0, out.width, out.height);
+        let q = .76, d = out.toDataURL('image/jpeg', q); while (d.length > 1_900_000 && q > .35) { q -= .1; d = out.toDataURL('image/jpeg', q); }
+        return finish(d);
+      }
+    };
+    requestAnimationFrame(draw);
+  });
+}
+
+// ============================================================ TEMA
+function setTheme(t) {
+  try { localStorage.setItem('dn2_theme', t); } catch { }
+  if (t === 'auto') document.documentElement.removeAttribute('data-theme'); else document.documentElement.setAttribute('data-theme', t);
+  const dark = t === 'dark' || (t === 'auto' && matchMedia('(prefers-color-scheme: dark)').matches);
+  document.querySelector('meta[name=theme-color]')?.setAttribute('content', dark ? '#08100e' : '#f2f5f4');
+}
+matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change', () => { let t = 'auto'; try { t = localStorage.getItem('dn2_theme') || 'auto'; } catch { } if (t === 'auto') setTheme('auto'); });
+
 // ============================================================ OCENE
 function gradeNum(g) { const m = /^\s*([1-5])\s*([+-])?/.exec(String(g)); return m ? +m[1] + (m[2] === '+' ? .25 : m[2] === '-' ? -.25 : 0) : null; }
 function avgOf(list) { const n = list.map(gradeNum).filter(x => x != null); return n.length ? (n.reduce((a, b) => a + b, 0) / n.length).toFixed(2).replace('.', ',') : ''; }
+function gradeLegend() { return `<div class="glegend">${GT.map(([v, l, c]) => `<span><i class="gd ${c}"></i>${l}</span>`).join('')}</div>`; }
 function vGrades() {
   const gs = (D.ls || []).filter(l => l.grade);
   const by = {}; gs.forEach(g => (by[g.nid] = by[g.nid] || []).push(g));
   const all = avgOf(gs.map(g => g.grade));
-  return `<div class="h1" style="margin:6px 0 14px">Ocene</div>
-  ${gs.length ? `<div class="card pad" style="margin-bottom:14px"><div class="mut sm">Skupno povprečje</div><div style="font-size:42px;font-weight:800;letter-spacing:-.04em;line-height:1.1">${all || '–'}</div><div class="mut xs">${pl(gs.length, 'ocena', 'oceni', 'ocene', 'ocen')} · upoštevane so številčne ocene 1–5</div></div>
-  <div class="card">${Object.entries(by).map(([nid, l]) => { const n = nbOf(nid), a = avgOf(l.map(x => x.grade)); return `<div class="avg"><span style="font-size:22px">${esc(n?.emoji || '📖')}</span><div style="width:34%;min-width:110px"><b class="sm">${esc(n?.name || '(izbrisan)')}</b><div class="mut xs">${l.map(x => esc(x.grade)).join(', ')}</div></div><div class="bar"><i style="width:${a ? parseFloat(a.replace(',', '.')) / 5 * 100 : 0}%"></i></div><b style="width:42px;text-align:right">${a || '–'}</b></div>`; }).join('')}</div>
-  <h2 class="h2">Vse ocene</h2><div class="card list">${gs.sort((a, b) => b.k.localeCompare(a.k)).map(g => { const n = nbOf(g.nid), [d, h] = g.k.split('_'); return `<button class="it" style="width:100%;text-align:left" data-a="openLesson" data-d="${d}" data-h="${h}"><span style="font-size:20px">${esc(n?.emoji || '📖')}</span><div class="grow"><b class="sm">${esc(n?.name || '')}</b><div class="mut xs">${esc(g.gtype || 'Ocena')} · ${fmtD(d)}</div></div><span class="pill o" style="font-size:15px">${esc(g.grade)}</span></button>`; }).join('')}</div>`
-      : `<div class="card empty"><div style="font-size:40px">⭐</div>Še nimaš vpisanih ocen.<br><span class="sm">Oceno dodaš pri vpisu ure (»Ocena« ali »Ura z zapiski« → Dodaj oceno).</span></div>`}`;
+  if (!gs.length) return `<div class="h1" style="margin:6px 2px 14px">Ocene</div><div class="card empty">${tile('s_star', 40, 90, 'lg')}<div style="margin-top:10px">Še nimaš vpisanih ocen.</div><span class="sm">Oceno dodaš pri vpisu ure (»Ocena« ali »Ura z zapiski« → Dodaj oceno).</span></div>`;
+  const cnt = c => gs.filter(g => gcat(g.gtype) === c).length;
+  return `<div class="h1" style="margin:6px 2px 14px">Ocene</div>
+  <div class="card pad gsum"><div><div class="mut sm">Skupno povprečje</div><div class="gbig">${all || '–'}</div><div class="mut xs">${pl(gs.length, 'ocena', 'oceni', 'ocene', 'ocen')} · številčne ocene 1–5</div></div>
+    <div class="gsplit">${GT.map(([v, l, c]) => `<div><i class="gd ${c}"></i><b>${avgOf(gs.filter(g => gcat(g.gtype) === c).map(g => g.grade)) || '–'}</b><small>${l.replace(' ocena', '')} · ${cnt(c)}</small></div>`).join('')}</div></div>
+  <h2 class="h2">Po predmetih</h2>
+  <div class="gsubj">${Object.entries(by).sort((a, b) => (nbOf(a[0])?.name || '').localeCompare(nbOf(b[0])?.name || '')).map(([nid, l]) => { const n = nbOf(nid), a = avgOf(l.map(x => x.grade)); return `<button class="card gsub" data-a="openGrades" data-id="${nid}">${sIc(n || { name: '?' })}<div class="grow" style="min-width:0"><b>${esc(n?.name || '(izbrisan)')}</b><div class="gchips">${l.sort((x, y) => x.k.localeCompare(y.k)).map(g => gChip(g)).join('')}</div></div><div class="gavg">${a || '–'}<small>povp.</small></div>${ic('r', 'ic-s')}</button>`; }).join('')}</div>
+  ${gradeLegend()}`;
+}
+function vGrade() {
+  const n = nbOf(S.gnid), gs = (D.ls || []).filter(l => l.grade && l.nid === S.gnid).sort((a, b) => b.k.localeCompare(a.k));
+  if (!gs.length) { S.view = 'grades'; return vGrades(); }
+  const a = avgOf(gs.map(g => g.grade));
+  return `<button class="btn btn-s btn-sm" style="margin:4px 0 12px" data-a="go" data-v="grades">${ic('l', 'ic-s')} Ocene</button>
+  <div class="row" style="margin-bottom:16px;gap:14px">${sIc(n || { name: '?' }, 'xl')}<div class="grow"><div class="h1">${esc(n?.name || '(izbrisan)')}</div><div class="mut sm">${pl(gs.length, 'ocena', 'oceni', 'ocene', 'ocen')}${n?.teachers?.length ? ' · ' + esc(n.teachers.join(', ')) : ''}</div></div></div>
+  <div class="card pad gsum"><div><div class="mut sm">Povprečje</div><div class="gbig">${a || '–'}</div></div>
+    <div class="gsplit">${GT.map(([v, l, c]) => { const x = gs.filter(g => gcat(g.gtype) === c); return `<div><i class="gd ${c}"></i><b>${avgOf(x.map(g => g.grade)) || '–'}</b><small>${l.replace(' ocena', '')} · ${x.length}</small></div>`; }).join('')}</div></div>
+  ${GT.map(([v, l, c]) => { const x = gs.filter(g => gcat(g.gtype) === c); return x.length ? `<h2 class="h2"><i class="gd ${c}"></i>${{ u: 'Ustne ocene', p: 'Pisne ocene', d: 'Druge ocene' }[c]}</h2><div class="card list">${x.map(g => { const [d, h] = g.k.split('_'); return `<button class="it" style="width:100%;text-align:left" data-a="openLesson" data-d="${d}" data-h="${h}">${gChip(g, true)}<div class="grow"><b class="sm">${fmtD(d)}</b><div class="mut xs">${h}. ura${g.note ? ' · ' + esc(g.note.split('\n')[0].slice(0, 80)) : ''}</div></div>${ic('r', 'ic-s')}</button>`; }).join('')}</div>` : ''; }).join('')}
+  ${gradeLegend()}`;
 }
 
 // ============================================================ OBVESTILA
@@ -647,7 +894,7 @@ async function pushSync(ask) {
     if (sub) { const cur = new Uint8Array(sub.options.applicationServerKey || []), want = b64u2buf(CFG.vapid); if (cur.length !== want.length || cur.some((v, i) => v !== want[i])) { await sub.unsubscribe(); sub = null; } }
     if (!sub) sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64u2buf(CFG.vapid) });
     const r = await api('/push/sub', { sub: sub.toJSON() }); localStorage.setItem('dn2_push', r.id); PUSHERR = '';
-    if (ask) { toast('Obvestila so vklopljena 🔔'); render(); }
+    if (ask) { toast('Obvestila so vklopljena.'); render(); }
   } catch (e) { PUSHERR = (e.name || '') + ' ' + (e.message || ''); if (ask) toast('Vklop obvestil ni uspel: ' + e.message, true); }
 }
 function notifCard() {
@@ -664,19 +911,20 @@ function vSet() {
 function setNb() {
   const l = D.nb || [];
   return `<div class="row" style="margin-bottom:10px"><b class="grow">Moji zvezki ${U.maxNb != null ? `<span class="mut sm">(${l.length}/${U.maxNb})</span>` : ''}</b><button class="btn btn-p btn-sm" data-a="nbForm">${ic('plus', 'ic-s')} Dodaj</button></div>
-  ${l.length ? `<div class="card list">${l.map(n => `<div class="it"><span style="font-size:26px">${esc(n.emoji)}</span><div class="grow"><b>${esc(n.name)}</b><div class="mut xs">${esc(n.teachers.join(', '))}</div></div><button class="btn btn-s btn-i" data-a="nbForm" data-id="${n.id}" aria-label="Uredi">${ic('edit', 'ic-s')}</button><button class="btn btn-d btn-i" data-a="delNb" data-id="${n.id}" aria-label="Izbriši">${ic('trash', 'ic-s')}</button></div>`).join('')}</div>` : '<div class="card empty">Ni zvezkov.</div>'}`;
+  ${l.length ? `<div class="card list">${l.map(n => `<div class="it">${sIc(n, 'sm')}<div class="grow"><b>${esc(n.name)}</b><div class="mut xs">${esc(n.teachers.join(', '))}</div></div><button class="btn btn-s btn-i" data-a="nbForm" data-id="${n.id}" aria-label="Uredi">${ic('edit', 'ic-s')}</button><button class="btn btn-d btn-i" data-a="delNb" data-id="${n.id}" aria-label="Izbriši">${ic('trash', 'ic-s')}</button></div>`).join('')}</div>` : '<div class="card empty">Ni zvezkov.</div>'}`;
 }
-const EM = ['📐', '📖', '🧪', '🌍', '🎨', '🎵', '⚽', '💻', '🇬🇧', '🔬', '📜', '🧮', '🌱', '✏️', '📚', '📝', '📓', '📒', '📕', '📗', '📘', '📙', '🔢', '➗', '📏', '🧬', '⚗️', '🔭', '🪐', '🌋', '🗺️', '🧭', '🏛️', '⚔️', '🏺', '🇩🇪', '🇫🇷', '🇮🇹', '🇪🇸', '🇸🇮', '🗣️', '🎭', '🎬', '📷', '🖌️', '🎹', '🎸', '🎻', '🏃', '🏀', '🏐', '🤸', '⚙️', '🔧', '🔌', '🤖', '🖥️', '🍳', '🧵', '🔨', '🌿', '🐾', '🧠', '❤️', '🩺', '💰', '📊', '⚖️', '🤝', '🧩', '♟️', '💡', '⭐', '🌈'];
+let NF = { i: 'book', c: 6 };
+function nfPicker() { return `<div id="nfp"><div class="row" style="gap:14px;margin-bottom:10px">${sIc({ emoji: `i:${NF.i}:${NF.c}` }, 'lg')}<div class="cpick">${HUES.map(([h, sa], i) => `<button type="button" class="${NF.c === i ? 'on' : ''}" style="--h:${h};--s:${sa}%" data-a="nfC" data-c="${i}" aria-label="Barva ${i + 1}"></button>`).join('')}</div></div><div class="ipick">${SUBJ.map(k => `<button type="button" class="${NF.i === k ? 'on' : ''}" data-a="nfIc" data-i="${k}" aria-label="${k}">${ic('s_' + k)}</button>`).join('')}</div></div>`; }
 function nbForm(id) {
   const n = id ? nbOf(id) : {};
   modal(`${sheetHead(id ? 'Uredi zvezek' : 'Nov zvezek')}
   <div class="field"><label class="lbl" for="nf_n">Predmet / ime zvezka</label><input id="nf_n" class="inp" maxlength="60" value="${esc(n.name || '')}" placeholder="npr. Matematika" autofocus></div>
-  <div class="field"><label class="lbl" for="nf_e">Emoji</label><input id="nf_e" class="inp" style="font-size:24px;text-align:center" maxlength="16" value="${esc(n.emoji || '📖')}"><div class="emojis">${EM.map(e => `<button type="button" data-a="pickEmoji" data-e="${e}">${e}</button>`).join('')}</div></div>
+  <div class="field"><label class="lbl">Ikona in barva</label>${(() => { const o = subjOf(n.name ? n : { emoji: '', id: 'x', name: 'x' }); NF = { i: o.i || 'book', c: n.name ? o.c : SUBJ_C.book, cm: !!n.name }; return nfPicker(); })()}<input type="hidden" id="nf_e"></div>
   <div class="field"><label class="lbl" for="nf_t">Učitelji (ločeni z vejico)</label><input id="nf_t" class="inp" maxlength="300" value="${esc((n.teachers || []).join(', '))}" placeholder="npr. Novak, Kovač"><p class="hint">Vpiši samo priimek ali kratico – dovolj je za izbiro v urniku.</p></div>
   <div class="row" style="justify-content:flex-end"><button class="btn btn-s" data-a="closeModal">Prekliči</button><button class="btn btn-p" data-a="nbSave" data-id="${id || ''}">Shrani</button></div>`);
 }
 function setTt() {
-  const opts = cur => `<option value="">— prosto —</option><option value="M" ${cur === 'M' ? 'selected' : ''}>☕ Malica</option>` + (D.nb || []).flatMap(n => n.teachers.map(t => { const v = n.id + '|' + t; return `<option value="${esc(v)}" ${cur === v ? 'selected' : ''}>${esc(n.emoji)} ${esc(n.name)} – ${esc(t)}</option>`; })).join('');
+  const opts = cur => `<option value="">— prosto —</option><option value="M" ${cur === 'M' ? 'selected' : ''}>Malica</option>` + (D.nb || []).flatMap(n => n.teachers.map(t => { const v = n.id + '|' + t; return `<option value="${esc(v)}" ${cur === v ? 'selected' : ''}>${optN(n)} – ${esc(t)}</option>`; })).join('');
   let rows = ''; for (let h = 1; h <= 9; h++) { rows += `<tr><td class="h">${h}.</td>`; for (let d = 0; d < 5; d++) { const s = (D.tt || []).find(x => x.d === d && x.h === h), cur = !s ? '' : s.malica ? 'M' : s.nid + '|' + s.teacher; rows += `<td><select class="inp" data-c="ttSet" data-d="${d}" data-h="${h}" aria-label="${DAYS[d]} ${h}. ura">${opts(cur)}</select></td>`; } rows += '</tr>'; }
   let times = ''; for (let h = 1; h <= 9; h++) { const t = tm(h); times += `<div class="row" style="margin-bottom:6px"><b style="width:26px;color:var(--mut2)">${h}.</b><input type="time" class="inp" style="width:auto" value="${t[0]}" data-c="timeSet" data-h="${h}" data-k="s"><span class="mut">–</span><input type="time" class="inp" style="width:auto" value="${t[1]}" data-c="timeSet" data-h="${h}" data-k="e"></div>`; }
   const off = (D.off || []).slice().sort();
@@ -691,7 +939,9 @@ function setTt() {
 }
 function setAc() {
   const perm = 'Notification' in window ? Notification.permission : 'ni podprto', row = (ok, t) => `<div class="${ok ? 'y' : 'n'}">${ic(ok ? 'check' : 'x', 'ic-s')}<span>${t}</span></div>`;
-  return `<div class="card pad" style="margin-bottom:14px"><b>Profil</b>
+  let th = 'auto'; try { th = localStorage.getItem('dn2_theme') || 'auto'; } catch { }
+  return `<div class="card pad" style="margin-bottom:14px"><b>Videz</b><div class="themes" style="margin-top:10px">${[['auto', 'Samodejno', 'linear-gradient(135deg,#f2f5f4 50%,#121c19 50%)'], ['light', 'Svetlo', '#f2f5f4'], ['dark', 'Temno', '#121c19']].map(([k, l, bg]) => `<button class="${th === k ? 'on' : ''}" data-a="theme" data-t="${k}"><span class="sw2" style="background:${bg}"></span>${l}</button>`).join('')}</div><p class="hint">»Samodejno« sledi nastavitvi telefona.</p></div>
+  <div class="card pad" style="margin-bottom:14px"><b>Profil</b>
     <div class="field" style="margin-top:10px"><label class="lbl" for="ac_n">Ime</label><input id="ac_n" class="inp" maxlength="80" value="${esc(U.name)}"></div>
     <div class="field"><label class="lbl" for="ac_u">Uporabniško ime</label><input id="ac_u" class="inp" maxlength="30" value="${esc(U.username)}" autocapitalize="none"></div>
     <button class="btn btn-p btn-sm" data-a="saveProfile">Shrani</button></div>
@@ -706,7 +956,7 @@ function setAc() {
     <label class="row" style="justify-content:space-between;padding:12px 0"><span class="sm">Opomnik ob koncu vsake ure</span><span class="sw"><input type="checkbox" data-c="setOpt" data-k="remind" ${U.remind ? 'checked' : ''}><span></span></span></label>
     <label class="row" style="justify-content:space-between;padding:12px 0;border-top:1px solid var(--line2)"><span class="sm">Obvestila o storitvi po e-pošti<br><span class="mut xs">Kode za geslo prejmeš vedno.</span></span><span class="sw"><input type="checkbox" data-c="setOpt" data-k="emailOpt" ${U.emailOpt ? 'checked' : ''}><span></span></span></label>
     ${U.ai.on ? `<label class="row" style="justify-content:space-between;padding:12px 0;border-top:1px solid var(--line2)"><span class="sm">AI pomočnik (privolitev)</span><span class="sw"><input type="checkbox" data-c="setOpt" data-k="aiConsent" ${U.ai.consent ? 'checked' : ''}><span></span></span></label>` : ''}
-    <div class="diag" style="margin:10px 0;padding:10px;border-radius:12px;background:#f8fafc;border:1px solid var(--line)"><div class="b xs" style="color:var(--ink2)">Stanje obvestil na tej napravi</div>
+    <div class="diag" style="margin:10px 0;padding:10px;border-radius:12px;background:var(--fill);border:1px solid var(--line)"><div class="b xs" style="color:var(--ink2)">Stanje obvestil na tej napravi</div>
       ${row(isApp() || !isIOS(), isApp() ? 'Aplikacija je nameščena' : isIOS() ? 'Na iPhonu jo moraš dodati na domači zaslon' : 'Brskalnik')}${row(perm === 'granted', 'Dovoljenje: ' + perm)}${row(!!navigator.serviceWorker?.controller, 'Service worker aktiven')}${row(!!localStorage.getItem('dn2_push'), 'Naprava prijavljena za push')}${PUSHERR ? `<div class="n xs">${esc(PUSHERR)}</div>` : ''}</div>
     <div class="row-w">${perm !== 'granted' ? `<button class="btn btn-p btn-sm" data-a="pushOn">${ic('bell', 'ic-s')} Vklopi obvestila</button>` : ''}<button class="btn btn-s btn-sm" data-a="pushTest">Pošlji testno obvestilo</button></div></div>` : ''}
   <button class="btn btn-s btn-w" data-a="logout">${ic('out', 'ic-s')} Odjava</button>
@@ -721,6 +971,7 @@ function setPr() {
     <div class="it" style="padding-left:0"><span class="grow sm">AI pomočnik</span><span class="pill ${U.ai.consent ? 'g' : ''}">${U.ai.consent ? 'vklopljen' : 'izklopljen'}</span></div>
     <div class="it" style="padding-left:0"><span class="grow sm">Push obvestila</span><span class="pill ${'Notification' in window && Notification.permission === 'granted' ? 'g' : ''}">${'Notification' in window && Notification.permission === 'granted' ? 'dovoljena' : 'niso dovoljena'}</span></div></div>
     <p class="hint">Privolitve spreminjaš v zavihku Račun. Dovoljenje za obvestila prekličeš v nastavitvah naprave.</p></div>
+  <div class="card pad" style="margin-bottom:14px"><b>Statistika fokusa</b><p class="mut sm" style="margin:6px 0 12px">Čas učenja s fokus časovnikom (zadnjih 60 dni je vidnih v aplikaciji).</p><button class="btn btn-s btn-sm" data-a="focusDel">${ic('trash', 'ic-s')} Izbriši statistiko fokusa</button></div>
   <div class="card pad" style="margin-bottom:14px"><b>Dokumenti</b><div class="row-w" style="margin-top:10px"><a class="btn btn-s btn-sm" href="${SITE}zasebnost.html" target="_blank" rel="noopener">Politika zasebnosti</a><a class="btn btn-s btn-sm" href="${SITE}pogoji.html" target="_blank" rel="noopener">Pogoji uporabe</a></div>
     <p class="hint">Vprašanja o zasebnosti: <a href="mailto:${esc(window.DN_CONTACT || '')}">${esc(window.DN_CONTACT || '')}</a>. Pritožbo lahko vložiš tudi pri Informacijskem pooblaščencu RS (ip-rs.si).</p></div>
   <div class="card pad" style="border-color:var(--red200)"><b style="color:var(--red600)">Izbriši račun</b><p class="mut sm" style="margin:6px 0 12px">Račun in vsi podatki (zvezki, fotografije, ocene, pogovori) bodo <b>takoj in trajno izbrisani</b>. Tega ni mogoče razveljaviti.</p>
@@ -757,9 +1008,9 @@ async function exportData() {
 function itemForm(id) {
   const it = id ? (D.items || []).find(x => x.id === id) : { kind: 'test', due: addD(today(), 1) };
   modal(`${sheetHead(id ? 'Uredi rok' : 'Nov rok', 'Dan prej ob 17:00 dobiš opomnik.')}
-  <div class="field"><div class="seg">${[['test', '📝 Test'], ['hw', '📚 Naloga'], ['other', '📌 Drugo']].map(([k, l]) => `<button type="button" class="${it.kind === k ? 'on' : ''}" data-a="itKind" data-k="${k}">${l}</button>`).join('')}</div><input type="hidden" id="it_k" value="${it.kind}"></div>
+  <div class="field"><div class="seg">${[['test', 'Test'], ['hw', 'Naloga'], ['other', 'Drugo']].map(([k, l]) => `<button type="button" class="${it.kind === k ? 'on' : ''}" data-a="itKind" data-k="${k}">${l}</button>`).join('')}</div><input type="hidden" id="it_k" value="${it.kind}"></div>
   <div class="field"><label class="lbl" for="it_t">Opis</label><input id="it_t" class="inp" maxlength="200" value="${esc(it.title || '')}" placeholder="npr. Test iz kvadratne funkcije" autofocus></div>
-  <div class="row"><div class="field grow"><label class="lbl" for="it_n">Predmet</label><select id="it_n" class="inp"><option value="">—</option>${(D.nb || []).map(n => `<option value="${n.id}" ${it.nid === n.id ? 'selected' : ''}>${esc(n.emoji)} ${esc(n.name)}</option>`).join('')}</select></div><div class="field"><label class="lbl" for="it_d">Datum</label><input id="it_d" type="date" class="inp" value="${it.due}"></div></div>
+  <div class="row"><div class="field grow"><label class="lbl" for="it_n">Predmet</label><select id="it_n" class="inp"><option value="">—</option>${(D.nb || []).map(n => `<option value="${n.id}" ${it.nid === n.id ? 'selected' : ''}>${optN(n)}</option>`).join('')}</select></div><div class="field"><label class="lbl" for="it_d">Datum</label><input id="it_d" type="date" class="inp" value="${it.due}"></div></div>
   <div class="row" style="justify-content:space-between">${id ? `<button class="btn btn-d" data-a="itDel" data-id="${id}">${ic('trash', 'ic-s')}</button>` : '<span></span>'}<button class="btn btn-p" data-a="itSave" data-id="${id || ''}">Shrani</button></div>`);
 }
 
@@ -772,7 +1023,7 @@ function vAdmin() {
   return `<div class="row" style="margin:6px 0 6px"><div class="h1 grow">Uporabniki</div><button class="btn btn-p btn-sm" data-a="userForm">${ic('plus', 'ic-s')} Dodaj</button></div>
   <div class="notice b sm" style="margin:10px 0 14px">${ic('shield')}<div>Zaradi varstva podatkov administrator <b>ne vidi</b> zapiskov, fotografij, ocen in pogovorov uporabnikov – samo podatke o računu.</div></div>
   ${us.length ? `<div class="card list">${us.map(u => `<div class="it" style="flex-wrap:wrap"><div class="grow" style="min-width:200px"><b>${esc(u.name)}</b> <span class="mut sm">@${esc(u.username)}</span><div class="mut xs">${esc(u.email)}</div>
-    <div class="row-w" style="gap:5px;margin-top:5px">${statusPill(u)}${u.minor ? '<span class="pill">&lt;15</span>' : ''}<span class="pill">${pl(u.nbs, 'zvezek', 'zvezka', 'zvezki', 'zvezkov')} · ${nphoto(u.phs)} · ${mb(u.bytes)}</span>${u.ai_on ? `<span class="pill g">AI ${u.ai_used || 0}/${u.ai_limit}${u.ai_consent ? '' : ' (ni privolitve)'}</span>` : ''}${u.devices ? `<span class="pill">🔔 ${u.devices}</span>` : ''}<span class="pill">aktiven ${since(u.last_active)}</span></div></div>
+    <div class="row-w" style="gap:5px;margin-top:5px">${statusPill(u)}${u.minor ? '<span class="pill">&lt;15</span>' : ''}<span class="pill">${pl(u.nbs, 'zvezek', 'zvezka', 'zvezki', 'zvezkov')} · ${nphoto(u.phs)} · ${mb(u.bytes)}</span>${u.ai_on ? `<span class="pill g">AI ${u.ai_used || 0}/${u.ai_limit}${u.ai_consent ? '' : ' (ni privolitve)'}</span>` : ''}${u.devices ? `<span class="pill">${ic('bell', 'ic-s')} ${u.devices}</span>` : ''}<span class="pill">aktiven ${since(u.last_active)}</span></div></div>
     <button class="btn btn-s btn-i" data-a="msgForm" data-id="${u.id}" title="Sporočilo">${ic('send', 'ic-s')}</button><button class="btn btn-s btn-i" data-a="userForm" data-id="${u.id}" title="Uredi">${ic('edit', 'ic-s')}</button><button class="btn btn-d btn-i" data-a="delUser" data-id="${u.id}" title="Izbriši">${ic('trash', 'ic-s')}</button></div>`).join('')}</div>` : '<div class="card empty">Še ni uporabnikov.</div>'}`;
 }
 function statusPill(u) { return u.status === 'active' ? '<span class="pill g">aktiven</span>' : u.status === 'parent' ? '<span class="pill o">čaka starša</span>' : '<span class="pill">še ni potrdil</span>'; }
@@ -809,6 +1060,8 @@ function vAdminSys() {
   <div class="stats" style="grid-template-columns:repeat(auto-fill,minmax(150px,1fr))"><div class="card pad"><div class="mut xs">Uporabniki</div><div class="h1">${s.users ?? '–'}</div></div><div class="card pad"><div class="mut xs">Fotografije</div><div class="h1">${s.photos ?? '–'}</div><div class="mut xs">${mb(s.bytes || 0)}</div></div><div class="card pad"><div class="mut xs">Naprave (push)</div><div class="h1">${s.devices ?? '–'}</div></div><div class="card pad"><div class="mut xs">Push v čakanju</div><div class="h1">${s.queue ?? '–'}</div></div></div>
   <h2 class="h2">Prostor za fotografije</h2><div class="card pad">${(s.shards || []).map(x => `<div class="row" style="margin-bottom:8px"><b style="width:40px">${esc(x.shard)}</b><div class="bar"><i style="width:${Math.min(100, x.b / 4.8e8 * 100)}%;${x.b > 4e8 ? 'background:#f97316' : ''}"></i></div><span class="sm" style="width:120px;text-align:right">${mb(x.b)} / 480 MB</span></div>`).join('') || '<span class="mut sm">Ni fotografij.</span>'}
   <p class="hint">Aktivna baza: <b>${esc(s.active || '')}</b>. Ko se približa 480 MB, ustvari novo bazo D1 (P1, P2 …) in jo nastavi kot PHOTO_ACTIVE – navodila v NAVODILA.md.</p></div>
+  <h2 class="h2">E-pošta</h2><div class="card pad"><p class="sm">Pošlji testno sporočilo in preveri, ali pošiljanje deluje.</p>
+    <div class="row" style="margin-top:10px"><input id="mt_to" class="inp grow" type="email" placeholder="${esc(U.email)}"><button class="btn btn-p btn-sm" data-a="mailTest">Pošlji test</button></div><div id="mt_out" class="sm" style="margin-top:10px"></div></div>
   <h2 class="h2">Uvoz iz DigitNotes 1</h2><div class="card pad"><p class="sm">Prenese uporabnike, zvezke, urnike, ure in fotografije iz stare baze Firebase. Gesla ostanejo enaka. Po uvozu <b>izbriši podatke v Firebase</b> (navodila v NAVODILA.md).</p>
     <div class="field" style="margin-top:10px"><label class="lbl" for="imp_u">Naslov stare baze</label><input id="imp_u" class="inp" value="https://digitnotes-bdeb7-default-rtdb.europe-west1.firebasedatabase.app"></div>
     <button class="btn btn-p btn-sm" data-a="importOld">Začni uvoz</button><div id="imp_s" class="sm" style="margin-top:10px"></div></div>
@@ -837,6 +1090,24 @@ async function importOld() {
 
 // ============================================================ DOGODKI (delegirano – brez inline JavaScripta, združljivo s CSP)
 const ACT = {
+  theme: d => { setTheme(d.t); render(); },
+  openFound: d => { S.nb = d.nid; const list = sortedPhotos(d.nid); VP = { list, share: null, name: nbOf(d.nid)?.name }; VI = Math.max(0, list.findIndex(p => p.id === d.id)); drawViewer(); },
+  fStart: focusStart, fPause: focusPause, fReset: () => confirmBox('Ustavim časovnik? Nedokončan krog se ne shrani.', focusReset, 'Ustavi'),
+  fLen: d => { FT.work = +d.w; FT.brk = +d.b; fSave(); render(); },
+  focusDel: () => confirmBox('Izbrišem vso statistiko fokusa?', async () => { try { await api('/focus/delete', {}); D.focus = []; toast('Statistika izbrisana.'); render(); } catch (e) { toast(e.message, true); } }, 'Izbriši'),
+  webToggle() {
+    if (!S.ai.web && !localStorage.getItem('dn2_webok')) {
+      _cf = () => { try { localStorage.setItem('dn2_webok', '1'); } catch { } S.ai.web = true; render(); };
+      return modal(`${sheetHead('Iskanje na spletu', '', `<span class="ailogo">${ic('globe')}</span>`)}<p class="sm">Ko je vklopljeno, AI poišče dodatne podatke na <b>Wikipediji</b> in jih navede kot vire.</p>
+      <div class="notice b sm" style="margin:12px 0">${ic('shield')}<div>• Strežnik DigitNotes iz tvojega vprašanja naredi kratko iskalno poizvedbo in jo pošlje Wikipediji (Wikimedia Foundation, ZDA).<br>• Wikipedija ne dobi tvojega imena, e-pošte ali IP-naslova.<br>• V vprašanja ne piši osebnih podatkov.<br>• Spletne vire vedno preveri.</div></div>
+      <div class="row" style="justify-content:flex-end"><button class="btn btn-s" data-a="closeModal">Prekliči</button><button class="btn btn-p" data-a="cfOk">Vklopi</button></div>`);
+    }
+    S.ai.web = !S.ai.web; render();
+  },
+  pickGt: (d, el) => { LM.gtype = d.v; $('lm_gt').value = d.v; el.parentNode.querySelectorAll('button').forEach(b => b.classList.toggle('on', b === el)); },
+  openGrades: d => { S.gnid = d.id; go('grade'); },
+  copyMsg: d => { let o; try { o = JSON.parse(S.ai.msgs[+d.i].content); } catch { return; } navigator.clipboard?.writeText(o.text).then(() => toast('Kopirano.')); },
+  async editExisting(d) { try { const u = await photoUrl(d.id), b = await (await fetch(u)).blob(), data = await editPhoto(b); if (!data) return; await api('/photo/replace', { id: d.id, data }); URL.revokeObjectURL(PHC.get(d.id)); PHC.delete(d.id); const p = D.ph.find(x => x.id === d.id); if (p) p.hasOcr = 0; render(); toast('Fotografija posodobljena.'); } catch (e) { toast(e.message, true); } },
   closeModal, cfOk: () => { const f = _cf; closeModal(); f && f(); }, logout,
   authMode: d => { AUTH.mode = d.m; renderLogin(); },
   async parentCheck() { await refreshMe(); if (U.status === 'active') afterLogin(); else toast('Privolitev še ni potrjena.'); },
@@ -848,8 +1119,10 @@ const ACT = {
   lmDelPhoto: d => delPhotoReq(d.id, () => lmNotesForm()),
   pickGrade: (d, el) => { LM.grade = d.g; $('lm_g').value = d.g; el.parentNode.querySelectorAll('button').forEach(b => b.classList.toggle('on', b === el)); },
   shiftDate: d => { S.date = addD(S.date, +d.n * (S.week ? 7 : 1)); render(); }, goToday: () => { S.date = today(); render(); }, setWeek: d => { S.week = d.w === '1'; render(); },
-  openNb: d => { S.nb = d.id; go('nb'); }, nbForm: d => nbForm(d.id), pickEmoji: d => $('nf_e').value = d.e,
-  async nbSave(d) { try { await api('/nb/save', { id: d.id || undefined, name: $('nf_n').value, emoji: $('nf_e').value, teachers: $('nf_t').value.split(',').map(s => s.trim()).filter(Boolean) }); closeModal(); await loadData(); render(); toast('Zvezek shranjen.'); } catch (e) { toast(e.message, true); } },
+  openNb: d => { S.nb = d.id; go('nb'); }, nbForm: d => nbForm(d.id),
+  nfIc: d => { NF.i = d.i; if (!NF.cm) NF.c = SUBJ_C[d.i]; $('nfp').outerHTML = nfPicker(); },
+  nfC: d => { NF.c = +d.c; NF.cm = true; $('nfp').outerHTML = nfPicker(); },
+  async nbSave(d) { try { await api('/nb/save', { id: d.id || undefined, name: $('nf_n').value, emoji: `i:${NF.i}:${NF.c}`, teachers: $('nf_t').value.split(',').map(s => s.trim()).filter(Boolean) }); closeModal(); await loadData(); render(); toast('Zvezek shranjen.'); } catch (e) { toast(e.message, true); } },
   delNb: d => confirmBox('Izbrisal se bo zvezek z <b>vsemi fotografijami, vnosi ur, roki in AI pogovori</b>. Tega ni mogoče razveljaviti.', async () => { try { await api('/nb/delete', { id: d.id }); await loadData(); if (S.nb === d.id) S.view = 'nbs'; render(); toast('Zvezek izbrisan.'); } catch (e) { toast(e.message, true); } }, 'Izbriši'),
   shareNb() {
     const n = nbOf(S.nb), link = n.shareToken ? location.origin + location.pathname + '?share=' + n.shareToken : '';
@@ -866,11 +1139,11 @@ const ACT = {
   replacePhoto(d) { const i = document.createElement('input'); i.type = 'file'; i.accept = 'image/*'; i.onchange = async () => { if (!i.files[0]) return; try { const data = await resize(i.files[0]); await api('/photo/replace', { id: d.id, data }); PHC.delete(d.id); const p = D.ph.find(x => x.id === d.id); if (p) p.hasOcr = 0; render(); toast('Fotografija zamenjana.'); } catch (e) { toast(e.message, true); } }; i.click(); },
   delPhoto: d => delPhotoReq(d.id, () => render()),
   makePdf,
-  aiFor: d => { S.ai = { nid: d.id, mode: 'chat', chat: null, msgs: [], busy: false }; go('ai'); },
+  aiFor: d => { S.ai = { nid: d.id, mode: 'chat', chat: null, msgs: [], busy: false, web: S.ai.web }; go('ai'); },
   async aiConsent() { if (!$('ai_ok').checked) return toast('Za vklop potrdi, da razumeš pogoje.', true); try { U = (await api('/me/settings', { aiConsent: true })).user; render(); } catch (e) { toast(e.message, true); } },
   aiMode: d => { S.ai.mode = d.m; S.ai.chat = null; S.ai.msgs = []; render(); }, aiNew: () => { S.ai.chat = null; S.ai.msgs = []; render(); },
   aiRun: () => aiAsk(S.ai.mode), aiOcr,
-  async aiOpen(d) { try { const r = await api('/ai/chat?id=' + d.id); S.ai = { nid: r.chat.nid, mode: r.chat.mode, chat: r.chat.id, msgs: r.msgs, busy: false }; render(); } catch (e) { toast(e.message, true); } },
+  async aiOpen(d) { try { const r = await api('/ai/chat?id=' + d.id); S.ai = { nid: r.chat.nid || 'general', mode: r.chat.mode, chat: r.chat.id, msgs: r.msgs, busy: false, web: S.ai.web }; render(); } catch (e) { toast(e.message, true); } },
   aiDel: d => confirmBox('Izbrišem ta pogovor?', async () => { await api('/ai/chat/delete', { id: d.id }); D.chats = D.chats.filter(c => c.id !== d.id); if (S.ai.chat === d.id) { S.ai.chat = null; S.ai.msgs = []; } render(); }, 'Izbriši'),
   flip: (d, el) => el.classList.toggle('flip'),
   fcNext: d => { const st = FCS[d.i]; st.i++; if (d.k === '1') st.ok++; render(); },
@@ -901,6 +1174,7 @@ const ACT = {
   mfMode: (d, el) => { $('mf_m').value = d.m; $('mf_l').classList.toggle('hide', d.m !== 'sel'); el.parentNode.querySelectorAll('button').forEach(b => b.classList.toggle('on', b === el)); },
   async sendMsg() { const all = $('mf_m').value === 'all', to = [...document.querySelectorAll('.mf_c:checked')].map(c => c.value); try { const r = await api('/admin/message', { title: $('mf_t').value, text: $('mf_x').value, all, to, email: $('mf_e').checked }); closeModal(); await loadAdmin(); S.view = 'amsg'; render(); toast(`Poslano ${r.n} uporabnikom${r.mailed ? `, ${r.mailed} po e-pošti` : ''}.`); } catch (e) { toast(e.message, true); } },
   delSent: d => confirmBox('Sporočilo se umakne tudi iz nabiralnikov prejemnikov. (Že poslanih e-poštnih sporočil ni mogoče umakniti.)', async () => { await api('/admin/sent/delete', { id: d.id }); await loadAdmin(); render(); }, 'Umakni'),
+  async mailTest() { const o = $('mt_out'); o.innerHTML = 'Pošiljam …'; try { const r = await api('/admin/mailtest', { to: $('mt_to').value.trim() }); o.innerHTML = r.ok ? `<span style="color:var(--g700)">✅ Poslano prek ${esc(r.provider)} (pošiljatelj ${esc(r.sender)}). Preveri nabiralnik in mapo z neželeno pošto.</span>` : `<div class="err">❌ ${esc(r.error || 'Neznana napaka')}</div>`; } catch (e) { o.innerHTML = `<div class="err">${esc(e.message)}</div>`; } },
   importOld: () => confirmBox('Uvozim podatke iz DigitNotes 1? Obstoječi uvoženi podatki se prepišejo.', importOld, 'Uvozi', false)
 };
 const CHANGE = {
@@ -911,7 +1185,9 @@ const CHANGE = {
   gradeTyped: (d, el) => { LM.grade = el.value; document.querySelectorAll('.gradepick button').forEach(b => b.classList.toggle('on', b.dataset.g === el.value.trim())); },
   nbFiles: async (d, el) => { const f = [...el.files]; el.value = ''; if (!f.length) return; toast(`Nalagam ${f.length} …`); await uploadFiles(f, S.nb, null, today()); render(); },
   shareToggle: async (d, el) => { try { const r = await api('/nb/share', { id: S.nb, on: el.checked }); const n = nbOf(S.nb); n.share = !!r.token; n.shareToken = r.token; render(); ACT.shareNb(); } catch (e) { toast(e.message, true); } },
-  aiNb: (d, el) => { S.ai = { nid: el.value, mode: S.ai.mode, chat: null, msgs: [], busy: false }; render(); },
+  aiNb: (d, el) => { S.ai = { nid: el.value, mode: S.ai.mode, chat: null, msgs: [], busy: false, web: S.ai.web }; render(); },
+  sq: () => {},
+  fNb: (d, el) => { FT.nid = el.value || null; fSave(); },
   ttSet: async (d, el) => { const v = el.value, body = { d: +d.d, h: +d.h }; if (v === 'M') body.malica = true; else if (v) { const i = v.indexOf('|'); body.nid = v.slice(0, i); body.teacher = v.slice(i + 1); } try { await api('/tt/set', body); D.tt = D.tt.filter(x => !(x.d === body.d && x.h === body.h)); if (v) D.tt.push({ d: body.d, h: body.h, nid: body.nid || null, teacher: body.teacher || null, malica: body.malica ? 1 : 0 }); } catch (e) { toast(e.message, true); } },
   timeSet: async (d, el) => { const c = tm(+d.h), n = { h: +d.h, s: c[0], e: c[1] }; n[d.k] = el.value; try { await api('/times/set', n); D.times = D.times.filter(x => x.h !== n.h).concat(n); } catch (e) { toast(e.message, true); render(); } },
   setOpt: async (d, el) => { try { U = (await api('/me/settings', { [d.k]: el.checked })).user; if (d.k === 'remind' && el.checked) pushSync(true); toast('Shranjeno.'); render(); } catch (e) { toast(e.message, true); el.checked = !el.checked; } },
@@ -932,8 +1208,8 @@ document.addEventListener('click', e => {
   f(el.dataset, el, e);
 });
 document.addEventListener('change', e => { const el = e.target.closest('[data-c]'); if (el && CHANGE[el.dataset.c]) CHANGE[el.dataset.c](el.dataset, el, e); });
-document.addEventListener('input', e => { const el = e.target.closest('[data-c=gradeTyped]'); if (el) CHANGE.gradeTyped(el.dataset, el); });
-document.addEventListener('submit', e => { const f = e.target.closest('[data-f]'); if (!f) return; e.preventDefault(); if (f.dataset.f === 'aiAsk') { const q = $('ai_q').value.trim(); if (q) aiAsk('chat', q); return; } FORMS[f.dataset.f]?.(); });
+document.addEventListener('input', e => { const el = e.target.closest('[data-c=gradeTyped]'); if (el) CHANGE.gradeTyped(el.dataset, el); if (e.target.id === 'sq') { SQ.q = e.target.value; searchRun(); } });
+document.addEventListener('submit', e => { const f = e.target.closest('[data-f]'); if (!f) return; e.preventDefault(); if (f.dataset.f === 'aiAsk') { const q = $('ai_q').value.trim(); if (q) aiAsk(S.ai.mode, q); return; } FORMS[f.dataset.f]?.(); });
 document.addEventListener('scroll', () => $('ctx').classList.add('hide'), true);
 
 // ============================================================ zagon
