@@ -450,3 +450,43 @@ mark{background:rgba(250,204,21,.4);color:inherit;border-radius:4px;padding:0 2p
 @media(min-width:900px){.dock{bottom:10px}}
 .aifoot{text-align:center;font-size:11.5px;color:var(--mut2);margin:10px 0 0}
 .aiv.empty .aifoot{margin-top:auto;padding-top:20px}
+
+/* ---------- 2.2: ocene na zavihku in popravki ---------- */
+.gsub{display:flex;align-items:center;padding:0;overflow:hidden}
+.gsubm{flex:1;min-width:0;display:flex;align-items:center;gap:12px;padding:13px 6px 13px 14px;text-align:left}
+.gsubm:active{transform:scale(.99)}
+.gplus{align-self:stretch;width:52px;display:grid;place-items:center;border-left:1px solid var(--line2);color:var(--g700);transition:background .2s}
+.gplus:hover{background:var(--g50)}.gplus svg{width:22px;height:22px}
+.gfix{display:inline-flex;align-items:baseline;gap:3px;white-space:nowrap}
+.gfix>.gc:first-child{font-size:.62em;opacity:.55;min-width:0;text-decoration:none}
+.gchips .gfix>.gc:first-child{font-size:11px}
+.gc.big+.gc,.gfix .gc.big{font-size:28px}
+.glegend .gfix .gc{font-size:15px}.glegend .gfix .gc:first-child{font-size:10px}
+
+/* ---------- 2.2: matematika, grafi, notni zapisi ---------- */
+.math{font-family:"Cambria Math","STIX Two Math","Latin Modern Math","Times New Roman",Georgia,serif;font-size:1.08em;white-space:nowrap;letter-spacing:0}
+.math.md2{display:block;text-align:center;font-size:1.22em;margin:10px 0 12px;overflow-x:auto;overflow-y:hidden;padding:4px 0;white-space:nowrap}
+.math i{font-style:italic}.math .mo{margin:0 .18em}.math .mfn,.math .mtext{font-style:normal}.math .mtext{font-family:inherit}
+.math sup,.math sub{font-size:.7em;line-height:0}
+.mfrac{display:inline-flex;flex-direction:column;vertical-align:middle;text-align:center;margin:0 .12em;line-height:1.15}
+.mfrac>span{padding:0 .18em}.mfrac>span+span{border-top:1.2px solid currentColor;padding-top:.08em}
+.msqrt{display:inline-flex;align-items:flex-start;white-space:nowrap}.msqrt .mrad{font-size:1.15em;line-height:1}.msqrt .mbody{border-top:1.2px solid currentColor;padding:0 .1em;margin-top:.12em}
+.msqrt .mroot{font-size:.6em;margin-right:-.4em;margin-top:-.1em}
+.mvec{position:relative;display:inline-block}.mvec::before{content:"→";position:absolute;top:-.85em;left:0;right:0;text-align:center;font-size:.7em}
+.mbar{border-top:1.2px solid currentColor}.mhat{position:relative;display:inline-block}.mhat::before{content:"^";position:absolute;top:-.7em;left:0;right:0;text-align:center;font-size:.8em}
+.menv{display:inline-block;text-align:left}
+.plot,.score{margin:10px 0 14px;background:var(--card);border:1px solid var(--line);border-radius:18px;padding:8px;overflow:hidden}
+.plot>svg,.score>svg{width:100%;height:auto;display:block}
+.plot .pg{stroke:var(--line);stroke-width:1}.plot .pa{stroke:var(--ink2);stroke-width:1.4}.plot .pam{fill:var(--ink2)}
+.plot .pl{font:12px -apple-system,system-ui,sans-serif;fill:var(--mut)}.plot .pi{font-style:italic;font-weight:700;fill:var(--ink2)}.plot .pt{fill:#e11d48;font-weight:700}.plot .pf{fill:var(--ink2);font-weight:650}
+.score .ns{stroke:var(--ink2);stroke-width:1}.score .nk{stroke:var(--ink)}.score .nf{fill:var(--ink)}.score .nh{fill:none;stroke:var(--ink)}.score .nb{stroke:var(--ink)}
+.score .na{font-size:18px;fill:var(--ink)}.score .nt{font:800 20px "Times New Roman",Georgia,serif;fill:var(--ink)}.score .ntt{font:700 15px -apple-system,system-ui,sans-serif;fill:var(--ink)}
+.score figcaption{display:flex;align-items:center;gap:8px;padding:6px 4px 2px;font-size:12px;color:var(--mut)}
+.score figcaption button{display:inline-flex;align-items:center;gap:5px;padding:6px 11px;border-radius:10px;background:var(--fill);font-weight:700;font-size:12.5px;color:var(--ink2)}
+.score figcaption button:first-child{background:var(--ink);color:var(--bg)}
+.score figcaption span{flex:1}
+.imgchip{display:flex;align-items:center;gap:10px;padding:6px;margin-bottom:6px;border-radius:14px;background:var(--fill)}
+.imgchip img{width:44px;height:44px;object-fit:cover;border-radius:10px}
+.imgchip button{width:30px;height:30px;border-radius:50%;display:grid;place-items:center}
+.srcpill{flex:0 1 auto;min-width:0}.crow .tog{flex-shrink:0}.crow .send{margin-left:auto}
+.aimodes .beta{font-size:8.5px;padding:1px 5px}

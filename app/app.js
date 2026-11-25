@@ -2,7 +2,7 @@
 'use strict';
 const API = (window.DN_API || '').replace(/\/$/, '');
 const SITE = '../';
-const VER = '2.1.2';
+const VER = '2.2.0';
 
 // ============================================================ ikone
 const P = {
@@ -88,7 +88,7 @@ async function api(path, body, raw) {
   if (raw && r.ok) return r;
   const j = await r.json().catch(() => ({}));
   if (r.status === 401 && TOK && !path.startsWith('/auth/')) { hardLogout(); throw new Error(j.error || 'Prijava je potekla.'); }
-  if (r.status === 428) { await refreshMe(); throw new Error('__gate'); }
+  if (r.status === 428 || r.status === 423) { await refreshMe(); throw new Error('__gate'); }
   if (r.status === 503 && j.maint) { Object.assign(CFG, j.maint); if (!path.startsWith('/auth/')) { renderMaint(); throw new Error('__gate'); } throw new Error('Med vzdrževanjem se lahko prijavi samo administrator.'); }
   if (!r.ok) throw new Error(j.error || 'Napaka (' + r.status + ')');
   return j;
@@ -142,6 +142,7 @@ function renderFatal(m) { $('app').innerHTML = `<div class="auth"><div class="au
 async function refreshMe() { try { const r = await fetch(API + '/me', { headers: { Authorization: 'Bearer ' + TOK } }); if (r.ok) { U = (await r.json()).user; gate(); } } catch { } }
 function gate() { // vrne true, če je uporabnik ustavljen pred aplikacijo
   if (!U) { renderLogin(); return true; }
+  if (U.status === 'frozen') { renderFrozen(); return true; }
   if (U.role !== 'admin' && (!U.termsOk || U.status === 'onboard')) { renderOnboard(); return true; }
   if (U.role !== 'admin' && U.status === 'parent') { renderParentWait(); return true; }
   return false;
@@ -301,7 +302,9 @@ function tick() { const c = $('clock'); if (c) c.textContent = new Date().toLoca
 setInterval(tick, 15000);
 
 // ============================================================ URNIK – logika
-function tm(h) { const t = (D.times || []).find(x => x.h === h); return t ? [t.s, t.e] : DT[h]; }
+const HN = () => Math.min(14, Math.max(9, U?.hours || 9));   // število ur na dan (privzeto 9, lahko več)
+const dtOf = h => { if (DT[h]) return DT[h]; const m = toMin(DT[9][1]) + (h - 10) * 50 + 5, f = x => String(Math.floor(x / 60)).padStart(2, '0') + ':' + String(x % 60).padStart(2, '0'); return [f(m), f(m + 45)]; };
+function tm(h) { const t = (D.times || []).find(x => x.h === h); return t ? [t.s, t.e] : dtOf(h); }
 const trng = h => tm(h)[0].replace(/^0/, '') + '–' + tm(h)[1].replace(/^0/, '');
 function slot(date, h) { const wd = wdOf(date); if (wd > 4) return null; return (D.tt || []).find(x => x.d === wd && x.h === h) || null; }
 const nbOf = id => (D.nb || []).find(n => n.id === id);
@@ -316,7 +319,7 @@ function status(date, h) {
   if (past && date >= addD(t, -7) && date >= (U.since || '')) return 'red';
   return 'open';
 }
-function daySlots(date) { const r = []; if (wdOf(date) > 4 || isOff(date)) return r; for (let h = 1; h <= 9; h++) { const s = slot(date, h); if (s && !s.malica) r.push(h); } return r; }
+function daySlots(date) { const r = []; if (U?.ttOff || wdOf(date) > 4 || isOff(date)) return r; for (let h = 1; h <= HN(); h++) { const s = slot(date, h); if (s && !s.malica) r.push(h); } return r; }
 function dayDone(date) { const hs = daySlots(date); return { total: hs.length, done: hs.filter(h => D.lsMap[date + '_' + h]).length }; }
 function streak() {
   let d = today(), n = 0; const td = dayDone(d);
@@ -331,7 +334,7 @@ function streak() {
 }
 function nextLesson() {
   const t = today(), m = nowMin();
-  for (let i = 0; i < 8; i++) { const d = addD(t, i); for (let h = 1; h <= 9; h++) { const s = slot(d, h); if (!s || s.malica || isOff(d)) continue; if (i === 0 && toMin(tm(h)[0]) <= m) continue; const n = nbOf(s.nid); return { d, h, n, i }; } }
+  for (let i = 0; i < 8; i++) { const d = addD(t, i); for (let h = 1; h <= HN(); h++) { const s = slot(d, h); if (!s || s.malica || isOff(d)) continue; if (i === 0 && toMin(tm(h)[0]) <= m) continue; const n = nbOf(s.nid); return { d, h, n, i }; } }
   return null;
 }
 function lessonRow(date, h, compact) {
@@ -347,7 +350,7 @@ function dayList(date, compact) {
   if (wdOf(date) > 4) return `<div class="card empty">${tile('u_palm', 174, 70, 'lg')}<div style="margin-top:10px">Vikend – ni pouka.</div></div>`;
   if (isOff(date)) return `<div class="card empty">Urnik je za ta dan izklopljen.</div>`;
   if (!(D.tt || []).length) return `<div class="card empty">Urnik še ni nastavljen.<br><button class="btn btn-p btn-sm" style="margin-top:12px" data-a="setTab" data-t="tt">Nastavi urnik</button></div>`;
-  let o = ''; for (let h = 1; h <= 9; h++) o += lessonRow(date, h, compact);
+  let o = ''; for (let h = 1; h <= HN(); h++) o += lessonRow(date, h, compact);
   return o || `<div class="card empty">Ta dan nimaš pouka.</div>`;
 }
 
@@ -507,7 +510,7 @@ function vCoNb(n) {
 function vNb() {
   const co = (D.co || []).find(x => x.id === S.nb); if (co) return vCoNb(co);
   const n = nbOf(S.nb); if (!n) { S.view = 'nbs'; return vNbs(); }
-  const ph = sortedPhotos(n.id), grades = (D.ls || []).filter(l => l.nid === n.id && l.grade).sort((a, b) => a.k.localeCompare(b.k));
+  const ph = sortedPhotos(n.id), grades = gradeList(n.id);
   const items = (D.items || []).filter(i => i.nid === n.id && !i.done);
   return `<button class="btn btn-s btn-sm" style="margin:4px 0 12px" data-a="go" data-v="nbs">${ic('l', 'ic-s')} Zvezki</button>
   <div class="row" style="margin-bottom:14px;align-items:flex-start">${sIc(n, 'xl')}<div class="grow"><div class="h1">${esc(n.name)}</div><div class="mut sm">${nphoto(ph.length)} · ${esc(n.teachers.join(', '))}</div></div><button class="btn btn-s btn-i" data-a="nbForm" data-id="${n.id}" aria-label="Uredi zvezek">${ic('edit')}</button></div>
@@ -515,7 +518,7 @@ function vNb() {
     <button class="btn btn-s btn-sm" data-a="makePdf">${ic('pdf', 'ic-s')} PDF</button>
     <button class="btn btn-s btn-sm" data-a="shareNb">${ic('share', 'ic-s')} ${n.share ? 'Deljeno' + (n.co ? ' · ' + n.co : '') : 'Deli'}</button>
     ${U.ai.on ? `<button class="btn btn-s btn-sm" data-a="aiFor" data-id="${n.id}">${ic('spark', 'ic-s')} Uči se z AI</button>` : ''}</div>
-  ${grades.length ? `<div class="card pad" style="margin-bottom:14px"><div class="row" style="margin-bottom:8px"><b class="grow">Ocene</b><button class="pill g" data-a="openGrades" data-id="${n.id}">povprečje ${avgOf(grades.map(g => g.grade)) || '–'} ›</button></div><div class="row-w">${grades.map(g => `<span class="row" style="gap:6px">${gChip(g)}<span class="mut xs">${fmtS(g.k.split('_')[0])}</span></span>`).join('')}</div></div>` : ''}
+  ${grades.length ? `<div class="card pad" style="margin-bottom:14px"><div class="row" style="margin-bottom:8px"><b class="grow">Ocene</b><button class="pill g" data-a="openGrades" data-id="${n.id}">povprečje ${avgOf(gVals(grades)) || '–'} ›</button></div><div class="row-w">${grades.map(g => `<span class="row" style="gap:6px">${gChipX(g)}<span class="mut xs">${fmtS(g.date)}</span></span>`).join('')}</div></div>` : ''}
   ${items.length ? `<div class="card list" style="margin-bottom:14px">${items.map(itemRow).join('')}</div>` : ''}
   ${photoGrid(ph, true)}
   ${ph.length ? '<p class="hint" style="margin-top:12px">Namig: dolg pritisk (ali desni klik) na fotografijo jo zamenja, prenese ali izbriše.</p>' : ''}`;
@@ -655,26 +658,29 @@ function vAi() {
   if (gen && A.mode === 'summary') A.mode = 'chat';
   const n = gen ? { id: 'general', name: 'Splošni pogovor' } : nbAny(A.nid), ph = gen ? [] : allPh().filter(p => p.nid === n.id), noOcr = ph.filter(p => !p.hasOcr).length;
   const lim = U.ai.limit || 0, used = D.aiUsed || 0, empty = !A.msgs.length;
-  const modes = gen ? [['chat', 'Pogovor', 'u_chat'], ['cards', 'Kartice', 'u_cards'], ['test', 'Test', 'u_quiz']] : [['chat', 'Pogovor', 'u_chat'], ['summary', 'Povzetek', 'u_sum'], ['cards', 'Kartice', 'u_cards'], ['test', 'Test', 'u_quiz']];
-  const free = A.mode === 'chat' || gen, title = A.chat ? ((D.chats || []).find(c => c.id === A.chat)?.title || 'Pogovor') : 'Nov pogovor';
+  const modes = (gen ? [['chat', 'Pogovor', 'u_chat'], ['cards', 'Kartice', 'u_cards'], ['test', 'Test', 'u_quiz']] : [['chat', 'Pogovor', 'u_chat'], ['summary', 'Povzetek', 'u_sum'], ['cards', 'Kartice', 'u_cards'], ['test', 'Test', 'u_quiz']]).concat(U.ai.music ? [['music', 'Glasba', 's_music']] : []);
+  if (A.mode === 'music' && !U.ai.music) A.mode = 'chat';
+  const free = A.mode === 'chat' || A.mode === 'music' || gen, title = A.chat ? ((D.chats || []).find(c => c.id === A.chat)?.title || 'Pogovor') : 'Nov pogovor';
   const first = esc((U.name || '').split(' ')[0]);
   const hour = new Date().getHours(), greet = hour < 11 ? 'Dobro jutro' : hour < 18 ? 'Živjo' : 'Dober večer';
-  const sugg = gen ? [['chat', 'Razloži mi fotosintezo po korakih'], ['chat', 'Kako rešim kvadratno enačbo?'], ['cards', 'Glavna mesta Evrope'], ['test', 'Druga svetovna vojna']]
+  const sugg = A.mode === 'music' ? [['music', 'Napiši lestvico G-dur'], ['music', 'Razloži četrtinko in osminko'], ['music', 'Kaj je kvinta? Pokaži primer.'], ['music', 'Napiši kratko melodijo v 3/4 taktu']] : gen ? [['chat', 'Razloži mi fotosintezo po korakih'], ['chat', 'Kako rešim kvadratno enačbo?'], ['cards', 'Glavna mesta Evrope'], ['test', 'Druga svetovna vojna']]
     : [['summary', 'Povzemi zvezek'], ['cards', 'Naredi kartice za ponavljanje'], ['test', 'Preizkusi moje znanje'], ['chat', 'Kaj je najpomembnejše za test?']];
-  const ph_ = A.mode === 'chat' ? (gen ? 'Vprašaj karkoli …' : `Vprašaj o snovi iz zvezka ${n.name} …`) : gen ? 'Vpiši temo …' : 'Tema (neobvezno) …';
+  const ph_ = A.mode === 'music' ? 'Vprašaj o glasbi ali pošlji fotografijo not …' : A.mode === 'chat' ? (gen ? 'Vprašaj karkoli …' : `Vprašaj o snovi iz zvezka ${n.name} …`) : gen ? 'Vpiši temo …' : 'Tema (neobvezno) …';
   const composer = `<form class="composer" data-f="aiAsk">
+      ${A.mode === 'music' && A.img ? `<div class="imgchip"><img src="${A.img}" alt="Notni zapis"><span class="grow xs">Fotografija notnega zapisa</span><button type="button" data-a="musicImgDel" aria-label="Odstrani">${ic('x', 'ic-s')}</button></div>` : ''}
       <textarea id="ai_q" rows="1" placeholder="${esc(ph_)}" maxlength="2000" ${A.busy ? 'disabled' : ''}></textarea>
       <div class="crow">
         <label class="srcpill" title="Vir">${n.ro || !gen ? sIc(n, 'xs') : ic('u_chat', 'ic-s')}<select data-c="aiNb" aria-label="Vir"><option value="general" ${gen ? 'selected' : ''}>Splošni pogovor (brez zapiskov)</option><optgroup label="Moji zvezki">${(D.nb || []).map(x => `<option value="${x.id}" ${x.id === n.id ? 'selected' : ''}>${optN(x)}</option>`).join('')}</optgroup>${(D.co || []).length ? `<optgroup label="Deljeni z mano">${D.co.map(x => `<option value="${x.id}" ${x.id === n.id ? 'selected' : ''}>${optN(x)} (${esc(x.author)})</option>`).join('')}</optgroup>` : ''}</select>${ic('chev', 'ic-s')}</label>
+        ${A.mode === 'music' ? `<label class="tog" title="Fotografija notnega zapisa" aria-label="Fotografija notnega zapisa">${ic('cam', 'ic-s')}<input type="file" accept="image/*" data-c="musicImg" hidden></label>` : ''}
         ${A.mode === 'chat' ? `<button type="button" class="tog ${A.web ? 'on' : ''}" data-a="webToggle" title="Išči na spletu (Wikipedija)">${ic('globe', 'ic-s')}<span>Splet</span></button>` : ''}
         <span class="grow"></span>
         ${free ? `<button class="send" type="submit" ${A.busy ? 'disabled' : ''} aria-label="Pošlji">${ic('up')}</button>` : `<button class="btn btn-k btn-sm" type="button" data-a="aiRun" ${A.busy ? 'disabled' : ''}>${ic('spark', 'ic-s')} Pripravi ${{ summary: 'povzetek', cards: 'kartice', test: 'test' }[A.mode]}</button>`}
       </div></form>`;
-  const seg = `<div class="aimodes">${modes.map(([m, l, i]) => `<button class="${A.mode === m ? 'on' : ''}" data-a="aiMode" data-m="${m}">${ic(i, 'ic-s')}${l}</button>`).join('')}</div>`;
+  const seg = `<div class="aimodes">${modes.map(([m, l, i]) => `<button class="${A.mode === m ? 'on' : ''}" data-a="aiMode" data-m="${m}">${ic(i, 'ic-s')}${l}${m === 'music' ? ' <span class="beta">DEMO</span>' : ''}</button>`).join('')}</div>`;
   const ocrN = !gen && noOcr ? `<div class="ocrbar">${ic('info', 'ic-s')}<span class="grow">${noOcr} ${noOcr === 1 ? 'fotografija še ni prebrana' : noOcr === 2 ? 'fotografiji še nista prebrani' : noOcr < 5 ? 'fotografije še niso prebrane' : 'fotografij še ni prebranih'}</span><button data-a="aiOcr">Preberi</button></div>` : '';
   return `<div class="aiv ${empty ? 'empty' : ''}">
   <div class="aitop"><button class="ib" data-a="aiHist" aria-label="Zgodovina pogovorov">${ic('menu')}</button><div class="grow t">${esc(title)}</div><button class="ib" data-a="go" data-v="focus" aria-label="Fokus">${FT.phase ? `<span class="xs b">${fmtClock(focusLeft())}</span>` : ic('timer')}</button><button class="ib" data-a="aiNew" aria-label="Nov pogovor">${ic('newc')}</button></div>
-  ${empty ? `<div class="hero"><div class="mark">${ic('spark')}</div><h1>${greet}, ${first}.<br><span>Kaj se danes učiva?</span></h1></div>
+  ${empty ? `<div class="hero"><div class="mark">${ic('spark')}</div><h1>${greet}, ${first}.<br><span>${A.mode === 'music' ? 'Kaj se danes učiva o glasbi?' : 'Kaj se danes učiva?'}</span></h1></div>
     ${seg}${ocrN}${composer}
     <div class="sugg">${sugg.map(([m, q]) => `<button data-a="aiSuggest" data-m="${m}" data-q="${esc(q)}">${esc(q)}</button>`).join('')}</div>`
   : `<div class="thread">${A.msgs.map(aiMsg).join('')}${A.busy ? `<div class="amsg"><div class="amark spin">${ic('spark')}</div><div class="thinking">Razmišljam …</div></div>` : ''}<div id="chatEnd"></div></div>
@@ -703,6 +709,217 @@ function mdLite(t) {
   if (code !== null) o += `<pre><code>${code}</code></pre>`;
   close(); return o;
 }
+
+// ============================================================ MATEMATIKA, GRAFI, NOTE (2.2) – brez zunanjih knjižnic
+// ---- LaTeX (pogosti ukazi) → HTML
+const TEXSYM = { cdot: '·', times: '×', div: '÷', pm: '±', mp: '∓', le: '≤', leq: '≤', ge: '≥', geq: '≥', ne: '≠', neq: '≠', approx: '≈', equiv: '≡', sim: '∼', infty: '∞', to: '→', rightarrow: '→', leftarrow: '←', Rightarrow: '⇒', Leftarrow: '⇐', Leftrightarrow: '⇔', iff: '⇔', implies: '⇒', in: '∈', notin: '∉', subset: '⊂', subseteq: '⊆', cup: '∪', cap: '∩', emptyset: '∅', varnothing: '∅', forall: '∀', exists: '∃', angle: '∠', circ: '°', degree: '°', perp: '⊥', parallel: '∥', sum: '∑', prod: '∏', int: '∫', oint: '∮', partial: '∂', nabla: '∇', cdots: '⋯', ldots: '…', dots: '…', prime: '′', triangle: '△', square: '□', mathbb: '', N: 'ℕ', Z: 'ℤ', Q: 'ℚ', R: 'ℝ', C: 'ℂ',
+  alpha: 'α', beta: 'β', gamma: 'γ', Gamma: 'Γ', delta: 'δ', Delta: 'Δ', epsilon: 'ε', varepsilon: 'ε', zeta: 'ζ', eta: 'η', theta: 'θ', Theta: 'Θ', iota: 'ι', kappa: 'κ', lambda: 'λ', Lambda: 'Λ', mu: 'μ', nu: 'ν', xi: 'ξ', pi: 'π', Pi: 'Π', rho: 'ρ', sigma: 'σ', Sigma: 'Σ', tau: 'τ', phi: 'φ', varphi: 'φ', Phi: 'Φ', chi: 'χ', psi: 'ψ', Psi: 'Ψ', omega: 'ω', Omega: 'Ω' };
+const TEXFN = ['sin', 'cos', 'tan', 'cot', 'arcsin', 'arccos', 'arctan', 'log', 'ln', 'lg', 'exp', 'lim', 'max', 'min', 'sgn', 'det'];
+function texHtml(s) {
+  let i = 0;
+  const sp = () => { while (s[i] === ' ') i++; };
+  const brace = k => { let d = 0; for (let j = k; j < s.length; j++) { if (s[j] === '{') d++; else if (s[j] === '}') { d--; if (!d) return j; } } return s.length - 1; };
+  const grp = () => { let o = ''; while (i < s.length && s[i] !== '}') o += atom(); return o; };
+  const arg = () => { sp(); if (s[i] === '{') { i++; const r = grp(); i++; return r; } return atom(); };
+  function cmd(n) {
+    if (n === 'frac' || n === 'dfrac' || n === 'tfrac') { const a = arg(), b = arg(); return `<span class="mfrac"><span>${a}</span><span>${b}</span></span>`; }
+    if (n === 'sqrt') { let ix = ''; sp(); if (s[i] === '[') { const j = s.indexOf(']', i); ix = texHtml(s.slice(i + 1, j)); i = j + 1; } const a = arg(); return `<span class="msqrt">${ix ? `<sup class="mroot">${ix}</sup>` : ''}<span class="mrad">√</span><span class="mbody">${a}</span></span>`; }
+    if (['text', 'mathrm', 'textrm', 'operatorname', 'mbox', 'textbf'].includes(n)) { sp(); if (s[i] === '{') { const j = brace(i), t = s.slice(i + 1, j); i = j + 1; return `<span class="mtext">${esc(t)}</span>`; } return ''; }
+    if (n === 'mathbf' || n === 'boldsymbol') return `<b>${arg()}</b>`;
+    if (n === 'mathbb') { const a = arg().replace(/<[^>]+>/g, ''); return TEXSYM[a] || a; }
+    if (n === 'vec') return `<span class="mvec">${arg()}</span>`;
+    if (n === 'overline' || n === 'bar') return `<span class="mbar">${arg()}</span>`;
+    if (n === 'hat') return `<span class="mhat">${arg()}</span>`;
+    if (['left', 'right', 'big', 'Big', 'bigl', 'bigr', 'Bigl', 'Bigr'].includes(n)) { sp(); const c = s[i]; if (c === '.') { i++; return ''; } if (c === '\\') { i++; let j = i; while (j < s.length && /[a-zA-Z]/.test(s[j])) j++; if (j === i) j++; const nm = s.slice(i, j); i = j; return nm === '{' ? '{' : nm === '}' ? '}' : nm === '|' ? '‖' : (TEXSYM[nm] || ''); } i++; return esc(c); }
+    if (n === 'begin' || n === 'end') { arg(); return n === 'begin' ? '<span class="menv">' : '</span>'; }
+    if (TEXFN.includes(n)) return `<span class="mfn">${n}</span>`;
+    if (n in TEXSYM) return TEXSYM[n];
+    if ([',', ';', ':', 'quad', 'qquad', ' ', '>'].includes(n)) return n === 'qquad' ? '\u2003\u2003' : n === 'quad' ? '\u2003' : '\u2009';
+    if (n === '!') return '';
+    if ('{}%$#&_'.includes(n)) return esc(n);
+    if (n === '\\') return '<br>';
+    return esc(n);
+  }
+  function atom() {
+    const c = s[i];
+    if (c === '{') { i++; const r = grp(); i++; return r; }
+    if (c === '\\') { let j = i + 1; if (/[a-zA-Z]/.test(s[j])) { while (j < s.length && /[a-zA-Z]/.test(s[j])) j++; } else j++; const n = s.slice(i + 1, j); i = j; return cmd(n); }
+    if (c === '^' || c === '_') { i++; const a = arg(); return c === '^' ? `<sup>${a}</sup>` : `<sub>${a}</sub>`; }
+    i++;
+    if (/[a-zA-Z]/.test(c)) return `<i>${c}</i>`;
+    if (c === ' ' || c === '&') return c === '&' ? '\u2003' : '';
+    if ('+=<>'.includes(c)) return `<span class="mo">${esc(c)}</span>`;
+    if (c === '-') return '<span class="mo">−</span>';
+    if (c === '*') return '<span class="mo">·</span>';
+    if (c === "'") return '′';
+    return esc(c);
+  }
+  let o = ''; let guard = 0; while (i < s.length && guard++ < 5000) { if (s[i] === '}') { i++; continue; } o += atom(); }
+  return o;
+}
+// ---- varen izračun funkcij za grafe (brez eval)
+function fparse(src) {
+  const s = String(src).toLowerCase().replace(/\s+/g, '').replace(/\*\*/g, '^').replace(/·/g, '*').replace(/−/g, '-').replace(/^y=|^f\(x\)=/, '');
+  const T = []; let i = 0;
+  while (i < s.length) {
+    const c = s[i];
+    if (/[0-9.,]/.test(c)) { let j = i; while (j < s.length && /[0-9.,]/.test(s[j])) j++; T.push({ n: parseFloat(s.slice(i, j).replace(',', '.')) }); i = j; continue; }
+    if (/[a-z]/.test(c)) { const m = /^(asin|acos|atan|sqrt|sin|cos|tan|abs|exp|ln|log|pi|x|e)/.exec(s.slice(i)); if (!m) throw new Error('fn'); T.push({ w: m[1] }); i += m[1].length; continue; }
+    if ('+-*/^()'.includes(c)) { T.push({ o: c }); i++; continue; }
+    throw new Error('chr');
+  }
+  let k = 0; const pk = () => T[k], nx = () => T[k++];
+  const F = { sin: Math.sin, cos: Math.cos, tan: Math.tan, asin: Math.asin, acos: Math.acos, atan: Math.atan, sqrt: Math.sqrt, abs: Math.abs, exp: Math.exp, ln: Math.log, log: Math.log10 };
+  const startsPrimary = t => t && (t.n != null || t.w || t.o === '(');
+  function expr() { let a = term(); while (pk() && (pk().o === '+' || pk().o === '-')) { const op = nx().o, b = term(), A = a; a = op === '+' ? x => A(x) + b(x) : x => A(x) - b(x); } return a; }
+  function term() { let a = unary(); for (;;) { const t = pk(); if (t && (t.o === '*' || t.o === '/')) { nx(); const b = unary(), A = a; a = t.o === '*' ? x => A(x) * b(x) : x => A(x) / b(x); } else if (startsPrimary(t)) { const b = unary(), A = a; a = x => A(x) * b(x); } else return a; } }
+  function unary() { if (pk() && pk().o === '-') { nx(); const a = unary(); return x => -a(x); } if (pk() && pk().o === '+') { nx(); return unary(); } return power(); }
+  function power() { const a = primary(); if (pk() && pk().o === '^') { nx(); const b = unary(); return x => Math.pow(a(x), b(x)); } return a; }
+  function primary() {
+    const t = nx(); if (!t) throw new Error('end');
+    if (t.n != null) return () => t.n;
+    if (t.o === '(') { const a = expr(); if (!pk() || pk().o !== ')') throw new Error(')'); nx(); return a; }
+    if (t.w === 'x') return x => x; if (t.w === 'pi') return () => Math.PI; if (t.w === 'e') return () => Math.E;
+    if (F[t.w]) { const f = F[t.w], a = power(); return x => f(a(x)); }
+    throw new Error('tok');
+  }
+  const f = expr(); if (k < T.length) throw new Error('rest'); return f;
+}
+function plotSVG(spec) {
+  const W = 600, H = 380, P = 34, cols = ['#10b981', '#3b82f6', '#f43f5e', '#f59e0b', '#8b5cf6'];
+  const fs = (Array.isArray(spec.f) ? spec.f : [spec.f]).filter(Boolean).slice(0, 5).map(src => { try { return { src: String(src), fn: fparse(src) }; } catch { return { src: String(src), bad: 1 }; } });
+  let [x0, x1] = Array.isArray(spec.x) && spec.x.length === 2 && spec.x[1] > spec.x[0] ? spec.x.map(Number) : [-10, 10];
+  const N = 400, data = fs.map(f => f.bad ? [] : Array.from({ length: N + 1 }, (_, i) => { const x = x0 + (x1 - x0) * i / N; let y; try { y = f.fn(x); } catch { y = NaN; } return [x, isFinite(y) ? y : NaN]; }));
+  let y0, y1;
+  if (Array.isArray(spec.y) && spec.y.length === 2 && spec.y[1] > spec.y[0]) [y0, y1] = spec.y.map(Number);
+  else { const ys = data.flat().map(p => p[1]).filter(isFinite).sort((a, b) => a - b); (spec.tocke || []).forEach(p => ys.push(+p[1])); if (!ys.length) { y0 = -10; y1 = 10; } else { const q = a => ys[Math.min(ys.length - 1, Math.max(0, Math.round(a * (ys.length - 1))))]; y0 = Math.min(q(.03), 0); y1 = Math.max(q(.97), 0); const pad = (y1 - y0 || 2) * .12; y0 -= pad; y1 += pad; } }
+  const sx = x => P + (x - x0) / (x1 - x0) * (W - 2 * P), sy = y => H - P - (y - y0) / (y1 - y0) * (H - 2 * P);
+  const step = r => { const p = Math.pow(10, Math.floor(Math.log10(r / 8))), m = r / 8 / p; return (m < 1.5 ? 1 : m < 3.5 ? 2 : m < 7.5 ? 5 : 10) * p; };
+  const fmt = v => (Math.abs(v) < 1e-9 ? 0 : +v.toFixed(4)).toString().replace('.', ',');
+  let g = '', lab = '';
+  const xs = step(x1 - x0), ys = step(y1 - y0);
+  for (let v = Math.ceil(x0 / xs) * xs; v <= x1 + 1e-9; v += xs) { g += `<line x1="${sx(v)}" y1="${P}" x2="${sx(v)}" y2="${H - P}" class="pg"/>`; if (Math.abs(v) > 1e-9) lab += `<text x="${sx(v)}" y="${Math.min(H - P, Math.max(P, sy(0))) + 15}" text-anchor="middle" class="pl">${fmt(v)}</text>`; }
+  for (let v = Math.ceil(y0 / ys) * ys; v <= y1 + 1e-9; v += ys) { g += `<line x1="${P}" y1="${sy(v)}" x2="${W - P}" y2="${sy(v)}" class="pg"/>`; if (Math.abs(v) > 1e-9) lab += `<text x="${Math.min(W - P, Math.max(P, sx(0))) - 6}" y="${sy(v) + 4}" text-anchor="end" class="pl">${fmt(v)}</text>`; }
+  let ax = '';
+  if (y0 <= 0 && y1 >= 0) ax += `<line x1="${P}" y1="${sy(0)}" x2="${W - P + 8}" y2="${sy(0)}" class="pa" marker-end="url(#ar)"/><text x="${W - P + 4}" y="${sy(0) - 8}" class="pl pi">x</text>`;
+  if (x0 <= 0 && x1 >= 0) ax += `<line x1="${sx(0)}" y1="${H - P}" x2="${sx(0)}" y2="${P - 8}" class="pa" marker-end="url(#ar)"/><text x="${sx(0) + 8}" y="${P - 2}" class="pl pi">y</text>`;
+  let curves = '';
+  data.forEach((d, fi) => { let path = '', pen = false, prev = null; d.forEach(([x, y]) => { if (!isFinite(y) || y < y0 - (y1 - y0) * 3 || y > y1 + (y1 - y0) * 3 || (prev != null && Math.abs(y - prev) > (y1 - y0) * 1.5)) { pen = false; prev = isFinite(y) ? y : null; return; } path += (pen ? 'L' : 'M') + sx(x).toFixed(1) + ' ' + sy(Math.max(y0 - (y1 - y0), Math.min(y1 + (y1 - y0), y))).toFixed(1); pen = true; prev = y; }); curves += `<path d="${path}" fill="none" stroke="${cols[fi]}" stroke-width="2.6" stroke-linejoin="round" stroke-linecap="round"/>`; });
+  const pts = (spec.tocke || []).slice(0, 12).map(p => `<circle cx="${sx(+p[0])}" cy="${sy(+p[1])}" r="4.5" fill="var(--card)" stroke="#f43f5e" stroke-width="2.4"/><text x="${sx(+p[0]) + 7}" y="${sy(+p[1]) - 8}" class="pl pt">(${fmt(+p[0])}, ${fmt(+p[1])})</text>`).join('');
+  const leg = fs.length ? `<rect x="${P + 2}" y="${P + 2}" width="${Math.min(W - 2 * P - 4, 30 + Math.max(...fs.map(f => f.src.length)) * 7.4)}" height="${fs.length * 20 + 10}" rx="8" fill="var(--card)" opacity=".9"/>` : '';
+  const leg2 = fs.map((f, i) => `<g transform="translate(${P + 8},${P + 8 + i * 20})"><rect width="14" height="4" y="5" rx="2" fill="${cols[i]}"/><text x="20" y="11" class="pl pf">${f.bad ? 'ni mogoče narisati: ' : 'y = '}${esc(f.src)}</text></g>`).join('');
+  return `<figure class="plot"><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Graf funkcije ${esc(fs.map(f => f.src).join(', '))}"><defs><marker id="ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" class="pam"/></marker><clipPath id="pc"><rect x="${P}" y="${P}" width="${W - 2 * P}" height="${H - 2 * P}"/></clipPath></defs>${g}${ax}${lab}<g clip-path="url(#pc)">${curves}</g>${pts}${leg}${leg2}</svg></figure>`;
+}
+// ---- notni zapis ABC → SVG (violinski ključ) + predvajanje
+const ABCS = [];
+const KEYS = { C: 0, G: 1, D: 2, A: 3, E: 4, B: 5, 'F#': 6, 'C#': 7, F: -1, Bb: -2, Eb: -3, Ab: -4, Db: -5, Gb: -6, Cb: -7, Am: 0, Em: 1, Bm: 2, 'F#m': 3, 'C#m': 4, 'G#m': 5, 'D#m': 6, Dm: -1, Gm: -2, Cm: -3, Fm: -4, Bbm: -5, Ebm: -6 };
+function abcParse(src) {
+  const head = {}, body = [];
+  String(src).split('\n').forEach(l => { const t = l.trim(), m = /^([A-Za-z]):\s*(.*)$/.exec(t); if (m && 'XTMLKQCRW'.includes(m[1]) && !body.length || (m && 'TKLMQ'.includes(m[1]) && t.length < 40 && !/[|]/.test(t))) head[m[1]] = m[2].trim(); else if (t && !t.startsWith('%')) body.push(t); });
+  const fr = v => { const m = /^(\d+)\/(\d+)$/.exec(v || ''); return m ? +m[1] / +m[2] : null; };
+  const L = fr(head.L) || .125, M = (head.M || '4/4').replace('C|', '2/2').replace(/^C$/, '4/4'), keyN = ((head.K || 'C').match(/^[A-G][#b]?m?/) || ['C'])[0];
+  const ks = KEYS[keyN] ?? KEYS[keyN.replace(/m$/, '')] ?? 0;
+  const sharpO = [3, 0, 4, 1, 5, 2, 6], flatO = [6, 2, 5, 1, 4, 0, 3], keyAcc = {};
+  (ks > 0 ? sharpO.slice(0, ks) : flatO.slice(0, -ks)).forEach(ix => keyAcc[ix] = ks > 0 ? 1 : -1);
+  const q = /(\d+)\/(\d+)\s*=\s*(\d+)/.exec(head.Q || '') || /^(\d+)$/.exec(head.Q || ''); const bpm = q ? +(q[3] || q[1]) : 96;
+  const ev = []; const txt = body.join(' ');
+  let i = 0, barAcc = {}, guard = 0;
+  const len = (num, sl, den) => { let v = num ? +num : 1; if (sl) v /= den ? +den : Math.pow(2, sl.length); return v * L; };
+  while (i < txt.length && guard++ < 4000) {
+    const r = txt.slice(i);
+    let m;
+    if ((m = /^"[^"]*"/.exec(r))) { i += m[0].length; continue; }
+    if ((m = /^(\|\]|\|\||\[\||:\||\|:|::|\|)/.exec(r))) { ev.push({ bar: m[1] === '|]' || m[1] === '||' ? 2 : 1 }); barAcc = {}; i += m[0].length; continue; }
+    if ((m = /^\[([^\]]+)\](\d*)(\/*)(\d*)/.exec(r))) { const ns = []; let j, re = /(\^{1,2}|_{1,2}|=)?([A-Ga-g])([',]*)/g; while ((j = re.exec(m[1]))) ns.push(j); if (ns.length) { const d = len(m[2], m[3], m[4]); ev.push({ chord: ns.map(n => noteOf(n[1], n[2], n[3])), dur: d }); } i += m[0].length; continue; }
+    if ((m = /^(\^{1,2}|_{1,2}|=)?([A-Ga-g])([',]*)(\d*)(\/*)(\d*)/.exec(r))) { ev.push({ chord: [noteOf(m[1], m[2], m[3])], dur: len(m[4], m[5], m[6]) }); i += m[0].length; continue; }
+    if ((m = /^[zx](\d*)(\/*)(\d*)/.exec(r))) { ev.push({ rest: true, dur: len(m[1], m[2], m[3]) }); i += m[0].length; continue; }
+    i++;
+  }
+  function noteOf(acc, letter, oct) {
+    const ix = 'CDEFGAB'.indexOf(letter.toUpperCase()); let o = letter === letter.toUpperCase() ? 4 : 5; for (const c of oct || '') o += c === "'" ? 1 : -1;
+    const step = o * 7 + ix; let a = null;
+    if (acc) { a = acc === '=' ? 0 : acc[0] === '^' ? acc.length : -acc.length; barAcc[step] = a; }
+    const eff = barAcc[step] ?? keyAcc[ix] ?? 0;
+    return { step, acc: a, midi: 12 * (o + 1) + [0, 2, 4, 5, 7, 9, 11][ix] + eff };
+  }
+  return { title: head.T || '', meter: M, ks, bpm, ev };
+}
+function abcSVG(A) {
+  const W = 440, sp = 10, rowH = 110, top0 = A.title ? 50 : 30;
+  const yOf = (row, step) => top0 + row * rowH + 40 - (step - 30) * sp / 2;   // spodnja črta = E4 (step 30)
+  let out = '', x, row = 0;
+  const clef = (row) => { const y0 = top0 + row * rowH, c = 22; return `<path d="M${c + 2} ${y0 + 58}C${c - 6} ${y0 + 60} ${c - 8} ${y0 + 50} ${c - 2} ${y0 + 48}M${c + 1} ${y0 + 56}L${c + 3} ${y0 - 14}C${c + 12} ${y0 - 4} ${c + 10} ${y0 + 8} ${c - 4} ${y0 + 20}C${c - 14} ${y0 + 28} ${c - 10} ${y0 + 42} ${c + 2} ${y0 + 42}C${c + 12} ${y0 + 42} ${c + 12} ${y0 + 28} ${c + 2} ${y0 + 28}C${c - 4} ${y0 + 28} ${c - 5} ${y0 + 35} ${c} ${y0 + 36}" class="nk" fill="none" stroke-width="2.3" stroke-linecap="round"/>`; };
+  const sharpS = [38, 35, 39, 36, 33, 37, 34], flatS = [34, 37, 33, 36, 32, 35, 31];
+  const keysig = row => { let o = '', n = Math.abs(A.ks); for (let k = 0; k < n; k++) o += `<text x="${44 + k * 9}" y="${yOf(row, A.ks > 0 ? sharpS[k] : flatS[k]) + 5}" class="na">${A.ks > 0 ? '♯' : '♭'}</text>`; return o; };
+  const ends = []; const lines = (r, x2) => { let o = ''; for (let l = 0; l < 5; l++) o += `<line x1="8" x2="${x2}" y1="${top0 + r * rowH + l * sp}" y2="${top0 + r * rowH + l * sp}" class="ns"/>`; return o; };
+  const startRow = (r, withTime) => { let o = ''; o += clef(r) + keysig(r); let xx = 50 + Math.abs(A.ks) * 9; if (withTime) { const [a, b] = A.meter.split('/'); o += `<text x="${xx + 4}" y="${yOf(r, 36) + 6}" class="nt">${esc(a || '')}</text><text x="${xx + 4}" y="${yOf(r, 32) + 6}" class="nt">${esc(b || '')}</text>`; xx += 24; } return [o, xx + 8]; };
+  [out, x] = startRow(0, true);
+  const kind = d => d >= .99 ? 'w' : d >= .74 ? 'hd' : d >= .49 ? 'h' : d >= .37 ? 'qd' : d >= .24 ? 'q' : d >= .18 ? 'ed' : d >= .12 ? 'e' : 's';
+  for (const e of A.ev) {
+    if (e.bar) { if (x > 70) { out += `<line x1="${x}" x2="${x}" y1="${top0 + row * rowH}" y2="${top0 + row * rowH + 40}" class="nb" stroke-width="${e.bar === 2 ? 3 : 1.2}"/>`; x += 12; } if (x > W - 70) { row++; let o; [o, x] = startRow(row, false); out += o; } continue; }
+    const k = kind(e.dur), w = Math.max(24, 64 * Math.pow(e.dur, .62));
+    if (x + w > W - 14) { row++; let o; [o, x] = startRow(row, false); out += o; }
+    const cx = x + 10;
+    if (e.rest) {
+      const ym = yOf(row, 34);
+      out += k === 'w' ? `<rect x="${cx - 6}" y="${yOf(row, 36)}" width="12" height="5" class="nf"/>` : k[0] === 'h' ? `<rect x="${cx - 6}" y="${ym - 5}" width="12" height="5" class="nf"/>` : k[0] === 'q' ? `<path d="M${cx - 3} ${ym - 15}l6 7-5 6 6 8c-5-3-9 0-6 4" class="nk" fill="none" stroke-width="2.2"/>` : `<circle cx="${cx - 2}" cy="${ym - 4}" r="2.6" class="nf"/><path d="M${cx - 2} ${ym - 2}c3 1 5 0 7-3l-5 14" class="nk" fill="none" stroke-width="1.6"/>`;
+    } else {
+      const steps = e.chord.map(n => n.step), up = steps.reduce((a, b) => a + b, 0) / steps.length < 34;
+      e.chord.forEach(n => {
+        const y = yOf(row, n.step), hollow = k === 'w' || k[0] === 'h';
+        for (let st = 28; st >= n.step; st -= 2) if (st % 2 === 0) out += `<line x1="${cx - 9}" x2="${cx + 9}" y1="${yOf(row, st)}" y2="${yOf(row, st)}" class="ns"/>`;
+        for (let st = 40; st <= n.step; st += 2) out += `<line x1="${cx - 9}" x2="${cx + 9}" y1="${yOf(row, st)}" y2="${yOf(row, st)}" class="ns"/>`;
+        out += `<ellipse cx="${cx}" cy="${y}" rx="5.8" ry="4.3" transform="rotate(-20 ${cx} ${y})" class="${hollow ? 'nh' : 'nf'}" ${hollow ? 'stroke-width="1.7"' : ''}/>`;
+        if (n.acc != null) out += `<text x="${cx - 17}" y="${y + 5}" class="na">${n.acc > 0 ? '♯' : n.acc < 0 ? '♭' : '♮'}</text>`;
+        if (k.endsWith('d')) out += `<circle cx="${cx + 9}" cy="${y - (n.step % 2 === 0 ? 3 : 0)}" r="1.8" class="nf"/>`;
+      });
+      if (k !== 'w') {
+        const yTop = yOf(row, Math.max(...steps)), yBot = yOf(row, Math.min(...steps)), sx = up ? cx + 5.2 : cx - 5.2, y1 = up ? yBot : yTop, y2 = up ? yTop - 32 : yBot + 32;
+        out += `<line x1="${sx}" x2="${sx}" y1="${y1}" y2="${y2}" class="nk" stroke-width="1.5"/>`;
+        const flags = k[0] === 'e' ? 1 : k === 's' ? 2 : 0;
+        for (let f = 0; f < flags; f++) { const fy = y2 + (up ? f * 8 : -f * 8); out += up ? `<path d="M${sx} ${fy}c2 6 9 8 8 17c0-6-4-9-8-10" class="nf"/>` : `<path d="M${sx} ${fy}c2-6 9-8 8-17c0 6-4 9-8 10" class="nf"/>`; }
+      }
+    }
+    x += w;
+  }
+  for (let r = 0; r <= row; r++) out = lines(r, r < row ? W - 8 : Math.min(W - 8, Math.max(x, 120))) + out;
+  const H = top0 + (row + 1) * rowH - 20;
+  return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Notni zapis${A.title ? ': ' + esc(A.title) : ''}">${A.title ? `<text x="${W / 2}" y="24" text-anchor="middle" class="ntt">${esc(A.title)}</text>` : ''}${out}</svg>`;
+}
+function abcBlock(src) {
+  let A; try { A = abcParse(src); } catch { A = null; }
+  if (!A || !A.ev.some(e => e.chord)) return `<pre><code>${esc(src)}</code></pre>`;
+  ABCS.push(A); if (ABCS.length > 60) ABCS.splice(0, ABCS.length - 60);
+  return `<figure class="score">${abcSVG(A)}<figcaption><button data-a="abcPlay" data-i="${ABCS.length - 1}">${ic('play', 'ic-s')} Predvajaj</button><span>${esc(A.meter)} · ${A.bpm} udarcev/min</span><button data-a="abcCopy" data-i="${ABCS.length - 1}" data-src="${esc(src)}">${ic('copy', 'ic-s')} ABC</button></figcaption></figure>`;
+}
+let PLAY = null;
+function abcPlay(i, btn) {
+  if (PLAY) { try { PLAY.ctx.close(); } catch { } clearTimeout(PLAY.tm); const was = PLAY.i; PLAY = null; document.querySelectorAll('[data-a=abcPlay]').forEach(b => b.innerHTML = `${ic('play', 'ic-s')} Predvajaj`); if (was === i) return; }
+  const A = ABCS[i]; if (!A) return;
+  const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return toast('Predvajanje ni podprto.', true);
+  const ctx = new AC(), out = ctx.createGain(); out.gain.value = .22; out.connect(ctx.destination);
+  const beat = 60 / A.bpm; let t = ctx.currentTime + .08;
+  for (const e of A.ev) {
+    if (e.bar) continue; const d = e.dur * 4 * beat;
+    if (!e.rest) e.chord.forEach(n => { const o = ctx.createOscillator(), g = ctx.createGain(), f = ctx.createBiquadFilter(); o.type = 'triangle'; o.frequency.value = 440 * Math.pow(2, (n.midi - 69) / 12); f.type = 'lowpass'; f.frequency.value = 2400; g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(1 / e.chord.length, t + .015); g.gain.exponentialRampToValueAtTime(.0008, t + Math.max(.12, d * .95)); o.connect(f).connect(g).connect(out); o.start(t); o.stop(t + d + .05); });
+    t += d;
+  }
+  PLAY = { ctx, i, tm: setTimeout(() => { if (PLAY?.ctx === ctx) abcPlay(i); }, (t - ctx.currentTime) * 1000 + 200) };
+  if (btn) btn.innerHTML = `${ic('stop', 'ic-s')} Ustavi`;
+}
+// ---- obogaten izpis: bloki ```graf / ```abc, $$…$$ in $…$
+function richText(t) {
+  const store = []; const tok = h => { store.push(h); return `\u0000${store.length - 1}\u0000`; };
+  let s = String(t);
+  s = s.replace(/```\s*(graf|graph|abc)\s*\n([\s\S]*?)```/gi, (m, k, body) => { if (k.toLowerCase() === 'abc') return '\n' + tok(abcBlock(body.trim())) + '\n'; let spec; try { spec = JSON.parse(body.trim()); } catch { return '\n' + tok(`<pre><code>${esc(body)}</code></pre>`) + '\n'; } return '\n' + tok(plotSVG(spec)) + '\n'; });
+  s = s.replace(/(^|\n)(X:\s*\d+\s*\n(?:[A-Za-z]:.*\n)*K:.*\n[\s\S]*?)(?=\n\n|$)/g, (m, a, body) => a + tok(abcBlock(body.trim())));
+  s = s.replace(/\$\$([\s\S]+?)\$\$|\\\[([\s\S]+?)\\\]/g, (m, a, b) => '\n' + tok(`<div class="math md2">${texHtml((a || b).trim())}</div>`) + '\n');
+  s = s.replace(/\$([^$\n]{1,200}?)\$|\\\((.+?)\\\)/g, (m, a, b) => tok(`<span class="math">${texHtml(a || b)}</span>`));
+  let h = mdLite(s);
+  h = h.replace(/<p>\s*\u0000(\d+)\u0000\s*<\/p>/g, (m, n) => store[+n]).replace(/\u0000(\d+)\u0000/g, (m, n) => store[+n]);
+  return h;
+}
+
 const srcHtml = w => w && w.length ? `<div class="srcs">${w.map((x, i) => `<a href="${esc(x.url)}" target="_blank" rel="noopener noreferrer"><span>${i + 1}</span>${esc(x.title)} · Wikipedija</a>`).join('')}<small>Besedila Wikipedije so na voljo pod licenco CC BY-SA.</small></div>` : '';
 const aiActs = idx => `<div class="aacts"><button data-a="copyMsg" data-i="${idx}" aria-label="Kopiraj">${ic('copy', 'ic-s')}</button><span>Ustvarila umetna inteligenca</span></div>`;
 function aiMsg(m, idx) {
@@ -711,13 +928,13 @@ function aiMsg(m, idx) {
   const tw = S.ai.tw === idx ? ' data-tw="1"' : '';
   if (o.mode === 'cards') { const a = parseJSON(o.text); if (a?.length) return `<div class="amsg"><div class="amark">${ic('spark')}</div><div class="abody">${cardsHtml(a, idx)}</div>${aiActs(idx)}</div>`; }
   if (o.mode === 'test') { const a = parseJSON(o.text); if (a?.length) return `<div class="amsg"><div class="amark">${ic('spark')}</div><div class="abody">${testHtml(a, idx)}</div>${aiActs(idx)}</div>`; }
-  return `<div class="amsg"><div class="amark">${ic('spark')}</div><div class="abody md"${tw}>${mdLite(o.text)}</div>${srcHtml(o.web)}${aiActs(idx)}</div>`;
+  return `<div class="amsg"><div class="amark">${ic('spark')}</div><div class="abody md"${tw}>${richText(o.text)}</div>${srcHtml(o.web)}${aiActs(idx)}</div>`;
 }
 // postopen izpis zadnjega odgovora (kot pri pisanju)
 function typewriter() {
   const el = document.querySelector('[data-tw]'); if (!el) return; el.removeAttribute('data-tw'); S.ai.tw = null;
   if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-  const w = document.createTreeWalker(el, NodeFilter.SHOW_TEXT), nodes = []; let n; while ((n = w.nextNode())) { nodes.push([n, n.textContent]); n.textContent = ''; }
+  const w = document.createTreeWalker(el, NodeFilter.SHOW_TEXT, { acceptNode: n => n.parentElement.closest('svg,figure,.math') ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT }), nodes = []; let n; while ((n = w.nextNode())) { nodes.push([n, n.textContent]); n.textContent = ''; }
   let i = 0, j = 0; const step = Math.max(2, Math.round(nodes.reduce((a, x) => a + x[1].length, 0) / 220));
   const t = setInterval(() => {
     let k = step; while (k > 0 && i < nodes.length) { const [nd, full] = nodes[i], take = Math.min(k, full.length - j); nd.textContent = full.slice(0, j + take); j += take; k -= take; if (j >= full.length) { i++; j = 0; } }
@@ -730,14 +947,14 @@ const QZ = {};
 function testHtml(a, idx) { const st = QZ[idx] || (QZ[idx] = {}); const n = Object.keys(st).length, ok = Object.entries(st).filter(([q, v]) => a[q] && v === a[q].c).length; return a.map((q, qi) => `<div class="qz"><b>${qi + 1}. ${esc(q.q)}</b>${(q.o || []).map((o, oi) => `<button data-a="qzPick" data-i="${idx}" data-q="${qi}" data-o="${oi}" class="${st[qi] != null ? (oi === q.c ? 'ok' : st[qi] === oi ? 'no' : '') : ''}" ${st[qi] != null ? 'disabled' : ''}>${'ABCD'[oi]}) ${esc(o)}</button>`).join('')}${st[qi] != null && q.e ? `<div class="ex">${esc(q.e)}</div>` : ''}</div>`).join('') + (n === a.length ? `<div class="notice g"><b>Rezultat: ${ok}/${a.length} (${Math.round(ok / a.length * 100)} %)</b></div>` : ''); }
 async function aiAsk(mode, message, opt = {}) {
   const A = S.ai; if (A.busy) return null;
-  const web = mode === 'chat' && !!A.web;
-  A.busy = true; A.msgs.push({ role: 'user', content: (message && mode === 'chat' ? message : ({ summary: 'Pripravi povzetek', cards: 'Pripravi kartice', test: 'Pripravi test' }[mode] + (message ? ': ' + message : ''))) + (web ? ' 🌐' : '') }); if (!opt.quiet) render();
+  const web = mode === 'chat' && !!A.web, image = mode === 'music' ? A.img || null : null;
+  A.busy = true; A.msgs.push({ role: 'user', content: (image ? '📷 ' : '') + (message && (mode === 'chat' || mode === 'music') ? message : mode === 'music' ? '[fotografija notnega zapisa]' : ({ summary: 'Pripravi povzetek', cards: 'Pripravi kartice', test: 'Pripravi test' }[mode] + (message ? ': ' + message : ''))) + (web ? ' 🌐' : '') }); if (!opt.quiet) render();
   let reply = null;
   try {
-    const r = await api('/ai/ask', { nid: A.nid, mode, message, chatId: A.chat, web });
+    const r = await api('/ai/ask', { nid: A.nid, mode, message, chatId: A.chat, web, image: image || undefined }); A.img = null;
     A.chat = r.chatId; A.msgs.push({ role: 'ai', content: JSON.stringify({ mode: r.mode, text: r.reply, web: r.web }) }); A.tw = A.msgs.length - 1; D.aiUsed = (D.aiUsed || 0) + 1 + (web ? 0 : 0);
     reply = r.reply;
-    if (!r.general && !r.sources.photos && !r.sources.texts) toast('V zvezku ni prebranih zapiskov – odgovor je splošen.', true);
+    if (mode !== 'music' && !r.general && !r.sources.photos && !r.sources.texts) toast('V zvezku ni prebranih zapiskov – odgovor je splošen.', true);
     if (web && !r.web.length) toast('Na Wikipediji ni bilo zadetkov – odgovor je brez spletnih virov.');
     const ch = await api('/ai/chats'); D.chats = ch.chats;
   } catch (e) { A.msgs.pop(); if (e.message !== '__gate') toast(e.message, true); }
@@ -757,6 +974,25 @@ async function aiOcr() {
   closeModal(); render(); if (i) toast(`Prebrano: ${nphoto(i)}.`);
 }
 
+
+
+// ============================================================ ZAMRZNJEN RAČUN (2.2)
+function renderFrozen() {
+  stopPolling?.();
+  const until = U.restoreUntil, left = Math.max(0, until - Date.now()), hh = Math.floor(left / 3600000), dd = new Date(until);
+  const dl = `${dd.toLocaleDateString('sl-SI', { weekday: 'long', day: 'numeric', month: 'long' })} ob ${dd.toLocaleTimeString('sl-SI', { hour: '2-digit', minute: '2-digit' })}`;
+  $('app').innerHTML = `<div class="auth"><div class="authbox">
+    <div class="maintic" style="background:linear-gradient(150deg,#60a5fa,#2563eb);animation:none">${ic('lock')}</div>
+    <div class="h1" style="font-size:25px;margin-top:16px;text-align:center">Račun je zamrznjen</div>
+    <p class="mut sm" style="margin-top:8px;text-align:center">Aplikacije nekaj šolskih dni nisi uporabljal, zato je račun zamrznjen. <b>Tvoji podatki so shranjeni.</b></p>
+    ${U.restoreAt ? `<div class="notice g sm" style="margin-top:16px">${ic('check')}<div><b>Prošnja je oddana</b> (${fmtT(U.restoreAt)}).<br>Administrator jo bo pregledal. Ko bo račun obnovljen, boš dobil e-pošto.</div></div>
+      <button class="btn btn-s btn-w" style="margin-top:14px" data-a="frozenCheck">${ic('rot', 'ic-s')} Preveri stanje</button>`
+    : `<div class="notice o sm" style="margin-top:16px">${ic('timer')}<div>Prošnjo za obnovitev oddaj do <b>${dl}</b> (še ${hh} ur). Sicer se račun izbriše.</div></div>
+      <div class="field" style="margin-top:14px"><label class="lbl" for="rs_r">Zakaj aplikacije nisi uporabljal?</label><textarea id="rs_r" class="inp" maxlength="1000" placeholder="npr. Bil sem bolan / imel sem počitnice in nisem izklopil urnika …"></textarea></div>
+      <button class="btn btn-p btn-w" data-a="restoreReq">Pošlji prošnjo za obnovitev</button>`}
+    <div class="row" style="justify-content:center;gap:8px;margin-top:16px"><button class="btn btn-s btn-sm" data-a="exportData">${ic('dl', 'ic-s')} Prenesi moje podatke</button><button class="btn btn-s btn-sm" data-a="logout">Odjava</button></div></div>
+    <div class="authfoot"><a href="${SITE}pogoji.html">Pogoji uporabe</a> · <a href="${SITE}zasebnost.html">Zasebnost</a></div></div>`;
+}
 
 // ============================================================ VZDRŽEVANJE IN DEMO (2.1.1)
 const ADM_KEY = 'dn2_adm';
@@ -807,6 +1043,7 @@ async function maintSet(on) {
 function aiGrow() { const t = $('ai_q'); if (!t) return; t.style.height = 'auto'; t.style.height = Math.min(180, t.scrollHeight) + 'px'; }
 document.addEventListener('input', e => { if (e.target.id === 'ai_q') aiGrow(); });
 document.addEventListener('keydown', e => { if (e.target.id === 'ai_q' && e.key === 'Enter' && !e.shiftKey && !e.isComposing && matchMedia('(hover: hover)').matches) { e.preventDefault(); const f = e.target.form; if (f.querySelector('[type=submit]')) f.requestSubmit(); else ACT.aiRun(); } });
+async function hoursApply(n) { try { U = (await api('/me/settings', { hours: n })).user; await loadData(); render(); toast(n > 9 ? `Dan ima zdaj ${n} ur.` : 'Shranjeno.'); } catch (e) { toast(e.message, true); } }
 // ============================================================ ISKANJE
 let SQ = { q: '', res: null, busy: false, tm: null };
 function hl(t, q) { const e = esc(t); if (!q) return e; const i = e.toLowerCase().indexOf(esc(q).toLowerCase()); return i < 0 ? e : e.slice(0, i) + '<mark>' + e.slice(i, i + esc(q).length) + '</mark>' + e.slice(i + esc(q).length); }
@@ -957,29 +1194,64 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change', () => { 
 function gradeNum(g) { const m = /^\s*([1-5])\s*([+-])?/.exec(String(g)); return m ? +m[1] + (m[2] === '+' ? .25 : m[2] === '-' ? -.25 : 0) : null; }
 function avgOf(list) { const n = list.map(gradeNum).filter(x => x != null); return n.length ? (n.reduce((a, b) => a + b, 0) / n.length).toFixed(2).replace('.', ',') : ''; }
 function gradeLegend() { return `<div class="glegend">${GT.map(([v, l, c]) => `<span><i class="gd ${c}"></i>${l}</span>`).join('')}</div>`; }
+// vse ocene: pri urah (ls) in vpisane na zavihku Ocene (grades); popravki so vezani na izvirno oceno
+function gradeList(nid) {
+  const out = [];
+  (D.ls || []).forEach(l => { if (l.grade && (!nid || l.nid === nid)) out.push({ id: 'ls:' + l.k, nid: l.nid, grade: l.grade, gtype: l.gtype, date: l.k.split('_')[0], note: l.note || '', k: l.k, src: 'ls' }); });
+  (D.grades || []).forEach(g => { if (!g.fix && (!nid || g.nid === nid)) out.push({ id: 'g:' + g.id, gid: g.id, nid: g.nid, grade: g.grade, gtype: g.gtype, date: g.date, note: g.note || '', src: 'g' }); });
+  const fx = {}; (D.grades || []).forEach(g => { if (g.fix) fx[g.fix] = g; });
+  out.forEach(o => { const f = fx[o.id]; if (f) o.fix = { id: f.id, grade: f.grade, gtype: f.gtype, date: f.date, note: f.note || '' }; });
+  return out.sort((a, b) => a.date.localeCompare(b.date));
+}
+const gVals = list => list.flatMap(o => o.fix ? [o.grade, o.fix.grade] : [o.grade]);   // v povprečje štejeta izvirna in popravljena ocena
+const gOfType = (list, c) => list.filter(o => gcat(o.gtype) === c);
+function gChipX(o, big) { return o.fix ? `<span class="gfix" title="Popravljena ocena">${gChip(o)}${gChip({ grade: o.fix.grade, gtype: o.fix.gtype }, big)}</span>` : gChip(o, big); }
+function gradeLegend() { return `<div class="glegend">${GT.map(([v, l, c]) => `<span><i class="gd ${c}"></i>${l}</span>`).join('')}<span><span class="gfix"><span class="gc u">2</span><span class="gc u">4</span></span>popravljena</span></div>`; }
 function vGrades() {
-  const gs = (D.ls || []).filter(l => l.grade);
-  const by = {}; gs.forEach(g => (by[g.nid] = by[g.nid] || []).push(g));
-  const all = avgOf(gs.map(g => g.grade));
-  if (!gs.length) return `<div class="h1" style="margin:6px 2px 14px">Ocene</div><div class="card empty">${tile('s_star', 40, 90, 'lg')}<div style="margin-top:10px">Še nimaš vpisanih ocen.</div><span class="sm">Oceno dodaš pri vpisu ure (»Ocena« ali »Ura z zapiski« → Dodaj oceno).</span></div>`;
-  const cnt = c => gs.filter(g => gcat(g.gtype) === c).length;
+  const gs = gradeList(), all = avgOf(gVals(gs));
+  const nbs = (D.nb || []).slice().sort((a, b) => a.name.localeCompare(b.name));
   return `<div class="h1" style="margin:6px 2px 14px">Ocene</div>
-  <div class="card pad gsum"><div><div class="mut sm">Skupno povprečje</div><div class="gbig">${all || '–'}</div><div class="mut xs">${pl(gs.length, 'ocena', 'oceni', 'ocene', 'ocen')} · številčne ocene 1–5</div></div>
-    <div class="gsplit">${GT.map(([v, l, c]) => `<div><i class="gd ${c}"></i><b>${avgOf(gs.filter(g => gcat(g.gtype) === c).map(g => g.grade)) || '–'}</b><small>${l.replace(' ocena', '')} · ${cnt(c)}</small></div>`).join('')}</div></div>
+  ${gs.length ? `<div class="card pad gsum"><div><div class="mut sm">Skupno povprečje</div><div class="gbig">${all || '–'}</div><div class="mut xs">${pl(gVals(gs).length, 'ocena', 'oceni', 'ocene', 'ocen')} · številčne ocene 1–5</div></div>
+    <div class="gsplit">${GT.map(([v, l, c]) => { const x = gOfType(gs, c); return `<div><i class="gd ${c}"></i><b>${avgOf(gVals(x)) || '–'}</b><small>${l.replace(' ocena', '')} · ${gVals(x).length}</small></div>`; }).join('')}</div></div>` : ''}
   <h2 class="h2">Po predmetih</h2>
-  <div class="gsubj">${Object.entries(by).sort((a, b) => (nbOf(a[0])?.name || '').localeCompare(nbOf(b[0])?.name || '')).map(([nid, l]) => { const n = nbOf(nid), a = avgOf(l.map(x => x.grade)); return `<button class="card gsub" data-a="openGrades" data-id="${nid}">${sIc(n || { name: '?' })}<div class="grow" style="min-width:0"><b>${esc(n?.name || '(izbrisan)')}</b><div class="gchips">${l.sort((x, y) => x.k.localeCompare(y.k)).map(g => gChip(g)).join('')}</div></div><div class="gavg">${a || '–'}<small>povp.</small></div>${ic('r', 'ic-s')}</button>`; }).join('')}</div>
+  ${nbs.length ? `<div class="gsubj">${nbs.map(n => { const l = gs.filter(o => o.nid === n.id), a = avgOf(gVals(l)); return `<div class="card gsub"><button class="gsubm" data-a="openGrades" data-id="${n.id}">${sIc(n)}<div class="grow" style="min-width:0"><b>${esc(n.name)}</b><div class="gchips">${l.length ? l.map(o => gChipX(o)).join('') : '<span class="mut xs">Še ni ocen</span>'}</div></div><div class="gavg">${a || '–'}<small>povp.</small></div></button><button class="gplus" data-a="gradeForm" data-nid="${n.id}" aria-label="Dodaj oceno – ${esc(n.name)}">${ic('plus')}</button></div>`; }).join('')}</div>`
+    : `<div class="card empty">Najprej ustvari zvezke za svoje predmete (Nastavitve → Zvezki).</div>`}
   ${gradeLegend()}`;
 }
 function vGrade() {
-  const n = nbOf(S.gnid), gs = (D.ls || []).filter(l => l.grade && l.nid === S.gnid).sort((a, b) => b.k.localeCompare(a.k));
-  if (!gs.length) { S.view = 'grades'; return vGrades(); }
-  const a = avgOf(gs.map(g => g.grade));
+  const n = nbOf(S.gnid); if (!n) { S.view = 'grades'; return vGrades(); }
+  const gs = gradeList(n.id).reverse(), a = avgOf(gVals(gs));
   return `<button class="btn btn-s btn-sm" style="margin:4px 0 12px" data-a="go" data-v="grades">${ic('l', 'ic-s')} Ocene</button>
-  <div class="row" style="margin-bottom:16px;gap:14px">${sIc(n || { name: '?' }, 'xl')}<div class="grow"><div class="h1">${esc(n?.name || '(izbrisan)')}</div><div class="mut sm">${pl(gs.length, 'ocena', 'oceni', 'ocene', 'ocen')}${n?.teachers?.length ? ' · ' + esc(n.teachers.join(', ')) : ''}</div></div></div>
-  <div class="card pad gsum"><div><div class="mut sm">Povprečje</div><div class="gbig">${a || '–'}</div></div>
-    <div class="gsplit">${GT.map(([v, l, c]) => { const x = gs.filter(g => gcat(g.gtype) === c); return `<div><i class="gd ${c}"></i><b>${avgOf(x.map(g => g.grade)) || '–'}</b><small>${l.replace(' ocena', '')} · ${x.length}</small></div>`; }).join('')}</div></div>
-  ${GT.map(([v, l, c]) => { const x = gs.filter(g => gcat(g.gtype) === c); return x.length ? `<h2 class="h2"><i class="gd ${c}"></i>${{ u: 'Ustne ocene', p: 'Pisne ocene', d: 'Druge ocene' }[c]}</h2><div class="card list">${x.map(g => { const [d, h] = g.k.split('_'); return `<button class="it" style="width:100%;text-align:left" data-a="openLesson" data-d="${d}" data-h="${h}">${gChip(g, true)}<div class="grow"><b class="sm">${fmtD(d)}</b><div class="mut xs">${h}. ura${g.note ? ' · ' + esc(g.note.split('\n')[0].slice(0, 80)) : ''}</div></div>${ic('r', 'ic-s')}</button>`; }).join('')}</div>` : ''; }).join('')}
+  <div class="row" style="margin-bottom:16px;gap:14px">${sIc(n, 'xl')}<div class="grow"><div class="h1">${esc(n.name)}</div><div class="mut sm">${pl(gVals(gs).length, 'ocena', 'oceni', 'ocene', 'ocen')}${n.teachers?.length ? ' · ' + esc(n.teachers.join(', ')) : ''}</div></div><button class="btn btn-p btn-sm" data-a="gradeForm" data-nid="${n.id}">${ic('plus', 'ic-s')} Ocena</button></div>
+  ${gs.length ? `<div class="card pad gsum"><div><div class="mut sm">Povprečje</div><div class="gbig">${a || '–'}</div></div>
+    <div class="gsplit">${GT.map(([v, l, c]) => { const x = gOfType(gs, c); return `<div><i class="gd ${c}"></i><b>${avgOf(gVals(x)) || '–'}</b><small>${l.replace(' ocena', '')} · ${gVals(x).length}</small></div>`; }).join('')}</div></div>
+  ${GT.map(([v, l, c]) => { const x = gOfType(gs, c); return x.length ? `<h2 class="h2"><i class="gd ${c}"></i>${{ u: 'Ustne ocene', p: 'Pisne ocene', d: 'Druge ocene' }[c]}</h2><div class="card list">${x.map(o => `<button class="it" style="width:100%;text-align:left" data-a="gradeOpen" data-id="${o.id}">${gChipX(o, true)}<div class="grow"><b class="sm">${fmtD(o.date)}${o.fix ? ' → popravljeno ' + fmtS(o.fix.date) : ''}</b><div class="mut xs">${o.src === 'ls' ? o.k.split('_')[1] + '. ura' : 'vpisano v Ocenah'}${o.note ? ' · ' + esc(o.note.split('\n')[0].slice(0, 80)) : ''}</div></div>${ic('r', 'ic-s')}</button>`).join('')}</div>` : ''; }).join('')}`
+  : `<div class="card empty">Za ta predmet še ni ocen.<br><button class="btn btn-p btn-sm" style="margin-top:12px" data-a="gradeForm" data-nid="${n.id}">${ic('plus', 'ic-s')} Dodaj oceno</button></div>`}
   ${gradeLegend()}`;
+}
+// obrazec: nova ocena, urejanje ali popravek
+let GF = null;
+function gradeForm(o) {
+  GF = { nid: o.nid, id: o.id || null, fix: o.fix || null, grade: o.grade || '', gtype: o.gtype ? GT.find(x => x[2] === gcat(o.gtype))[0] : 'Ustna', date: o.date || today(), note: o.note || '', old: o.old || null };
+  const n = nbOf(GF.nid);
+  modal(`${sheetHead(GF.fix ? 'Popravi oceno' : GF.id ? 'Uredi oceno' : 'Nova ocena', esc(n?.name || ''), sIc(n, 'sm'))}
+  ${GF.fix ? `<div class="notice b sm" style="margin-bottom:14px">${ic('info')}<div>Popravljaš oceno <b>${esc(GF.old)}</b>. Stara ocena ostane (manjša), v povprečje se štejeta obe. Vsako oceno lahko popraviš samo enkrat.</div></div>` : ''}
+  <div class="field"><label class="lbl">Ocena</label><div class="gradepick">${[1, 2, 3, 4, 5].map(g => `<button type="button" class="${String(GF.grade) === String(g) ? 'on' : ''}" data-a="gfPick" data-g="${g}">${g}</button>`).join('')}</div></div>
+  <div class="field"><label class="lbl">Vrsta ocene</label><div class="gtpick">${GT.map(([v, l, c]) => `<button type="button" class="${c} ${GF.gtype === v ? 'on' : ''}" data-a="gfType" data-v="${v}"><i></i>${v}</button>`).join('')}</div></div>
+  <div class="row"><div class="field grow"><label class="lbl" for="gf_d">Datum</label><input id="gf_d" type="date" class="inp" value="${GF.date}" max="${today()}"></div></div>
+  <div class="field"><label class="lbl" for="gf_n">Opomba (neobvezno)</label><input id="gf_n" class="inp" maxlength="300" placeholder="npr. kontrolna naloga, spraševanje …" value="${esc(GF.note)}"></div>
+  <div class="row" style="justify-content:flex-end"><button class="btn btn-s" data-a="closeModal">Prekliči</button><button class="btn btn-p" data-a="gfSave">${GF.fix ? 'Shrani popravek' : 'Shrani'}</button></div>`);
+}
+function gradeOpen(id) {
+  const o = gradeList().find(x => x.id === id); if (!o) return;
+  const n = nbOf(o.nid);
+  modal(`${sheetHead('Ocena', esc(n?.name || ''), sIc(n, 'sm'))}
+  <div class="card pad" style="margin-bottom:14px"><div class="row" style="gap:16px">${gChipX(o, true)}<div class="grow"><b>${gLabel(o.gtype)}</b><div class="mut sm">${fmtD(o.date)}${o.src === 'ls' ? ', ' + o.k.split('_')[1] + '. ura' : ''}</div>${o.note ? `<div class="sm" style="margin-top:4px">${esc(o.note)}</div>` : ''}</div></div>
+  ${o.fix ? `<div class="row" style="margin-top:12px;padding-top:12px;border-top:1px solid var(--line2)"><div class="grow sm"><b>Popravljena ocena: ${esc(o.fix.grade)}</b><div class="mut xs">${fmtD(o.fix.date)}${o.fix.note ? ' · ' + esc(o.fix.note) : ''}</div></div><button class="btn btn-s btn-sm" data-a="gfDel" data-id="${o.fix.id}" data-fix="1">${ic('trash', 'ic-s')} Odstrani popravek</button></div>` : ''}</div>
+  <div class="row-w" style="justify-content:flex-end">
+    ${!o.fix ? `<button class="btn btn-p" data-a="gfFix" data-id="${o.id}">${ic('edit', 'ic-s')} Popravi oceno</button>` : ''}
+    ${o.src === 'ls' ? `<button class="btn btn-s" data-a="openLesson" data-d="${o.k.split('_')[0]}" data-h="${o.k.split('_')[1]}">Odpri uro</button>` : `<button class="btn btn-s" data-a="gfEdit" data-id="${o.id}">Uredi</button><button class="btn btn-d" data-a="gfDel" data-id="${o.gid}">${ic('trash', 'ic-s')} Izbriši</button>`}
+  </div>`);
 }
 
 // ============================================================ OBVESTILA
@@ -1045,12 +1317,13 @@ function nbForm(id) {
 }
 function setTt() {
   const opts = cur => `<option value="">— prosto —</option><option value="M" ${cur === 'M' ? 'selected' : ''}>Malica</option>` + (D.nb || []).flatMap(n => n.teachers.map(t => { const v = n.id + '|' + t; return `<option value="${esc(v)}" ${cur === v ? 'selected' : ''}>${optN(n)} – ${esc(t)}</option>`; })).join('');
-  let rows = ''; for (let h = 1; h <= 9; h++) { rows += `<tr><td class="h">${h}.</td>`; for (let d = 0; d < 5; d++) { const s = (D.tt || []).find(x => x.d === d && x.h === h), cur = !s ? '' : s.malica ? 'M' : s.nid + '|' + s.teacher; rows += `<td><select class="inp" data-c="ttSet" data-d="${d}" data-h="${h}" aria-label="${DAYS[d]} ${h}. ura">${opts(cur)}</select></td>`; } rows += '</tr>'; }
-  let times = ''; for (let h = 1; h <= 9; h++) { const t = tm(h); times += `<div class="row" style="margin-bottom:6px"><b style="width:26px;color:var(--mut2)">${h}.</b><input type="time" class="inp" style="width:auto" value="${t[0]}" data-c="timeSet" data-h="${h}" data-k="s"><span class="mut">–</span><input type="time" class="inp" style="width:auto" value="${t[1]}" data-c="timeSet" data-h="${h}" data-k="e"></div>`; }
+  let rows = ''; for (let h = 1; h <= HN(); h++) { rows += `<tr><td class="h">${h}.</td>`; for (let d = 0; d < 5; d++) { const s = (D.tt || []).find(x => x.d === d && x.h === h), cur = !s ? '' : s.malica ? 'M' : s.nid + '|' + s.teacher; rows += `<td><select class="inp" data-c="ttSet" data-d="${d}" data-h="${h}" aria-label="${DAYS[d]} ${h}. ura">${opts(cur)}</select></td>`; } rows += '</tr>'; }
+  let times = ''; for (let h = 1; h <= HN(); h++) { const t = tm(h); times += `<div class="row" style="margin-bottom:6px"><b style="width:26px;color:var(--mut2)">${h}.</b><input type="time" class="inp" style="width:auto" value="${t[0]}" data-c="timeSet" data-h="${h}" data-k="s"><span class="mut">–</span><input type="time" class="inp" style="width:auto" value="${t[1]}" data-c="timeSet" data-h="${h}" data-k="e"></div>`; }
   const off = (D.off || []).slice().sort();
   return `${!(D.nb || []).length ? '<div class="notice o sm" style="margin-bottom:12px">' + ic('info') + '<div>Najprej ustvari zvezke – v urniku izbiraš med njimi.</div></div>' : ''}
-  <b>Tedenski urnik</b><p class="mut sm" style="margin-bottom:8px">Za vsako uro izberi predmet in učitelja.</p>
-  <div class="card ttwrap" style="padding:6px;margin-bottom:22px"><table class="tt"><thead><tr><th></th>${DAYS.map(d => `<th>${d}</th>`).join('')}</tr></thead><tbody>${rows}</tbody></table></div>
+  <div class="card pad" style="margin-bottom:18px"><label class="row" style="justify-content:space-between;gap:12px"><div><b>Urnik je vklopljen</b><div class="mut xs">Izklopi ga med počitnicami ali če ne hodiš v šolo. Ko je izklopljen, ni opomnikov ob koncu ur in dnevi se ne štejejo v neaktivnost.</div></div><span class="sw"><input type="checkbox" data-c="setOpt" data-k="ttOff" data-inv="1" ${U.ttOff ? '' : 'checked'}><span></span></span></label></div>
+  <b>Tedenski urnik</b><p class="mut sm" style="margin-bottom:8px">Za vsako uro izberi predmet in učitelja. Privzeto ima dan 9 ur – po potrebi dodaj še dodatne.</p>
+  <div class="card ttwrap" style="padding:6px;margin-bottom:22px"><table class="tt"><thead><tr><th></th>${DAYS.map(d => `<th>${d}</th>`).join('')}</tr></thead><tbody>${rows}</tbody></table><div class="row" style="justify-content:center;gap:8px;padding:8px">${HN() < 14 ? `<button class="btn btn-s btn-sm" data-a="hoursSet" data-n="${HN() + 1}">${ic('plus', 'ic-s')} Dodaj ${HN() + 1}. uro</button>` : ''}${HN() > 9 ? `<button class="btn btn-s btn-sm" data-a="hoursSet" data-n="${HN() - 1}">${ic('x', 'ic-s')} Odstrani ${HN()}. uro</button>` : ''}</div></div>
   <b>Čas ur</b><p class="mut sm" style="margin-bottom:8px">Ko se ura konča in ni vpisana, se obarva rdeče. Prilagodi čase svoji šoli.</p>
   <div class="card pad" style="margin-bottom:22px">${times}<button class="btn btn-s btn-sm" style="margin-top:6px" data-a="timesReset">Privzeti časi</button></div>
   <b>Prosti dnevi</b><p class="mut sm" style="margin-bottom:8px">Počitnice, ekskurzije … Takrat aplikacija ne zahteva vpisa ur.</p>
@@ -1073,7 +1346,7 @@ function setAc() {
     <div class="field"><label class="lbl" for="ac_p">Novo geslo (vsaj 8 znakov)</label><input id="ac_p" type="password" class="inp" autocomplete="new-password"></div><button class="btn btn-s btn-sm" data-a="savePw">Spremeni geslo</button>
     <p class="hint">Ob spremembi gesla se odjaviš z vseh drugih naprav.</p></div>
   ${U.role !== 'admin' ? `<div class="card pad" style="margin-bottom:14px"><b>Obvestila</b>
-    <label class="row" style="justify-content:space-between;padding:12px 0"><span class="sm">Opomnik ob koncu vsake ure</span><span class="sw"><input type="checkbox" data-c="setOpt" data-k="remind" ${U.remind ? 'checked' : ''}><span></span></span></label>
+    <label class="row" style="justify-content:space-between;padding:12px 0"><span class="sm">Opomnik ob koncu vsake ure<br><span class="mut xs">Opomnike za roke in sporočila administratorja prejemaš vedno.</span></span><span class="sw"><input type="checkbox" data-c="setOpt" data-k="remind" ${U.remind ? 'checked' : ''}><span></span></span></label>
     <label class="row" style="justify-content:space-between;padding:12px 0;border-top:1px solid var(--line2)"><span class="sm">Obvestila o storitvi po e-pošti<br><span class="mut xs">Kode za geslo prejmeš vedno.</span></span><span class="sw"><input type="checkbox" data-c="setOpt" data-k="emailOpt" ${U.emailOpt ? 'checked' : ''}><span></span></span></label>
     ${U.ai.on ? `<label class="row" style="justify-content:space-between;padding:12px 0;border-top:1px solid var(--line2)"><span class="sm">AI pomočnik (privolitev)</span><span class="sw"><input type="checkbox" data-c="setOpt" data-k="aiConsent" ${U.ai.consent ? 'checked' : ''}><span></span></span></label>` : ''}
     <div class="diag" style="margin:10px 0;padding:10px;border-radius:12px;background:var(--fill);border:1px solid var(--line)"><div class="b xs" style="color:var(--ink2)">Stanje obvestil na tej napravi</div>
@@ -1141,12 +1414,21 @@ const since = t => { if (!t) return 'nikoli'; const d = Math.floor((Date.now() -
 function vAdmin() {
   const us = A.users.filter(u => u.role === 'user');
   return `${A.maint?.on ? `<button class="notice o" style="width:100%;text-align:left;margin:6px 0 10px" data-a="go" data-v="asys">${ic('alert')}<div class="grow"><b>Vzdrževanje je vklopljeno.</b> Uporabniki se ne morejo prijaviti. Tapni za upravljanje.</div></button>` : ''}<div class="row" style="margin:6px 0 6px"><div class="h1 grow">Uporabniki</div><button class="btn btn-p btn-sm" data-a="userForm">${ic('plus', 'ic-s')} Dodaj</button></div>
+  ${restoreCards(us)}
   <div class="notice b sm" style="margin:10px 0 14px">${ic('shield')}<div>Zaradi varstva podatkov administrator <b>ne vidi</b> zapiskov, fotografij, ocen in pogovorov uporabnikov – samo podatke o računu.</div></div>
   ${us.length ? `<div class="card list">${us.map(u => `<div class="it" style="flex-wrap:wrap"><div class="grow" style="min-width:200px"><b>${esc(u.name)}</b> <span class="mut sm">@${esc(u.username)}</span><div class="mut xs">${esc(u.email)}</div>
     <div class="row-w" style="gap:5px;margin-top:5px">${statusPill(u)}${u.minor ? '<span class="pill">&lt;15</span>' : ''}<span class="pill">${pl(u.nbs, 'zvezek', 'zvezka', 'zvezki', 'zvezkov')} · ${nphoto(u.phs)} · ${mb(u.bytes)}</span>${u.ai_on ? `<span class="pill g">AI ${u.ai_used || 0}/${u.ai_limit}${u.ai_consent ? '' : ' (ni privolitve)'}</span>` : ''}${u.devices ? `<span class="pill">${ic('bell', 'ic-s')} ${u.devices}</span>` : ''}<span class="pill">aktiven ${since(u.last_active)}</span></div></div>
     <button class="btn btn-s btn-i" data-a="msgForm" data-id="${u.id}" title="Sporočilo">${ic('send', 'ic-s')}</button><button class="btn btn-s btn-i" data-a="userForm" data-id="${u.id}" title="Uredi">${ic('edit', 'ic-s')}</button><button class="btn btn-d btn-i" data-a="delUser" data-id="${u.id}" title="Izbriši">${ic('trash', 'ic-s')}</button></div>`).join('')}</div>` : '<div class="card empty">Še ni uporabnikov.</div>'}`;
 }
-function statusPill(u) { return u.status === 'active' ? '<span class="pill g">aktiven</span>' : u.status === 'parent' ? '<span class="pill o">čaka starša</span>' : '<span class="pill">še ni potrdil</span>'; }
+function statusPill(u) { return u.status === 'frozen' ? `<span class="pill" style="background:var(--sky50);color:#2563eb">zamrznjen${u.restore_at ? ' · prošnja' : ''}</span>` : u.status === 'deleted' ? '<span class="pill r">izbrisan</span>' : u.status === 'active' && u.inact_warn ? '<span class="pill o">opozorjen (neaktiven)</span>' : u.status === 'active' ? '<span class="pill g">aktiven</span>' : u.status === 'parent' ? '<span class="pill o">čaka starša</span>' : '<span class="pill">še ni potrdil</span>'; }
+function restoreCards(us) {
+  const req = us.filter(u => u.status === 'frozen'), del = us.filter(u => u.status === 'deleted'), H = 3600000;
+  if (!req.length && !del.length) return '';
+  return `${req.length ? `<h2 class="h2">${ic('lock')} Zamrznjeni računi (${req.length})</h2><div class="card list" style="margin-bottom:10px">${req.map(u => { const left = Math.max(0, Math.round((u.frozen_at + 170 * H - Date.now()) / H)); return `<div class="it" style="flex-wrap:wrap;align-items:flex-start"><div class="grow" style="min-width:200px"><b>${esc(u.name)}</b> <span class="mut sm">@${esc(u.username)}</span><div class="mut xs">zamrznjen ${fmtT(u.frozen_at)}</div>
+    ${u.restore_at ? `<div class="notice b sm" style="margin-top:8px">${ic('info')}<div><b>Prošnja (${fmtT(u.restore_at)}):</b><br>${esc(u.restore_reason || '')}</div></div>` : `<div class="mut xs" style="margin-top:4px">Še ni oddal prošnje · izbris čez ${left} ur</div>`}</div>
+    ${u.restore_at ? `<div class="row" style="gap:6px"><button class="btn btn-p btn-sm" data-a="admRestore" data-id="${u.id}">Obnovi</button><button class="btn btn-d btn-sm" data-a="admRestore" data-id="${u.id}" data-ok="0">Zavrni</button></div>` : `<button class="btn btn-s btn-sm" data-a="admRestore" data-id="${u.id}">Obnovi</button>`}</div>`; }).join('')}</div>` : ''}
+  ${del.length ? `<h2 class="h2">${ic('trash')} Izbrisani računi (${del.length})</h2><div class="card list" style="margin-bottom:10px">${del.map(u => { const left = Math.max(0, Math.ceil((u.deleted_at + 10 * 864e5 - Date.now()) / 864e5)); return `<div class="it"><div class="grow"><b>${esc(u.name)}</b> <span class="mut sm">@${esc(u.username)}</span><div class="mut xs">izbrisan ${fmtT(u.deleted_at)} · trajni izbris čez ${left} ${left === 1 ? 'dan' : left === 2 ? 'dneva' : 'dni'}</div></div><button class="btn btn-s btn-sm" data-a="admRestore" data-id="${u.id}">${ic('rot', 'ic-s')} Obnovi</button></div>`; }).join('')}</div>` : ''}`;
+}
 function userForm(id) {
   const u = id ? A.users.find(x => x.id === id) : { ai_limit: 60 };
   modal(`${sheetHead(id ? 'Uredi uporabnika' : 'Nov uporabnik')}
@@ -1156,7 +1438,8 @@ function userForm(id) {
   ${!id ? `<label class="chk" style="margin-bottom:12px"><input type="checkbox" id="uf_inv" checked><span>Pošlji vabilo po e-pošti <span class="mut xs">(uporabnik si sam nastavi geslo prek »Pozabljeno geslo«)</span></span></label>` : ''}
   <div class="field"><label class="lbl" for="uf_p">${id ? 'Ponastavi geslo (neobvezno)' : 'Začasno geslo (neobvezno)'}</label><input id="uf_p" class="inp" autocomplete="off" placeholder="vsaj 8 znakov"><p class="hint">Uporabnik ga bo moral ob prvi prijavi zamenjati. Gesel ne pošiljaj po e-pošti.</p></div>
   <div class="row"><div class="field grow"><label class="lbl" for="uf_m">Največ zvezkov</label><input id="uf_m" type="number" min="0" class="inp" placeholder="brez omejitve" value="${u.max_nb ?? ''}"></div><div class="field grow"><label class="lbl" for="uf_al">AI uporab / mesec</label><input id="uf_al" type="number" min="0" class="inp" value="${u.ai_limit ?? 60}"></div></div>
-  <label class="chk" style="margin-bottom:16px"><input type="checkbox" id="uf_ai" ${u.ai_on ? 'checked' : ''}><span>Omogoči AI pomočnika <span class="mut xs">(uporabnik ga mora še sam vklopiti)</span></span></label>
+  <label class="chk" style="margin-bottom:10px"><input type="checkbox" id="uf_ai" ${u.ai_on ? 'checked' : ''}><span>Omogoči AI pomočnika <span class="mut xs">(uporabnik ga mora še sam vklopiti)</span></span></label>
+  <label class="chk" style="margin-bottom:16px"><input type="checkbox" id="uf_mu" ${u.ai_music ? 'checked' : ''}><span>Glasbeni AI <span class="beta">DEMO</span> <span class="mut xs">(notni zapisi; deluje le z vklopljenim AI)</span></span></label>
   <div class="row" style="justify-content:space-between">${id ? `<button class="btn btn-s btn-sm" data-a="userLogout" data-id="${id}">Odjavi z vseh naprav</button>` : '<span></span>'}<button class="btn btn-p" data-a="userSave" data-id="${id || ''}">Shrani</button></div>`);
 }
 function vAdminMsg() {
@@ -1249,6 +1532,21 @@ const ACT = {
   maintOn: () => confirmBox('Vklopim vzdrževanje? Vsi prijavljeni uporabniki bodo videli zaslon za vzdrževanje, prijaviti se bo mogel samo administrator.', () => maintSet(true), 'Vklopi'),
   maintSave: () => maintSet(true),
   maintOff: () => maintSet(false),
+  hoursSet: async d => { const n = +d.n; if (n < HN() && (D.tt || []).some(x => x.h > n)) { _cf = async () => { closeModal(); await hoursApply(n); }; return modal(`${sheetHead('Odstranim ' + HN() + '. uro?')}<p class="sm">V urniku so pri tej uri vpisani predmeti – odstranjeni bodo iz urnika. Vpisane ure in zapiski ostanejo.</p><div class="row" style="justify-content:flex-end;margin-top:14px"><button class="btn btn-s" data-a="closeModal">Prekliči</button><button class="btn btn-d" data-a="cfOk">Odstrani</button></div>`); } hoursApply(n); },
+  restoreReq: async () => { try { const r = await api('/me/restore', { reason: $('rs_r').value.trim() }); U = r.user; renderFrozen(); toast('Prošnja je poslana administratorju.'); } catch (e) { if (e.message !== '__gate') toast(e.message, true); } },
+  frozenCheck: async () => { await refreshMe(); if (U && U.status !== 'frozen') { toast('Račun je spet aktiven.'); afterLogin(); } else toast('Prošnja še čaka na administratorja.'); },
+  gradeForm: d => gradeForm({ nid: d.nid }),
+  gradeOpen: d => gradeOpen(d.id),
+  gfPick: (d, el) => { GF.grade = d.g; el.parentNode.querySelectorAll('button').forEach(b => b.classList.toggle('on', b === el)); },
+  gfType: (d, el) => { GF.gtype = d.v; el.parentNode.querySelectorAll('button').forEach(b => b.classList.toggle('on', b === el)); },
+  gfFix: d => { const o = gradeList().find(x => x.id === d.id); gradeForm({ nid: o.nid, fix: o.id, old: o.grade, gtype: o.gtype }); },
+  gfEdit: d => { const o = gradeList().find(x => x.id === d.id); gradeForm({ nid: o.nid, id: o.gid, grade: o.grade, gtype: o.gtype, date: o.date, note: o.note }); },
+  async gfSave() {
+    if (!GF.grade) return toast('Izberi oceno.', true);
+    try { await api('/grade/save', { id: GF.id || undefined, nid: GF.nid, fix: GF.fix || undefined, grade: GF.grade, gtype: GF.gtype, date: $('gf_d').value, note: $('gf_n').value.trim() }); closeModal(); await loadData(); render(); toast(GF.fix ? 'Ocena je popravljena.' : 'Ocena je shranjena.'); } catch (e) { toast(e.message, true); }
+  },
+  gfDel: d => confirmBox(d.fix ? 'Odstranim popravek? Ostane izvirna ocena.' : 'Izbrišem oceno? Izbriše se tudi njen popravek.', async () => { try { await api('/grade/delete', { id: d.id }); await loadData(); render(); toast('Izbrisano.'); } catch (e) { toast(e.message, true); } }, 'Izbriši'),
+  async admRestore(d) { try { const r = await api('/admin/restore', { id: d.id, ok: d.ok !== '0' }); await loadAdmin(); render(); toast(r.status === 'active' ? 'Račun je obnovljen – uporabnik je dobil e-pošto.' : 'Prošnja zavrnjena – račun je izbrisan (obnova možna še 10 dni).'); } catch (e) { toast(e.message, true); } },
   closeModal, cfOk: () => { const f = _cf; closeModal(); f && f(); }, logout,
   authMode: d => { AUTH.mode = d.m; renderLogin(); },
   async parentCheck() { await refreshMe(); if (U.status === 'active') afterLogin(); else toast('Privolitev še ni potrjena.'); },
@@ -1295,6 +1593,8 @@ const ACT = {
   async aiConsent() { if (!$('ai_ok').checked) return toast('Za vklop potrdi, da razumeš pogoje.', true); try { U = (await api('/me/settings', { aiConsent: true })).user; render(); } catch (e) { toast(e.message, true); } },
   aiMode: d => { S.ai.mode = d.m; S.ai.chat = null; S.ai.msgs = []; render(); }, aiNew: () => { closeModal(); S.ai.chat = null; S.ai.msgs = []; render(); setTimeout(() => $('ai_q')?.focus(), 50); },
   aiRun: () => aiAsk(S.ai.mode, $('ai_q')?.value.trim() || undefined), aiOcr,
+  abcPlay: (d, el) => abcPlay(+d.i, el), abcCopy: d => navigator.clipboard?.writeText(d.src).then(() => toast('Zapis ABC kopiran.')),
+  musicImgDel: () => { S.ai.img = null; render(); },
   aiSuggest: d => { S.ai.mode = d.m; if (d.m === 'chat' || S.ai.nid === 'general') aiAsk(d.m, d.q); else aiAsk(d.m); },
   aiHist() {
     const ch = (D.chats || []).slice(0, 40);
@@ -1326,7 +1626,7 @@ const ACT = {
   async itDel(d) { await api('/item/delete', { id: d.id }); closeModal(); D.items = D.items.filter(x => x.id !== d.id); render(); },
   // admin
   userForm: d => userForm(d.id), msgForm: d => msgForm(d.id),
-  async userSave(d) { try { await api('/admin/user/save', { id: d.id || undefined, name: $('uf_n').value, email: $('uf_e').value.trim(), username: $('uf_u').value.trim(), password: $('uf_p').value || undefined, invite: $('uf_inv')?.checked, maxNb: $('uf_m').value, aiOn: $('uf_ai').checked, aiLimit: $('uf_al').value }); closeModal(); await loadAdmin(); render(); toast('Uporabnik shranjen.'); } catch (e) { toast(e.message, true); } },
+  async userSave(d) { try { await api('/admin/user/save', { id: d.id || undefined, name: $('uf_n').value, email: $('uf_e').value.trim(), username: $('uf_u').value.trim(), password: $('uf_p').value || undefined, invite: $('uf_inv')?.checked, maxNb: $('uf_m').value, aiOn: $('uf_ai').checked, aiMusic: $('uf_mu').checked, aiLimit: $('uf_al').value }); closeModal(); await loadAdmin(); render(); toast('Uporabnik shranjen.'); } catch (e) { toast(e.message, true); } },
   async userLogout(d) { await api('/admin/user/logout', { id: d.id }); toast('Uporabnik je odjavljen z vseh naprav.'); },
   delUser: d => { const u = A.users.find(x => x.id === d.id); confirmBox(`Trajno izbrišem uporabnika <b>${esc(u.name)}</b> z vsemi podatki?`, async () => { try { await api('/admin/user/delete', { id: d.id }); await loadAdmin(); render(); toast('Uporabnik izbrisan.'); } catch (e) { toast(e.message, true); } }, 'Izbriši'); },
   mfMode: (d, el) => { $('mf_m').value = d.m; $('mf_l').classList.toggle('hide', d.m !== 'sel'); el.parentNode.querySelectorAll('button').forEach(b => b.classList.toggle('on', b === el)); },
@@ -1344,12 +1644,13 @@ const CHANGE = {
   nbFiles: async (d, el) => { const f = [...el.files]; el.value = ''; if (!f.length) return; toast(`Nalagam ${f.length} …`); await uploadFiles(f, S.nb, null, today()); render(); },
   coToggle: async (d, el) => { try { await api('/nb/coown', { id: S.nb, on: el.checked }); const n = nbOf(S.nb); n.coown = el.checked; if (!el.checked) n.co = 0; ACT.shareNb(); render(); } catch (e) { el.checked = !el.checked; toast(e.message, true); } if (!el.checked) toast('Solastništvo izklopljeno – zvezek je odstranjen pri vseh solastnikih.'); },
   shareToggle: async (d, el) => { try { const r = await api('/nb/share', { id: S.nb, on: el.checked }); const n = nbOf(S.nb); n.share = !!r.token; n.shareToken = r.token; render(); ACT.shareNb(); } catch (e) { toast(e.message, true); } },
+  musicImg: async (d, el) => { const f = el.files?.[0]; if (!f) return; try { S.ai.img = await resize(f); render(); } catch { toast('Fotografije ni bilo mogoče prebrati.', true); } },
   aiNb: (d, el) => { S.ai = { nid: el.value, mode: S.ai.mode, chat: null, msgs: [], busy: false, web: S.ai.web }; render(); },
   sq: () => {},
   fNb: (d, el) => { FT.nid = el.value || null; fSave(); },
   ttSet: async (d, el) => { const v = el.value, body = { d: +d.d, h: +d.h }; if (v === 'M') body.malica = true; else if (v) { const i = v.indexOf('|'); body.nid = v.slice(0, i); body.teacher = v.slice(i + 1); } try { await api('/tt/set', body); D.tt = D.tt.filter(x => !(x.d === body.d && x.h === body.h)); if (v) D.tt.push({ d: body.d, h: body.h, nid: body.nid || null, teacher: body.teacher || null, malica: body.malica ? 1 : 0 }); } catch (e) { toast(e.message, true); } },
   timeSet: async (d, el) => { const c = tm(+d.h), n = { h: +d.h, s: c[0], e: c[1] }; n[d.k] = el.value; try { await api('/times/set', n); D.times = D.times.filter(x => x.h !== n.h).concat(n); } catch (e) { toast(e.message, true); render(); } },
-  setOpt: async (d, el) => { try { U = (await api('/me/settings', { [d.k]: el.checked })).user; if (d.k === 'remind' && el.checked) pushSync(true); toast('Shranjeno.'); render(); } catch (e) { toast(e.message, true); el.checked = !el.checked; } },
+  setOpt: async (d, el) => { try { U = (await api('/me/settings', { [d.k]: d.inv ? !el.checked : el.checked })).user; if (d.k === 'remind' && el.checked) pushSync(true); toast('Shranjeno.'); render(); } catch (e) { toast(e.message, true); el.checked = !el.checked; } },
   itemDone: async (d, el) => { const it = D.items.find(x => x.id === d.id); try { await api('/item/save', { ...it, done: el.checked }); it.done = el.checked ? 1 : 0; render(); } catch (e) { toast(e.message, true); } }
 };
 function delPhotoReq(id, after) {
@@ -1369,7 +1670,7 @@ document.addEventListener('click', e => {
 document.addEventListener('change', e => { const el = e.target.closest('[data-c]'); if (el && CHANGE[el.dataset.c]) CHANGE[el.dataset.c](el.dataset, el, e); });
 document.addEventListener('input', e => { const el = e.target.closest('[data-c=gradeTyped]'); if (el) CHANGE.gradeTyped(el.dataset, el); if (e.target.id === 'sq') { SQ.q = e.target.value; searchRun(); } });
 document.addEventListener('submit', e => { const f = e.target.closest('[data-f]'); if (!f) return; e.preventDefault(); if (f.dataset.f === 'openLink') { const m = /share=([A-Za-z0-9_-]{8,40})/.exec($('pl_u').value) || /^([A-Za-z0-9_-]{16,40})$/.exec($('pl_u').value.trim()); if (!m) return toast('To ni povezava do deljenega zvezka.', true); closeModal(); SHARE = m[1]; openShared(); return; }
-  if (f.dataset.f === 'aiAsk') { const q = $('ai_q').value.trim(); if (q) aiAsk(S.ai.mode, q); return; } FORMS[f.dataset.f]?.(); });
+  if (f.dataset.f === 'aiAsk') { const q = $('ai_q').value.trim(); if (q || (S.ai.mode === 'music' && S.ai.img)) aiAsk(S.ai.mode, q); return; } FORMS[f.dataset.f]?.(); });
 document.addEventListener('scroll', () => $('ctx').classList.add('hide'), true);
 
 // ============================================================ zagon
