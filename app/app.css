@@ -490,3 +490,7 @@ mark{background:rgba(250,204,21,.4);color:inherit;border-radius:4px;padding:0 2p
 .imgchip button{width:30px;height:30px;border-radius:50%;display:grid;place-items:center}
 .srcpill{flex:0 1 auto;min-width:0}.crow .tog{flex-shrink:0}.crow .send{margin-left:auto}
 .aimodes .beta{font-size:8.5px;padding:1px 5px}
+/* ---------- 2.2.1: pričakovane ocene in prikaz ---------- */
+.gc.x{color:var(--mut2)}
+.seg.gview{max-width:320px;margin:22px auto 0}
+.h2 .r{font-size:13px}

@@ -2,7 +2,7 @@
 'use strict';
 const API = (window.DN_API || '').replace(/\/$/, '');
 const SITE = '../';
-const VER = '2.2.0';
+const VER = '2.2.1';
 
 // ============================================================ ikone
 const P = {
@@ -343,8 +343,9 @@ function lessonRow(date, h, compact) {
   if (s.malica) return `<div class="malica"><b style="width:22px;text-align:center">${h}.</b>${ic('u_cup', 'ic-s')} Malica<span style="margin-left:auto;font-weight:500;font-size:12px">${trng(h)}</span></div>`;
   const n = nbOf(s.nid), l = D.lsMap[date + '_' + h], pc = (D.ph || []).filter(p => p.lk === date + '_' + h).length;
   const nowCls = date === today() && nowMin() >= toMin(tm(h)[0]) && nowMin() < toMin(tm(h)[1]) ? ' now' : '';
+  const pln = (D.grades || []).find(g => g.st === 'plan' && g.date === date && g.h === h);
   const icons = (l?.kind === 'notes' ? `<span title="Zapiski" class="row" style="gap:3px">${ic('u_note', 'ic-s')}${pc ? `<small class="xs">${pc}</small>` : ''}</span>` : '') + (l?.kind === 'nonotes' ? `<span title="Brez zapiskov" style="color:var(--g600)">${ic('u_okc', 'ic-s')}</span>` : '') + (l?.grade ? gChip(l) : '') + (l?.kind === 'cancel' ? '<span class="xs">odpadla</span>' : '') + (st === 'red' ? `<span style="color:var(--red600)">${ic('alert', 'ic-s')}</span>` : '') + (st === 'ok' && !l?.grade && l?.kind !== 'nonotes' && l?.kind !== 'notes' ? ic('check', 'ic-s') : '');
-  return `<button class="lesson ${st}${nowCls}" data-a="openLesson" data-d="${date}" data-h="${h}"><span class="n">${h}.</span>${sIc(n)}<span class="grow"><span class="t">${esc(n?.name || '(izbrisan zvezek)')}</span><span class="s">${trng(h)}${s.teacher ? ' · ' + esc(s.teacher) : ''}${st === 'red' ? ' · <b style="color:var(--red600)">vpiši uro</b>' : ''}</span></span><span class="st">${icons}</span></button>`;
+  return `<button class="lesson ${st}${nowCls}" data-a="openLesson" data-d="${date}" data-h="${h}"><span class="n">${h}.</span>${sIc(n)}<span class="grow"><span class="t">${esc(n?.name || '(izbrisan zvezek)')}${pln ? ` <span class="pill ${gcat(pln.gtype) === 'p' ? 'r' : 'o'}" style="font-size:10.5px;padding:1px 7px;vertical-align:1px">${gWord(pln.gtype).toLowerCase()}</span>` : ''}</span><span class="s">${trng(h)}${s.teacher ? ' · ' + esc(s.teacher) : ''}${st === 'red' ? ' · <b style="color:var(--red600)">vpiši uro</b>' : ''}</span></span><span class="st">${icons}</span></button>`;
 }
 function dayList(date, compact) {
   if (wdOf(date) > 4) return `<div class="card empty">${tile('u_palm', 174, 70, 'lg')}<div style="margin-top:10px">Vikend – ni pouka.</div></div>`;
@@ -369,6 +370,7 @@ function vHome() {
     <div class="chip next">${nx ? `<span class="row" style="gap:8px">${sIc(nx.n, 'xs')}${nx.i === 0 ? tm(nx.h)[0].replace(/^0/, '') : nx.i === 1 ? 'jutri' : fmtS(nx.d)}</span><small>naslednja: ${esc(nx.n?.name || '')}</small>` : `${ic('cal')}<small>ni prihajajočih ur</small>`}</div>
   </div>
   <div class="quick"><button data-a="go" data-v="search">${tile('search', 214, 85)}Iskanje</button><button data-a="go" data-v="focus">${tile('timer', 22, 88)}${FT.phase ? fmtClock(focusLeft()) : 'Fokus'}</button><button data-a="go" data-v="ai">${tile('spark', 268, 70)}Vprašaj AI</button><button data-a="itemForm">${tile('u_pin', 152, 62)}Nov rok</button></div>
+  ${(() => { const l = plans().filter(g => (g.st === 'plan' && (planReached(g) || g.date <= addD(today(), 7))) ); return l.length ? `<h2 class="h2">${ic('cal')} Ocenjevanja</h2><div class="card list">${l.slice(0, 5).map(g => planRow(g, true)).join('')}</div>` : ''; })()}
   ${red.length ? `<div class="notice r" style="margin-top:14px">${ic('alert')}<div class="grow"><b>${pl(red.length, 'ura čaka', 'uri čakata', 'ure čakajo', 'ur čaka')} na vpis</b><div class="sm">${red.length === 1 ? "Vpiši jo" : "Vpiši jih"}, da ohraniš niz.</div></div><button class="btn btn-sm btn-d" data-a="openLesson" data-d="${red[0][0]}" data-h="${red[0][1]}">Vpiši</button></div>` : ''}
   <h2 class="h2">${ic('cal')} Današnji urnik</h2>${dayList(t)}
   <h2 class="h2">${ic('clock')} Roki <button class="btn btn-s btn-sm r" data-a="itemForm">${ic('plus', 'ic-s')} Dodaj</button></h2>
@@ -1198,21 +1200,37 @@ function gradeLegend() { return `<div class="glegend">${GT.map(([v, l, c]) => `<
 function gradeList(nid) {
   const out = [];
   (D.ls || []).forEach(l => { if (l.grade && (!nid || l.nid === nid)) out.push({ id: 'ls:' + l.k, nid: l.nid, grade: l.grade, gtype: l.gtype, date: l.k.split('_')[0], note: l.note || '', k: l.k, src: 'ls' }); });
-  (D.grades || []).forEach(g => { if (!g.fix && (!nid || g.nid === nid)) out.push({ id: 'g:' + g.id, gid: g.id, nid: g.nid, grade: g.grade, gtype: g.gtype, date: g.date, note: g.note || '', src: 'g' }); });
+  (D.grades || []).forEach(g => { if (!g.fix && g.st !== 'plan' && (!nid || g.nid === nid) && (g.st !== 'exp' || gExp())) out.push({ id: 'g:' + g.id, gid: g.id, nid: g.nid, grade: g.grade, gtype: g.gtype, date: g.date, note: g.note || '', src: 'g', exp: g.st === 'exp', h: g.h }); });
   const fx = {}; (D.grades || []).forEach(g => { if (g.fix) fx[g.fix] = g; });
   out.forEach(o => { const f = fx[o.id]; if (f) o.fix = { id: f.id, grade: f.grade, gtype: f.gtype, date: f.date, note: f.note || '' }; });
   return out.sort((a, b) => a.date.localeCompare(b.date));
 }
 const gVals = list => list.flatMap(o => o.fix ? [o.grade, o.fix.grade] : [o.grade]);   // v povprečje štejeta izvirna in popravljena ocena
 const gOfType = (list, c) => list.filter(o => gcat(o.gtype) === c);
-function gChipX(o, big) { return o.fix ? `<span class="gfix" title="Popravljena ocena">${gChip(o)}${gChip({ grade: o.fix.grade, gtype: o.fix.gtype }, big)}</span>` : gChip(o, big); }
-function gradeLegend() { return `<div class="glegend">${GT.map(([v, l, c]) => `<span><i class="gd ${c}"></i>${l}</span>`).join('')}<span><span class="gfix"><span class="gc u">2</span><span class="gc u">4</span></span>popravljena</span></div>`; }
+function gChipX(o, big) { if (o.exp) return `<span class="gc x${big ? ' big' : ''}" title="Pričakovana ocena">${esc(o.grade)}</span>`; return o.fix ? `<span class="gfix" title="Popravljena ocena">${gChip(o)}${gChip({ grade: o.fix.grade, gtype: o.fix.gtype }, big)}</span>` : gChip(o, big); }
+const gExp = () => { try { return localStorage.getItem('dn2_gexp') === '1'; } catch { return false; } };
+function gradeLegend() { return `<div class="seg gview" role="tablist" aria-label="Prikaz ocen"><button class="${gExp() ? '' : 'on'}" data-a="gView" data-v="0">Ocene</button><button class="${gExp() ? 'on' : ''}" data-a="gView" data-v="1">S pričakovanji</button></div><div class="glegend">${GT.map(([v, l, c]) => `<span><i class="gd ${c}"></i>${l}</span>`).join('')}<span><span class="gfix"><span class="gc u">2</span><span class="gc u">4</span></span>popravljena</span>${gExp() ? '<span><span class="gc x">4</span>pričakovana</span>' : ''}</div>`; }
+// ---- napovedana ocenjevanja (st='plan'): pisno → pričakovanje → prava ocena; ustno/drugo → ocena tisto uro
+const plans = nid => (D.grades || []).filter(g => (g.st === 'plan' || g.st === 'exp') && (!nid || g.nid === nid)).sort((a, b) => (a.date + (a.h || 0)).localeCompare(b.date + (b.h || 0)));
+const planReached = g => g.date < today() || (g.date === today() && (!g.h || nowMin() >= toMin(tm(g.h)[0])));
+const gWord = t => ({ p: 'Pisno', u: 'Ustno', d: 'Ocenjevanje' })[gcat(t)];
+function planRow(g, showNb) {
+  const n = nbOf(g.nid), due = planReached(g);
+  const state = g.st === 'exp' ? `<span class="pill">pričakuješ <b>${esc(g.grade)}</b></span>` : due ? `<span class="pill ${gcat(g.gtype) === 'p' ? 'o' : 'r'}">${gcat(g.gtype) === 'p' ? 'vpiši pričakovanje' : 'vpiši oceno'}</span>` : `<span class="pill g">${g.date === today() ? 'danes' : g.date === addD(today(), 1) ? 'jutri' : 'čez ' + Math.round((pd(g.date) - pd(today())) / 864e5) + ' dni'}</span>`;
+  return `<button class="it" style="width:100%;text-align:left" data-a="planOpen" data-id="${g.id}">${showNb ? sIc(n, 'sm') : `<span class="gd ${gcat(g.gtype)}" style="width:12px;height:12px"></span>`}<div class="grow"><b class="sm">${showNb ? esc(n?.name || '') + ' · ' : ''}${gWord(g.gtype)}${g.note ? ': ' + esc(g.note) : ''}</b><div class="mut xs">${fmtD(g.date)}${g.h ? ', ' + g.h + '. ura' : ''}</div></div>${state}</button>`;
+}
+function plansCard(nid) {
+  const l = plans(nid).filter(g => g.st === 'exp' || g.date >= addD(today(), -60));
+  return `<h2 class="h2">${ic('cal')} Napovedana ocenjevanja<button class="btn btn-s btn-sm r" data-a="planForm" ${nid ? `data-nid="${nid}"` : ''}>${ic('plus', 'ic-s')} Napovej</button></h2>
+  ${l.length ? `<div class="card list" style="margin-bottom:6px">${l.map(g => planRow(g, !nid)).join('')}</div>` : `<div class="card empty sm">Ni napovedanih ocenjevanj. Napovej jih, da te aplikacija opomni dan prej in po uri.</div>`}`;
+}
 function vGrades() {
   const gs = gradeList(), all = avgOf(gVals(gs));
   const nbs = (D.nb || []).slice().sort((a, b) => a.name.localeCompare(b.name));
   return `<div class="h1" style="margin:6px 2px 14px">Ocene</div>
-  ${gs.length ? `<div class="card pad gsum"><div><div class="mut sm">Skupno povprečje</div><div class="gbig">${all || '–'}</div><div class="mut xs">${pl(gVals(gs).length, 'ocena', 'oceni', 'ocene', 'ocen')} · številčne ocene 1–5</div></div>
+  ${gs.length ? `<div class="card pad gsum"><div><div class="mut sm">Skupno povprečje${gExp() ? ' (s pričakovanji)' : ''}</div><div class="gbig">${all || '–'}</div><div class="mut xs">${pl(gVals(gs).length, 'ocena', 'oceni', 'ocene', 'ocen')} · številčne ocene 1–5</div></div>
     <div class="gsplit">${GT.map(([v, l, c]) => { const x = gOfType(gs, c); return `<div><i class="gd ${c}"></i><b>${avgOf(gVals(x)) || '–'}</b><small>${l.replace(' ocena', '')} · ${gVals(x).length}</small></div>`; }).join('')}</div></div>` : ''}
+  ${plansCard()}
   <h2 class="h2">Po predmetih</h2>
   ${nbs.length ? `<div class="gsubj">${nbs.map(n => { const l = gs.filter(o => o.nid === n.id), a = avgOf(gVals(l)); return `<div class="card gsub"><button class="gsubm" data-a="openGrades" data-id="${n.id}">${sIc(n)}<div class="grow" style="min-width:0"><b>${esc(n.name)}</b><div class="gchips">${l.length ? l.map(o => gChipX(o)).join('') : '<span class="mut xs">Še ni ocen</span>'}</div></div><div class="gavg">${a || '–'}<small>povp.</small></div></button><button class="gplus" data-a="gradeForm" data-nid="${n.id}" aria-label="Dodaj oceno – ${esc(n.name)}">${ic('plus')}</button></div>`; }).join('')}</div>`
     : `<div class="card empty">Najprej ustvari zvezke za svoje predmete (Nastavitve → Zvezki).</div>`}
@@ -1223,12 +1241,47 @@ function vGrade() {
   const gs = gradeList(n.id).reverse(), a = avgOf(gVals(gs));
   return `<button class="btn btn-s btn-sm" style="margin:4px 0 12px" data-a="go" data-v="grades">${ic('l', 'ic-s')} Ocene</button>
   <div class="row" style="margin-bottom:16px;gap:14px">${sIc(n, 'xl')}<div class="grow"><div class="h1">${esc(n.name)}</div><div class="mut sm">${pl(gVals(gs).length, 'ocena', 'oceni', 'ocene', 'ocen')}${n.teachers?.length ? ' · ' + esc(n.teachers.join(', ')) : ''}</div></div><button class="btn btn-p btn-sm" data-a="gradeForm" data-nid="${n.id}">${ic('plus', 'ic-s')} Ocena</button></div>
-  ${gs.length ? `<div class="card pad gsum"><div><div class="mut sm">Povprečje</div><div class="gbig">${a || '–'}</div></div>
+  ${plansCard(n.id)}
+  ${gs.length ? `<div class="card pad gsum"><div><div class="mut sm">Povprečje${gExp() ? ' (s pričakovanji)' : ''}</div><div class="gbig">${a || '–'}</div></div>
     <div class="gsplit">${GT.map(([v, l, c]) => { const x = gOfType(gs, c); return `<div><i class="gd ${c}"></i><b>${avgOf(gVals(x)) || '–'}</b><small>${l.replace(' ocena', '')} · ${gVals(x).length}</small></div>`; }).join('')}</div></div>
-  ${GT.map(([v, l, c]) => { const x = gOfType(gs, c); return x.length ? `<h2 class="h2"><i class="gd ${c}"></i>${{ u: 'Ustne ocene', p: 'Pisne ocene', d: 'Druge ocene' }[c]}</h2><div class="card list">${x.map(o => `<button class="it" style="width:100%;text-align:left" data-a="gradeOpen" data-id="${o.id}">${gChipX(o, true)}<div class="grow"><b class="sm">${fmtD(o.date)}${o.fix ? ' → popravljeno ' + fmtS(o.fix.date) : ''}</b><div class="mut xs">${o.src === 'ls' ? o.k.split('_')[1] + '. ura' : 'vpisano v Ocenah'}${o.note ? ' · ' + esc(o.note.split('\n')[0].slice(0, 80)) : ''}</div></div>${ic('r', 'ic-s')}</button>`).join('')}</div>` : ''; }).join('')}`
+  ${GT.map(([v, l, c]) => { const x = gOfType(gs, c); return x.length ? `<h2 class="h2"><i class="gd ${c}"></i>${{ u: 'Ustne ocene', p: 'Pisne ocene', d: 'Druge ocene' }[c]}</h2><div class="card list">${x.map(o => `<button class="it" style="width:100%;text-align:left" data-a="${o.exp ? 'planOpen' : 'gradeOpen'}" data-id="${o.exp ? o.gid : o.id}">${gChipX(o, true)}<div class="grow"><b class="sm">${fmtD(o.date)}${o.fix ? ' → popravljeno ' + fmtS(o.fix.date) : ''}</b><div class="mut xs">${o.exp ? 'pričakovana ocena' : o.src === 'ls' ? o.k.split('_')[1] + '. ura' : 'vpisano v Ocenah'}${o.note ? ' · ' + esc(o.note.split('\n')[0].slice(0, 80)) : ''}</div></div>${ic('r', 'ic-s')}</button>`).join('')}</div>` : ''; }).join('')}`
   : `<div class="card empty">Za ta predmet še ni ocen.<br><button class="btn btn-p btn-sm" style="margin-top:12px" data-a="gradeForm" data-nid="${n.id}">${ic('plus', 'ic-s')} Dodaj oceno</button></div>`}
   ${gradeLegend()}`;
 }
+// napoved ocenjevanja
+let PF = null;
+function planForm(o) {
+  PF = { id: o.id || null, nid: o.nid || (D.nb || [])[0]?.id, gtype: o.gtype ? GT.find(x => x[2] === gcat(o.gtype))[0] : 'Pisna', date: o.date || addD(today(), 1), h: o.h || '', note: o.note || '' };
+  if (!(D.nb || []).length) return toast('Najprej ustvari zvezke (Nastavitve → Zvezki).', true);
+  modal(`${sheetHead(PF.id ? 'Uredi napoved' : 'Napovej ocenjevanje', 'Dan prej in po uri te opomnim.', tile('u_quiz', 355, 78, 'sm'))}
+  <div class="field"><label class="lbl" for="pf_n">Predmet</label><select id="pf_n" class="inp" data-c="pfNb">${(D.nb || []).map(n => `<option value="${n.id}" ${n.id === PF.nid ? 'selected' : ''}>${optN(n)}</option>`).join('')}</select></div>
+  <div class="field"><label class="lbl">Vrsta</label><div class="gtpick">${GT.map(([v, l, c]) => `<button type="button" class="${c} ${PF.gtype === v ? 'on' : ''}" data-a="pfType" data-v="${v}"><i></i>${v}</button>`).join('')}</div><p class="hint">Pri pisnem lahko po uri vpišeš pričakovano oceno. Pri ustnem in drugem vpišeš dobljeno oceno.</p></div>
+  <div class="row"><div class="field grow"><label class="lbl" for="pf_d">Datum</label><input id="pf_d" type="date" class="inp" value="${PF.date}" data-c="pfDate"></div><div class="field grow"><label class="lbl" for="pf_h">Ura</label><select id="pf_h" class="inp">${pfHours()}</select></div></div>
+  <div class="field"><label class="lbl" for="pf_t">Snov (neobvezno)</label><input id="pf_t" class="inp" maxlength="300" placeholder="npr. periodni sistem, ulomki …" value="${esc(PF.note)}"></div>
+  <div class="row" style="justify-content:flex-end"><button class="btn btn-s" data-a="closeModal">Prekliči</button><button class="btn btn-p" data-a="pfSave">${PF.id ? 'Shrani' : 'Napovej'}</button></div>`);
+}
+function pfHours() {
+  const d = $('pf_d')?.value || PF.date, nid = $('pf_n')?.value || PF.nid, wd = wdOf(d); let o = '<option value="">— brez ure —</option>', auto = '';
+  for (let h = 1; h <= HN(); h++) { const sl = wd <= 4 ? (D.tt || []).find(x => x.d === wd && x.h === h) : null, nm = sl ? (sl.malica ? 'malica' : nbOf(sl.nid)?.name || '') : ''; if (!auto && sl && sl.nid === nid) auto = String(h); o += `<option value="${h}" data-x="${sl?.nid || ''}">${h}. ura${nm ? ' – ' + esc(nm) : ''}</option>`; }
+  const sel = String(PF.h || auto); return o.replace(`value="${sel}"`, `value="${sel}" selected`);
+}
+function planOpen(id) {
+  const g = (D.grades || []).find(x => x.id === id); if (!g) return;
+  const n = nbOf(g.nid), due = planReached(g), pis = gcat(g.gtype) === 'p';
+  modal(`${sheetHead(`${gWord(g.gtype)}${g.note ? ': ' + esc(g.note) : ''}`, `${esc(n?.name || '')} · ${fmtD(g.date)}${g.h ? ', ' + g.h + '. ura' : ''}`, sIc(n, 'sm'))}
+  ${g.st === 'exp' ? `<div class="card pad" style="margin-bottom:14px"><div class="row" style="gap:14px"><span class="gc x big">${esc(g.grade)}</span><div class="grow sm"><b>Pričakovana ocena</b><div class="mut xs">Siva ocena se šteje v povprečje le v prikazu »S pričakovanji«. Ko dobiš test nazaj, vpiši pravo oceno.</div></div></div></div>`
+    : !due ? `<div class="notice b sm" style="margin-bottom:14px">${ic('info')}<div>Ocenjevanje je napovedano. Dan prej ob 17:00 te opomnim${g.h ? ', po uri pa te vprašam po oceni' : ''}.</div></div>`
+    : `<div class="notice ${pis ? 'o' : 'r'} sm" style="margin-bottom:14px">${ic('alert')}<div>${pis ? 'Kako je šlo? Vpiši, koliko pričakuješ – ali pa pravo oceno, če jo že imaš.' : 'Vpiši oceno, ki si jo dobil.'}</div></div>`}
+  ${due || g.st === 'exp' ? `<div class="field"><label class="lbl">${pis && g.st !== 'exp' ? 'Ocena ali pričakovanje' : g.st === 'exp' ? 'Prava ocena' : 'Dobljena ocena'}</label><div class="gradepick">${[1, 2, 3, 4, 5].map(x => `<button type="button" data-a="ppPick" data-g="${x}">${x}</button>`).join('')}</div></div>` : ''}
+  <div class="row-w" style="justify-content:flex-end">
+    ${due && pis && g.st !== 'exp' ? `<button class="btn btn-s" data-a="ppSave" data-id="${g.id}" data-st="exp">Shrani kot pričakovanje</button>` : ''}
+    ${g.st === 'exp' ? `<button class="btn btn-s" data-a="ppSave" data-id="${g.id}" data-st="exp">Spremeni pričakovanje</button>` : ''}
+    ${due || g.st === 'exp' ? `<button class="btn btn-p" data-a="ppSave" data-id="${g.id}" data-st="">Shrani oceno</button>` : `<button class="btn btn-s" data-a="planEdit" data-id="${g.id}">${ic('edit', 'ic-s')} Uredi</button>`}
+    <button class="btn btn-d btn-i" data-a="gfDel" data-id="${g.id}" aria-label="Izbriši">${ic('trash', 'ic-s')}</button>
+  </div>`);
+  PP = { g: null };
+}
+let PP = { g: null };
 // obrazec: nova ocena, urejanje ali popravek
 let GF = null;
 function gradeForm(o) {
@@ -1536,6 +1589,14 @@ const ACT = {
   restoreReq: async () => { try { const r = await api('/me/restore', { reason: $('rs_r').value.trim() }); U = r.user; renderFrozen(); toast('Prošnja je poslana administratorju.'); } catch (e) { if (e.message !== '__gate') toast(e.message, true); } },
   frozenCheck: async () => { await refreshMe(); if (U && U.status !== 'frozen') { toast('Račun je spet aktiven.'); afterLogin(); } else toast('Prošnja še čaka na administratorja.'); },
   gradeForm: d => gradeForm({ nid: d.nid }),
+  gView: d => { try { localStorage.setItem('dn2_gexp', d.v); } catch { } render(); },
+  planForm: d => planForm({ nid: d.nid }),
+  planOpen: d => planOpen(d.id),
+  planEdit: d => { const g = D.grades.find(x => x.id === d.id); planForm(g); },
+  pfType: (d, el) => { PF.gtype = d.v; el.parentNode.querySelectorAll('button').forEach(b => b.classList.toggle('on', b === el)); },
+  async pfSave() { const d = $('pf_d').value; if (!d) return toast('Izberi datum.', true); try { await api('/grade/save', { id: PF.id || undefined, st: 'plan', nid: $('pf_n').value, gtype: PF.gtype, date: d, h: $('pf_h').value || null, note: $('pf_t').value.trim() }); closeModal(); await loadData(); render(); toast(PF.id ? 'Shranjeno.' : 'Ocenjevanje je napovedano.'); } catch (e) { toast(e.message, true); } },
+  ppPick: (d, el) => { PP.g = d.g; el.parentNode.querySelectorAll('button').forEach(b => b.classList.toggle('on', b === el)); },
+  async ppSave(d) { if (!PP.g) return toast('Izberi oceno.', true); const g = D.grades.find(x => x.id === d.id); try { await api('/grade/save', { id: g.id, st: d.st || null, nid: g.nid, grade: PP.g, gtype: g.gtype, date: g.date, h: g.h, note: g.note }); closeModal(); await loadData(); render(); toast(d.st ? 'Pričakovanje shranjeno – ocena je siva.' : 'Ocena je vpisana.'); } catch (e) { toast(e.message, true); } },
   gradeOpen: d => gradeOpen(d.id),
   gfPick: (d, el) => { GF.grade = d.g; el.parentNode.querySelectorAll('button').forEach(b => b.classList.toggle('on', b === el)); },
   gfType: (d, el) => { GF.gtype = d.v; el.parentNode.querySelectorAll('button').forEach(b => b.classList.toggle('on', b === el)); },
@@ -1645,6 +1706,7 @@ const CHANGE = {
   coToggle: async (d, el) => { try { await api('/nb/coown', { id: S.nb, on: el.checked }); const n = nbOf(S.nb); n.coown = el.checked; if (!el.checked) n.co = 0; ACT.shareNb(); render(); } catch (e) { el.checked = !el.checked; toast(e.message, true); } if (!el.checked) toast('Solastništvo izklopljeno – zvezek je odstranjen pri vseh solastnikih.'); },
   shareToggle: async (d, el) => { try { const r = await api('/nb/share', { id: S.nb, on: el.checked }); const n = nbOf(S.nb); n.share = !!r.token; n.shareToken = r.token; render(); ACT.shareNb(); } catch (e) { toast(e.message, true); } },
   musicImg: async (d, el) => { const f = el.files?.[0]; if (!f) return; try { S.ai.img = await resize(f); render(); } catch { toast('Fotografije ni bilo mogoče prebrati.', true); } },
+  pfNb: () => { PF.h = ''; $('pf_h').innerHTML = pfHours(); }, pfDate: () => { PF.h = ''; $('pf_h').innerHTML = pfHours(); },
   aiNb: (d, el) => { S.ai = { nid: el.value, mode: S.ai.mode, chat: null, msgs: [], busy: false, web: S.ai.web }; render(); },
   sq: () => {},
   fNb: (d, el) => { FT.nid = el.value || null; fSave(); },
