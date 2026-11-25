@@ -12,7 +12,7 @@
 <header class="top"><div><a class="b" href="index.html"><img src="Logo.png" alt="">DigitNotes</a><nav><a href="pogoji.html">Pogoji uporabe</a><a href="app/">Aplikacija</a></nav></div></header>
 <main>
 <h1>Politika zasebnosti</h1>
-<p class="meta">Velja od 21. 11. 2026 · posodobljeno 23. 11. 2026 (solastništvo zvezkov) · različica 2026-11-21</p>
+<p class="meta">Velja od 26. 11. 2026 · različica 2026-11-26</p>
 
 <div class="box sum"><b>Na kratko</b>
 <ul>
@@ -43,9 +43,10 @@ E-pošta za vprašanja o zasebnosti: <a href="mailto:digitnotes.info@gmail.com">
 <div class="wrap"><table>
 <tr><th>Podatki</th><th>Namen</th><th>Pravna podlaga</th></tr>
 <tr><td><b>Račun:</b> ime, uporabniško ime, e-poštni naslov, geslo (shranjeno samo v zgoščeni obliki), mesec in leto rojstva</td><td>Ustvarjanje in upravljanje računa, prijava, ponastavitev gesla, preverjanje starosti</td><td>Privolitev (čl. 6(1)(a) GDPR); pri otrocih, mlajših od 15 let, privolitev starša (8. člen ZVOP-2)</td></tr>
-<tr><td><b>Vsebina:</b> urnik, časi ur, prosti dnevi, zvezki, fotografije zapiskov, vnosi ur, ocene, roki (testi, naloge)</td><td>Delovanje aplikacije – digitalni zvezek, urnik, ocene, opomniki</td><td>Privolitev (čl. 6(1)(a) GDPR)</td></tr>
+<tr><td><b>Vsebina:</b> urnik (tudi dodatne ure in vklop/izklop urnika), časi ur, prosti dnevi, zvezki, fotografije zapiskov, vnosi ur, ocene (tudi ocene, vpisane na zavihku Ocene, in popravljene ocene), roki (testi, naloge)</td><td>Delovanje aplikacije – digitalni zvezek, urnik, ocene, opomniki</td><td>Privolitev (čl. 6(1)(a) GDPR)</td></tr>
 <tr><td><b>AI pomočnik:</b> zapiski, ki jih pošlješ v obdelavo, prepisi fotografij, pogovori z AI, iskalne poizvedbe za spletno iskanje</td><td>Povzetki, kartice, testi, odgovori na vprašanja o snovi, odgovori z viri iz Wikipedije</td><td>Ločena, izrecna privolitev (čl. 6(1)(a) GDPR) – neobvezno</td></tr>
 <tr><td><b>Fokus časovnik:</b> predmet, trajanje in čas zaključenega učnega kroga</td><td>Prikaz tvoje statistike učenja (danes, teden, po predmetih)</td><td>Privolitev (čl. 6(1)(a) GDPR)</td></tr>
+<tr><td><b>Redna uporaba:</b> čas zadnje uporabe, število šolskih dni brez uporabe, čas opozorila in zamrznitve, besedilo prošnje za obnovitev (razlog za neaktivnost), ki ga vidi administrator</td><td>Izvajanje pogoja redne uporabe (opozorilo, zamrznitev, obnovitev, izbris) zaradi omejenega prostora za shranjevanje</td><td>Izvajanje storitve po pogojih uporabe (čl. 6(1)(b) GDPR); hramba le, dokler je potrebno (čl. 5(1)(e))</td></tr>
 <tr><td><b>Push obvestila:</b> tehnični naslov naprave za obvestila (naročnina brskalnika)</td><td>Opomniki ob koncu ure, roki, sporočila</td><td>Privolitev (dovoljenje v brskalniku/napravi)</td></tr>
 <tr><td><b>E-pošta:</b> e-poštni naslov</td><td>Enkratne kode (geslo, potrditev), obvestila o storitvi in računu</td><td>Privolitev; obvestila o storitvi lahko izklopiš v nastavitvah</td></tr>
 <tr><td><b>Starš ali skrbnik:</b> e-poštni naslov starša, čas in dokaz privolitve</td><td>Pridobitev in dokazovanje privolitve za otroka, mlajšega od 15 let</td><td>Zakonska obveznost (čl. 6(1)(c) in 8(2) GDPR, 8. člen ZVOP-2)</td></tr>
@@ -66,6 +67,7 @@ E-pošta za vprašanja o zasebnosti: <a href="mailto:digitnotes.info@gmail.com">
 <ul>
 <li>se izbrani zapiski (fotografije in besedilo) in tvoja vprašanja pošljejo v obdelavo storitvi Cloudflare Workers AI (odprtokodni model Mistral Small 3.1). V »splošnem pogovoru« se zapiski ne pošiljajo – samo tvoje vprašanje;</li>
 <li><b>iskanje na spletu</b> (samo če ga sam vklopiš z gumbom »Splet« – pred prvim vklopom te aplikacija o tem obvesti): strežnik DigitNotes iz tvojega vprašanja s pomočjo AI sestavi kratko iskalno poizvedbo in jo pošlje Wikipediji (Wikimedia Foundation, Inc., ZDA). Wikipedija ne dobi tvojega imena, e-poštnega naslova ali IP-naslova (poizvedbo pošlje strežnik). V vprašanja ne piši osebnih podatkov. Uporabljeni članki so navedeni kot viri (licenca CC BY-SA);</li>
+<li><b>glasbeni AI (DEMO)</b>, če ti ga dodeli administrator: fotografija notnega zapisa, ki jo sam izbereš, se pošlje v obdelavo storitvi Cloudflare Workers AI in se <b>ne shrani</b> – shrani se le besedilni odgovor v pogovoru;</li>
 <li>se podatki <b>ne uporabljajo za učenje</b> AI modelov;</li>
 <li>se prepisi fotografij in pogovori shranijo v tvoj račun, da jih lahko ponovno uporabiš. Izbrišeš jih lahko kadarkoli;</li>
 <li>so vsi odgovori AI v aplikaciji jasno označeni. AI se lahko zmoti – odgovore vedno preveri. AI ne ocenjuje znanja in ne sprejema odločitev o tebi.</li>
@@ -92,7 +94,9 @@ E-pošta za vprašanja o zasebnosti: <a href="mailto:digitnotes.info@gmail.com">
 <div class="wrap"><table>
 <tr><th>Podatki</th><th>Rok hrambe</th></tr>
 <tr><td>Račun in vsa vsebina</td><td>Dokler račun obstaja. Ob izbrisu računa se izbrišejo takoj.</td></tr>
-<tr><td>Neaktivni računi</td><td>Po 24 mesecih brez prijave te opozorimo po e-pošti, po nadaljnjih 30 dneh račun izbrišemo.</td></tr>
+<tr><td>Neuporabljeni računi (šolski dnevi)</td><td>Po 5 šolskih dneh brez uporabe opozorilo, po 7 zamrznitev. Brez prošnje za obnovitev v 170 urah (ali ob zavrnjeni prošnji) račun izbrišemo; podatke hranimo še 10 dni zaradi morebitne obnove, nato jih trajno izbrišemo. Podrobnosti v <a href="pogoji.html">pogojih uporabe</a> (10. točka).</td></tr>
+<tr><td>Besedilo prošnje za obnovitev</td><td>Do odločitve administratorja; ob obnovi se izbriše.</td></tr>
+<tr><td>Neaktivni računi brez urnika</td><td>Po 24 mesecih brez prijave te opozorimo po e-pošti, po nadaljnjih 30 dneh račun izbrišemo.</td></tr>
 <tr><td>Račun, ki čaka na privolitev starša</td><td>Največ 14 dni</td></tr>
 <tr><td>Račun, pri katerem prva prijava ni bila dokončana</td><td>Največ 90 dni</td></tr>
 <tr><td>Statistika fokus časovnika</td><td>Dokler račun obstaja ali dokler je ne izbrišeš (Nastavitve → Zasebnost)</td></tr>
